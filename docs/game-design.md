@@ -1,97 +1,133 @@
-# Game design
+# Game design — Purrfectly Dangerous
 
-## Loop
+A kitten runs automatically across four worlds to win back the Sacred Fish. Each world ends in a
+three-phase boss fight and gives the kitten a new ability. The source concept and style sheet are in
+`docs/concept/`; this file is the version the game actually builds, and it wins where they differ.
 
-The hero runs automatically. The level scrolls toward him at the level's speed.
+First-release scope (concept §8): four worlds, four bosses, four abilities, fish, medals, endless
+mode. **Not yet**: mini-bosses, upgrade shop, Nine Lives, Catnip Frenzy, cutscenes, the extra
+encounters (§3) and the special bosses (§4).
+
+## Loop and controls
+
+The kitten runs automatically; the level scrolls toward it at the level's speed.
 
 | Input | Action |
 | --- | --- |
-| Jump button (bottom right) | Jump. Hold for a higher jump; release early for a short hop. |
-| Press it again in the air | Double jump (hero level 3+); always full height, even on a tap. |
-| Fire button (bottom left) | Fireball (hero level 2+). |
-| Hold the fire button, then release | Charged fireball: 3 damage (hero level 4). |
+| Jump button (bottom right) | Jump. Hold for higher, release early for a short hop. |
+| Jump again in the air | **Double Pounce** (kitten level 3+): a second, full-height jump. |
+| Throw button (bottom left) | **Yarn Shot** (kitten level 2+): a ball of yarn thrown forward. |
+| Paw button (above throw), tap | **Ghost Dash** (kitten level 4+): ~0.35 s intangible to enemies, projectiles and hazards (not to ravines). Cooldown ~1.5 s. |
+| Paw button, hold then release | **Super Pounce** (kitten level 5): a long forward leap. Every walking/rolling enemy it touches is defeated and a `crate_wall` it touches breaks. Uses the charge timing the old charged shot used. |
 
-Three hearts. A hit costs one and gives 1.2 s of immunity (the hero blinks). Zero hearts ends the run.
-Landing on top of a goblin, wolf or skeleton defeats it in one go and gives its XP, and the hero
-bounces off. Landing on a hound or archer is a safe bounce only: it is not hurt and gives no XP, so
-those need fireballs. Running into any of them from the side costs a heart.
+The paw button only appears once Ghost Dash is unlocked.
+
+Three hearts. A hit costs one and gives 1.2 s of immunity (the kitten blinks). Zero hearts ends the
+run. Falling into a ravine (pit, chasm, lava) ends the run whatever hearts are left. Landing on top
+of a stompable enemy bounces the kitten; enemies marked *stomp kills* are defeated by it.
 
 ## Progression
 
-XP comes from coins (5), enemies burned with fireballs or jumped on (10–40) and is topped up by
-shrines and bosses.
+Fish are the pickups: each is +5 XP and +1 to the fish counter (score; shown in the HUD as `🐟 ×N`).
+Enemies defeated by yarn or stomp give 10–40 XP.
 
-| Hero level | XP | Unlocks |
-| --- | --- | --- |
-| 1 | 0 | — |
-| 2 | 100 | Fireball |
-| 3 | 300 | Double jump |
-| 4 | 600 | Charged fireball |
+| Kitten level | XP | Unlocks | Guaranteed by |
+| --- | --- | --- | --- |
+| 1 | 0 | — | — |
+| 2 | 100 | Yarn Shot | `yarn_basket` shrine in world 1, before the boss |
+| 3 | 300 | Double Pounce | beating world 1's boss |
+| 4 | 600 | Ghost Dash | beating world 2's boss |
+| 5 | 1000 | Super Pounce | beating world 3's boss |
 
-Abilities a level needs are **guaranteed**, never left to how many coins the player picked up:
-level 1 has a shrine that raises the hero to level 2 before the boss, and each boss raises the hero
-to the level the next stage assumes (`bossRewardLevel` → next level's `entryHeroLevel`). Coins and
-kills only get you there sooner. XP is saved when a level is cleared.
+This shifts the concept's reward table by one world so that every boss can be fought with yarn from
+the start; the reward a boss *names* on the award card is the one it grants.
 
-## Obstacles and enemies
+## Worlds
 
-| Id | Behaviour | Beat it by |
-| --- | --- | --- |
-| `tree` | Static, 24 high | Jump (fireballs pass through it) |
-| `root` | Static, low | Hop |
-| `thorns` | Static, low and wide | A full jump (fireballs pass through it) |
-| `goblin` | Walks toward the hero | Land on it or burn it, or jump over |
-| `wolf` | Fast ground runner, 2 HP | Land on it or 2 fireballs, or jump over |
-| `skeleton` | Slow walker, 2 HP | Land on it or 2 fireballs, or jump over |
-| `ghost` | Drifts in overhead, then swoops to the ground when close | Jump clear of it late; fireballs pass through and landing on it hurts |
-| `giant` | Slow, 56 high, 3 HP | 3 fireballs, or a double jump (landing on its head still hurts) |
-| `icicle` | Hangs just above head height | Stay on the ground |
-| `archer` | Stands and shoots low arrows | Jump the arrows; bounce over it or burn (2 HP) |
-| `hound` | Fast ground runner | Jump or bounce over it, or burn |
-| `raven` | Flies just above head height | Stay on the ground (a jumping fireball also works) |
-| `coin` | +5 XP | — |
-| `shrine` | Raises the hero to the level's `shrineLevel` | Cannot be missed |
+Ravines are gaps in the ground, themed per world (broken bridge, ice chasm, crypt pit, lava).
+Walkers and rollers turn back at a rim. No ravines in a boss fight.
 
-Ravines are gaps in the ground. The hero keeps their footing until their middle is past the rim;
-after that they fall, and a fall ends the run whatever hearts are left. Jump them — fireballs,
-arrows and flying enemies cross freely. Anything that walks (`goblin`, `wolf`, `skeleton`, `giant`,
-`hound`) turns around at a rim and heads back the other way, so an enemy on a ledge between two
-ravines paces it, and one that has turned runs ahead of the hero until it is caught or burned.
-There are no ravines in a boss fight.
+### 1 — forest (speed 110, Easy)
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `bush` | thorny rose bush | static, low and wide | full jump |
+| `stump` | tree stump | static, tall | jump |
+| `squirrel` | squirrel soldier | walks toward the kitten | stomp (kills) or yarn, or jump |
+| `acorn` | rolling acorn | small fast roller | hop |
+| `branch_squirrel` | squirrel on a branch | stands up high, throws acorns that arc to the ground ahead | jump the acorn, or yarn it from a jump |
+| `hedgehog` | hedgehog | walks; curls into a spiky ball when close (~90 units): curled, it can't be stomped and yarn bounces off | jump clear of it, or yarn/stomp before it curls |
+| `milk` | spilled milk (zone) | slick ground: run speed ×1.3 and no short hop while on it | timing |
+| `bridge` | broken bridge plank (platform) | one-way platform over a ravine; **crumbles** 0.5 s after it is landed on | keep moving |
 
-## Levels and bosses
+Boss `boss_squirrel` — **The Great Squirrel King**, always vulnerable, 20 HP.
+1. Throws three acorns in a predictable arc (high/low mix).
+2. Rolls across the arena leaving acorns behind (low rollers).
+3. Climbs a tree and drops a giant acorn that makes a shockwave (blinking warning, then low wave).
 
-During a boss fight the world keeps scrolling and the boss stays ahead of the hero (210 units in
-landscape, 140 in portrait where less fits on screen; levels are validated at both). Every boss
-attack is one of two shapes: **low** (jump it) or **high** (stay down). Attacks are announced by a
-wind-up animation; ground strikes that appear ahead blink before they can hurt.
+### 2 — frost (speed 120, Medium)
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `ice` | ice patch (zone) | slick, as `milk` | timing |
+| `icicle` | falling icicle | hangs from above; when the kitten is ~120 units away it blinks, then drops and shatters | pass before it falls, or wait |
+| `snowball` | rolling snowball | fast roller, 2 HP | jump, or 2 yarn |
+| `penguin` | sliding penguin | very fast belly-slider | jump/stomp (safe bounce, no kill) or yarn |
+| `ice_ledge` | crumbling ice platform (platform) | crumbles 0.4 s after landing | keep moving |
+| `snowdrift` | snow mound | static, low | hop |
 
-| # | Theme | Speed | Boss | Twist |
-| --- | --- | --- | --- | --- |
-| 1 | forest | 110 | `boss_giant` | Always vulnerable. Shockwaves (low) and boulders (high). |
-| 2 | mountain | 120 | `boss_dragon` | Only vulnerable while recovering after an attack. |
-| 3 | wastes | 130 | `boss_queen` | Summons hounds and ravens that soak up fireballs. |
-| 4 | tower | 140 | `boss_stormking` | Only charged fireballs hurt, and only while recovering. |
+Wide ravines (needing Double Pounce) appear here. Boss `boss_icedragon` — **Glacipurr**,
+vulnerable only while recovering, 24 HP.
+1. Ice shards in a fan (some high, some low).
+2. Freezing breath sweep along the ground (low; jump it).
+3. Ices the floor (slick for the rest of the attack), then dives from above (high; stay down).
 
-Bosses change attack pattern as their health drops (`phases` in `Bosses.json`).
+### 3 — haunted (speed 130, Hard)
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `ghost_cat` | ghost cat | drifts toward the kitten, blinking in and out on a fixed cycle; only hurts while visible; yarn passes through | time it, or Ghost Dash |
+| `bat` | swooping bat | flies at head height, swoops as it nears | stay down or jump late; yarn |
+| `skeleton_mouse` | skeleton mouse | stands and throws bones low | jump the bones; stomp (kills) or 2 yarn |
+| `skull` | floating skull | projectile flying straight at head height | stay down, or Ghost Dash |
+| `bell` | cursed bell | hangs; every ~2 s rings a low sound wave along the ground | jump the waves |
+| `tombstone` | gravestone | static, tall | jump |
+| `vanish` | vanishing platform (platform) | solid/absent on a fixed cycle (world clock), blinking before it vanishes | time it |
 
-## Endless run
+Boss `boss_phantom` — **The Phantom Cat Queen**, always vulnerable, 26 HP, summons soak yarn.
+1. Summons ghost cats that chase the kitten.
+2. Teleports and sends spectral waves along the ground (low).
+3. Splits into three copies; only the glowing one takes damage (others let yarn pass through).
 
-The menu's START button begins an endless run: the levels in order, each with its boss, then round
-again from the first. It is open from the first launch. Beating a level in an endless run is also
-what makes that level appear on the menu to play on its own.
+### 4 — citadel (speed 140, Expert)
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `vent` | flame vent | fires a column of flame on a fixed on/off cycle, blinking before it fires | pass while off |
+| `piston` | crushing piston | slams down on a cycle, blinking before | pass while up |
+| `cannon` | wall cannon | fires fireballs at head height | stay down, Ghost Dash, or yarn (2 HP) |
+| `debris` | falling ceiling debris | as `icicle` | pass before or after |
+| `mech_mouse` | mechanical mouse | fast chaser; stomp is a safe bounce only | jump, yarn (2 HP), Super Pounce |
+| `gear` | moving gear | static tall obstacle that spins (looks only) | jump |
+| `crate_wall` | breakable wall | blocks the whole path up to jump height; only Super Pounce breaks it | Super Pounce |
 
-- The hero starts every run at level 1 with three hearts, whatever the save holds, and keeps their
-  XP and abilities from level to level. Hearts carry over; each boss beaten gives one back.
-- Every completed loop runs the whole game clock 15% faster (hero, enemies, bosses and their
-  attacks alike), up to twice the normal speed from loop 8. Because only the clock changes, the
-  proof that each level can be beaten without a hit holds on every loop.
-- Between two levels a next-level screen shows the coming level's name (or the new loop and its
-  speed) over that level's own scenery, with the run's score, levels beaten, hero level and hearts.
-  GO starts the level; it also starts by itself after four seconds.
-- The run ends when the hearts run out or the hero falls. The score adds up across levels; the best
-  score and the most levels beaten in one run are saved. XP earned here is not saved.
+Lava ravines everywhere. Boss `boss_mecha` — **The Mecha-Mouser**, 30 HP. Armored: until its HP is
+at or below 40% it is hit only while recovering; then the core is exposed and phase 3 is fast.
+1. Rockets that leave burning patches on the ground for a short time (low).
+2. Tail sweep (low) while flame vents fire ahead (blinking warning).
+3. Core exposed: rapid alternating high/low attacks with short openings.
+
+## Pickups
+
+| Id | Effect |
+| --- | --- |
+| `fish` | +5 XP, +1 fish |
+| `yarn_basket` | raises the kitten to the level's `shrineLevel`; cannot be missed |
+
+## Medals and endless
+
+Medals as before (bronze/silver/gold → shown as 1–3 stars) for distance, enemies defeated and fish.
+The START button begins an endless run through the four worlds in order, each with its boss, every
+loop 15% faster up to ×2 (only the game clock changes, so the no-hit proof holds on every loop).
+Scoring and saving as in the engine's `EndlessRun`.
 
 ## Names
 
-All display text comes from `App/Resources/Lore.json`, keyed by role id.
+Every displayed name — the title, tagline "One cat. Nine lives. Zero fish.", worlds, bosses,
+abilities — lives in `App/Resources/Lore.json`, keyed by the role ids above.

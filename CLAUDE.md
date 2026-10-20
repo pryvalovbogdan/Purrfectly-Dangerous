@@ -1,8 +1,10 @@
-# Simon the Dragon Slayer — agent instructions
+# Purrfectly Dangerous — agent instructions
 
-2D auto-runner for iPhone (Swift + SpriteKit). The hero runs, jumps obstacles, levels up into a
-fireball, and fights a boss at the end of each of four levels. An original setting: do not add
-names, places or story from existing books, films or games.
+2D pixel-art auto-runner for iPhone (Swift + SpriteKit). A kitten runs through four worlds, jumps
+obstacles, unlocks Yarn Shot, Double Pounce, Ghost Dash and Super Pounce, and fights a three-phase
+boss at the end of each world. `docs/game-design.md` is the spec (built from the concept in
+`docs/concept/`, which is reference only). An original setting: do not add names, places or story
+from existing books, films or games.
 
 ## Rules that are easy to break
 
@@ -13,7 +15,7 @@ names, places or story from existing books, films or games.
    types. The validator bot copies the world and steps the copy to look ahead; anything
    non-deterministic silently breaks level validation.
 3. **Display names live only in `App/Resources/Lore.json`.** Code, asset names and level data use
-   neutral role ids (`hero`, `boss_dragon`, …), so anything can be renamed in one place.
+   neutral role ids (`hero`, `boss_squirrel`, …), so anything can be renamed in one place.
 4. **Art is code.** Never hand-edit PNGs under `Assets.xcassets/Sprites.spriteatlas` or
    `Sprites.json`; change `Tools/sprites/characters/*.py` and run the build. Output must be
    byte-identical between runs (use `draw.noise(seed)`, never `random`).
@@ -22,7 +24,7 @@ names, places or story from existing books, films or games.
 6. **Never cut a piece out of a sprite texture in code** (`SKTexture(rect:in:)`). On a real device
    the atlas packs sprites together and the cut-out shows its neighbours; the simulator hides this.
    Generate the piece as its own sprite instead.
-7. `SimonTheDragonSlayer.xcodeproj` is generated. Edit `project.yml`, then `xcodegen generate`.
+7. `PurrfectlyDangerous.xcodeproj` is generated. Edit `project.yml`, then `xcodegen generate`.
 
 ## Commands
 
@@ -49,7 +51,7 @@ First-time setup: `brew install xcodegen` and
 
 | Path | What |
 | --- | --- |
-| `Packages/GameCore/Sources/GameCore/World.swift` | The simulation: movement, collisions, fireballs, boss state machine |
+| `Packages/GameCore/Sources/GameCore/World.swift` | The simulation: movement, collisions, yarn shots, abilities, boss state machine |
 | `…/Bot.swift` | Look-ahead bot and `LevelValidator` |
 | `…/Progression.swift`, `Items.swift` | XP thresholds, abilities, per-item hitboxes and stats |
 | `App/Resources/Levels/level_NN.json`, `Bosses.json` | Content — see `docs/level-format.md` |
