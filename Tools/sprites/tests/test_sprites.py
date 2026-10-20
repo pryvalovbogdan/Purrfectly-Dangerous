@@ -16,7 +16,8 @@ import export  # noqa: E402
 # sprite -> (size, {animation: frames}). Mirrors docs/sprite-spec.md; change both together.
 SPEC = {
     "hero": ((44, 36), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "double": 4, "throw": 4, "dash": 4,
-                        "pounce": 4, "hurt": 2, "death": 6}),
+                        "pounce": 4, "hurt": 2, "death": 6, "peek": 4, "cheer": 4, "sit_happy": 4, "ko": 2,
+                        "ghost": 4}),
     "yarn": ((12, 12), {"fly": 4, "impact": 5}),
     # World 1, forest
     "squirrel": ((36, 36), {"walk": 6, "death": 4}),
@@ -72,6 +73,19 @@ SPEC = {
     "fish": ((16, 12), {"spin": 6}),
     "yarn_basket": ((28, 28), {"glow": 4}),
     "medal": ((32, 32), {"bronze": 1, "silver": 1, "gold": 1}),
+    # Start, level-complete and game-over screens (no text baked in)
+    "title_wreath": ((200, 64), {"still": 1}),
+    "title_wreath_small": ((160, 52), {"still": 1}),
+    "title_wreath_stone": ((200, 96), {"still": 1}),
+    **{f"icon_{name}": ((16, 16), {"still": 1}) for name in ("trophy", "cat", "retry", "home", "play", "paw", "lock")},
+    **{f"confetti_{name}": ((8, 8), {"loop": 6}) for name in ("red", "yellow", "blue", "green")},
+    "sparkle_big": ((12, 12), {"loop": 4}),
+    "sunburst": ((160, 160), {"still": 1}),
+    "cat_silhouette": ((44, 36), {"still": 1}),
+    "sign_cat": ((18, 22), {"still": 1}),
+    "life_lost": ((18, 16), {"still": 1}),
+    "leaf_drift": ((10, 8), {"loop": 4}),
+    "stars_dizzy": ((16, 8), {"loop": 4}),
 }
 
 

@@ -22,6 +22,7 @@ final class SpriteLibrary {
 
     private let sheets: [String: Sheet]
     private var cache: [String: [SKTexture]] = [:]
+    private var imageCache: [String: [CGImage]] = [:]
 
     init(bundle: Bundle) throws {
         guard let url = bundle.url(forResource: "Sprites", withExtension: "json") else {
@@ -36,6 +37,25 @@ final class SpriteLibrary {
 
     func animation(_ sprite: String, _ name: String) -> Animation? {
         sheets[sprite]?.animations[name]
+    }
+
+    /// `preferred` if the sprite has that animation, else its first animation by name; nil if the
+    /// sprite is not in the manifest. Lets screens use art that is still being drawn (or whose
+    /// animation names differ) without crashing: a missing sprite is simply left out.
+    func animationName(_ sprite: String, preferring preferred: String) -> String? {
+        guard let animations = sheets[sprite]?.animations else { return nil }
+        if animations[preferred] != nil { return preferred }
+        return animations.keys.sorted().first
+    }
+
+    /// The frames of an animation as images for SwiftUI, cached. Each frame is a whole sprite image
+    /// from the asset catalog; nothing is cut out of a texture.
+    func images(_ sprite: String, _ name: String) -> [CGImage] {
+        let key = "\(sprite)/\(name)"
+        if let cached = imageCache[key] { return cached }
+        let images = textures(sprite, name).map { $0.cgImage() }
+        imageCache[key] = images
+        return images
     }
 
     func textures(_ sprite: String, _ name: String) -> [SKTexture] {

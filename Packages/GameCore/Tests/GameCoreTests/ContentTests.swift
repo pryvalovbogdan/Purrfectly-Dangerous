@@ -92,4 +92,43 @@ import Testing
         }
         #expect(lore.text("no.such.key") == "no.such.key")
     }
+
+    /// Every interface label the app asks for (`ui("key")` / `ui("key", …)` in App/) is worded in Lore.json.
+    @Test func everyInterfaceLabelIsInTheLoreFile() throws {
+        let lore = try Content.lore()
+        let app = Content.resources.deletingLastPathComponent()
+        let files = FileManager.default.enumerator(atPath: app.path)?.compactMap { $0 as? String }
+            .filter { $0.hasSuffix(".swift") } ?? []
+        let pattern = try NSRegularExpression(pattern: #"\bui\("([a-z_]+)""#)
+        var keys = Set<String>()
+        for file in files {
+            let source = try String(contentsOf: app.appendingPathComponent(file), encoding: .utf8)
+            let range = NSRange(source.startIndex..., in: source)
+            for match in pattern.matches(in: source, range: range) {
+                keys.insert("ui." + (source as NSString).substring(with: match.range(at: 1)))
+            }
+        }
+        #expect(keys.count > 10)
+        for key in keys.sorted() {
+            #expect(lore.strings[key]?.isEmpty == false, "Lore.json has no text for \(key)")
+        }
+    }
+
+    @Test func fishTotalCountsTheFishInALevel() throws {
+        let level = flatLevel(items: [PlacedItem(at: 300, kind: .fish), PlacedItem(at: 320, kind: .fish, y: 40),
+                                      PlacedItem(at: 400, kind: .bush), PlacedItem(at: 500, kind: .yarnBasket)])
+        #expect(level.fishTotal == 2)
+        #expect(flatLevel().fishTotal == 0)
+        for id in Content.levelIDs {
+            #expect(try Content.level(id).fishTotal > 0, "\(id) has no fish to collect")
+        }
+    }
+
+    /// A bot run can never report more fish than the level holds.
+    @Test func aRunCollectsAtMostTheLevelsFish() throws {
+        let level = flatLevel(items: stride(from: 300.0, to: 600, by: 30).map { PlacedItem(at: $0, kind: .fish) })
+        var world = RunnerWorld(level: level, boss: nil)
+        world.run(8)
+        #expect(world.fishCollected == level.fishTotal)
+    }
 }

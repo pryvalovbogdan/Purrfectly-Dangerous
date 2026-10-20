@@ -10,6 +10,11 @@ public struct SaveGame: Codable, Sendable, Equatable {
     public var bestEndlessScore = 0
     /// Most levels beaten in one endless run.
     public var bestEndlessCleared = 0
+    /// The cat skin picked on the CATS screen, by neutral id.
+    public var selectedSkin = SaveGame.defaultSkin
+
+    /// The skin every player has from the start.
+    public static let defaultSkin = "orange"
 
     public init() {}
 
@@ -22,6 +27,7 @@ public struct SaveGame: Codable, Sendable, Equatable {
         soundOn = try values.decodeIfPresent(Bool.self, forKey: .soundOn) ?? true
         bestEndlessScore = try values.decodeIfPresent(Int.self, forKey: .bestEndlessScore) ?? 0
         bestEndlessCleared = try values.decodeIfPresent(Int.self, forKey: .bestEndlessCleared) ?? 0
+        selectedSkin = try values.decodeIfPresent(String.self, forKey: .selectedSkin) ?? Self.defaultSkin
     }
 
     /// Records a level finished on its own.

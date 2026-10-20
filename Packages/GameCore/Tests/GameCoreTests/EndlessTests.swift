@@ -107,6 +107,16 @@ import Testing
         #expect(game.bestScores["level_01"] == 120)
         #expect(!game.soundOn)
         #expect(game.bestEndlessScore == 0)
+        #expect(game.selectedSkin == SaveGame.defaultSkin)
+    }
+
+    @Test func theChosenSkinIsSaved() throws {
+        var game = SaveGame()
+        #expect(game.selectedSkin == "orange")
+        game.selectedSkin = "orange"
+        let loaded = try JSONDecoder().decode(SaveGame.self, from: JSONEncoder().encode(game))
+        #expect(loaded.selectedSkin == "orange")
+        #expect(loaded == game)
     }
 
     /// The bot plays the shipped levels back to back the way the mode chains them.

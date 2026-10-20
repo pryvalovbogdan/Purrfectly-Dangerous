@@ -208,9 +208,9 @@ private struct HUDView: View {
             if hud.isPaused {
                 Color.black.opacity(0.6).ignoresSafeArea()
                 VStack(spacing: 18) {
-                    Text(model.ui("paused", "PAUSED")).font(.pixel(28))
-                    Button(model.ui("resume", "RESUME")) { hud.isPaused = false }.buttonStyle(PixelButton())
-                    Button(model.ui("quit", "QUIT TO MENU"), action: quit).buttonStyle(PixelButton(tint: .gray))
+                    Text(model.ui("paused")).font(.pixel(28))
+                    Button(model.ui("resume")) { hud.isPaused = false }.buttonStyle(PixelButton())
+                    Button(model.ui("quit"), action: quit).buttonStyle(PixelButton(tint: .gray))
                 }
             }
         }
@@ -287,7 +287,7 @@ private struct AwardCard: View {
         HStack(spacing: 12) {
             SpriteImage(sprite: "ability_\(ability.rawValue)", animation: "still").frame(width: 48, height: 48)
             VStack(alignment: .leading, spacing: 2) {
-                Text(model.ui("new_ability", "NEW ABILITY")).font(.pixel(10)).foregroundStyle(Color.menuInk.opacity(0.75))
+                Text(model.ui("new_ability")).font(.pixel(10)).foregroundStyle(Color.menuInk.opacity(0.75))
                 PixelTitle(text: model.text("ability.\(ability.rawValue)"), size: 20).fixedSize()
             }
         }

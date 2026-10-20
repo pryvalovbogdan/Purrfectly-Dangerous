@@ -210,3 +210,8 @@ GL2_MEM_D = _hex("2c44b8")
 GL2_CRY_L = _hex("b4f0ff")
 GL2_CRY = _hex("3cc2e6")
 GL2_CRY_D = _hex("1a7cbc")
+# Screens: the mossy grey-green boulder behind the game-over title.
+ROCK_L = _hex("a3a89a")
+ROCK = _hex("7b8078")
+ROCK_D = _hex("575d58")
+ROCK_DD = _hex("373c3c")

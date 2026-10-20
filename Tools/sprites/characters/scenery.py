@@ -654,34 +654,195 @@ def citadel() -> list[Sprite]:
     ]
 
 
+# --- start screen -----------------------------------------------------------------------------------
+# The strips start at the left edge of the screen, and an upright phone shows about the first 195 units, so the
+# treehouse sits at the left and the castle with its waterfall at the right of that span (as in the start-screen
+# reference); the rest of the 320 strip continues the forest for wide screens and the scroll.
+
+def treehouse(c: Canvas, x: float, base: float) -> None:
+    """A big leafy tree with a red-roofed cabin on a plank platform in its crown, a ladder down the trunk."""
+    W.gnarled_tree(c, x, base, 26, 12, 64, 40, 301, vines=3)
+    deck_y, hx = 50, x + 2
+    for px_ in (hx - 13, hx + 12):                           # struts down to the trunk
+        c.line((px_, deck_y + 1), (x + (2 if px_ > x else -2), deck_y + 12), P.BARK_D, 2)
+    c.rect(hx - 16, deck_y, hx + 16, deck_y + 2, P.PLANK)     # platform
+    c.rect(hx - 16, deck_y, hx + 16, deck_y, P.PLANK_L)
+    c.rect(hx - 16, deck_y + 2, hx + 16, deck_y + 2, P.PLANK_D)
+    for k in range(int(hx - 16), int(hx + 17), 4):
+        c.px(k, deck_y + 1, P.PLANK_D)
+    for k in range(int(hx - 16), int(hx + 17), 5):            # rail
+        c.rect(k, deck_y - 5, k, deck_y - 1, P.PLANK_D)
+    c.rect(hx - 16, deck_y - 5, hx - 7, deck_y - 5, P.PLANK_L)
+    c.rect(hx + 8, deck_y - 5, hx + 16, deck_y - 5, P.PLANK_L)
+    # cabin
+    wl, wr, wt = hx - 9, hx + 9, deck_y - 15
+    c.rect(wl, wt, wr, deck_y - 1, P.PLANK)
+    for k, yy in enumerate(range(int(wt), int(deck_y), 3)):
+        c.rect(wl, yy, wr, yy, P.PLANK_D)
+    c.rect(wr - 4, wt, wr, deck_y - 1, P.PLANK_D)
+    c.rect(wl + 3, wt + 4, wl + 7, wt + 8, P.BARK_DD)          # lit window
+    c.rect(wl + 4, wt + 5, wl + 6, wt + 7, P.LANTERN)
+    c.px(wl + 4, wt + 5, P.WHITE)
+    c.rect(hx + 2, wt + 5, hx + 6, deck_y - 1, P.BARK_D)       # door
+    c.rect(hx + 3, wt + 6, hx + 5, deck_y - 1, P.BARK)
+    c.rect(wr - 3, wt - 12, wr - 1, wt - 4, P.STONE)           # chimney
+    c.rect(wr - 4, wt - 13, wr, wt - 12, P.STONE_D)
+    c.poly([(wl - 4, wt + 1), (hx, wt - 12), (wr + 4, wt + 1)], P.RED)     # red roof
+    c.poly([(hx, wt - 12), (wr + 4, wt + 1), (hx + 1, wt + 1)], P.RED_D)
+    for k in range(1, 4):                                    # shingle rows
+        yy = wt - 12 + k * 3.3
+        half = (yy - (wt - 12)) / 13 * (13 + 4)
+        c.line((hx - half, yy), (hx + half, yy), P.RED_D if k % 2 else P.CAPE_D)
+    c.line((wl - 3, wt), (hx - 1, wt - 11), P.CAPE_L)
+    # leaves overlapping the platform's ends, and a ladder down the trunk
+    W.clump(c, hx - 18, deck_y + 2, 6)
+    W.clump(c, hx + 19, deck_y + 3, 6)
+    for k in range(int(deck_y + 4), int(base - 2), 3):
+        c.rect(x - 4, k, x + 1, k, P.PLANK_L)
+    c.line((x - 4, deck_y + 3), (x - 4, base - 2), P.PLANK_D)
+    c.line((x + 1, deck_y + 3), (x + 1, base - 2), P.PLANK_D)
+
+
+def menu_clouds() -> Canvas:
+    """Far layer: a cumulus bank, blue mountains, the castle with red cone roofs on a cliff and a waterfall;
+    the treehouse tree at the left stands in front of it all (unhazed)."""
+    h = 110
+    c = Canvas(LAYER_W, h)
+    far = Canvas(LAYER_W, h)
+    for k, (x, base, w, ch) in enumerate(((40, 52, 70, 30), (120, 44, 60, 26), (200, 50, 80, 32), (280, 46, 60, 26),
+                                          (90, 64, 50, 18), (250, 66, 56, 20))):
+        layer = Canvas(LAYER_W, h)
+        W.wrapped(lambda px, base=base, w=w, ch=ch, k=k: W.cumulus(layer, px, base, w, ch, 120 + k), x)
+        far.paste(layer)
+    W.mountains(far, h, 14, 6, (34, 56), (P.MOUNT_L, P.MOUNT_L, P.MOUNT), tips=P.SKY_HAZE)
+    W.mountains(far, h, 15, 5, (22, 40), (P.MOUNT_L, P.MOUNT, P.MOUNT_D))
+    top, left, right = 40, 116, 194                           # the castle cliff
+    far.poly([(left - 4, h), (left, top + 6), (left + 6, top), (right - 6, top), (right, top + 8), (right + 6, h)],
+             P.CLIFF)
+    for k in range(left + 4, right, 6):
+        far.line((k, top + 4), (k - 2 + (k % 3), h), P.CLIFF_D)
+        far.line((k + 2, top + 5), (k + 1, top + 18 + (k * 7) % 12), P.CLIFF_L)
+    far.rect(left + 5, top, right - 5, top + 3, P.FAR_GRASS)
+    far.rect(left + 5, top, right - 5, top, P.KIT_GREEN_L)
+    for k in range(left + 6, right - 6, 4):
+        far.rect(k, top + 4, k + 1, top + 4 + (k * 5) % 4, P.FAR_GRASS)
+    W.castle(far, 150, top + 1)
+    for tx in (124, 186):
+        W.canopy(far, tx, top - 4, 12, 10, tx, W.DISTANT, (3, 5))
+    W.waterfall(far, 172, top + 2, h - 3, 9)
+    W.haze(far, P.SKY_HAZE, 0.1)
+    c.paste(far)
+    W.piece(c, lambda layer, px: treehouse(layer, px, h - 1), 24)
+    return c
+
+
+def menu_horizon() -> Canvas:
+    """Middle distance: a teal forest band and green pines, a lake, a red-roofed cottage, a wooden bridge over
+    the water and lush round trees."""
+    h = 80
+    c = Canvas(LAYER_W, h)
+    band = Canvas(LAYER_W, h)
+    rnd = noise(140)
+    band.rect(0, h - 22, 156, h - 1, P.DIST_D)
+    band.rect(194, h - 22, LAYER_W - 1, h - 1, P.DIST_D)
+    band.rect(157, h - 16, 193, h - 1, P.DIST_D)
+    for i in range(18):
+        x = i * LAYER_W / 18 + rnd() * 8
+        top = h - 40 - rnd() * 12
+        if 150 < x < 196:                                    # keep the waterfall's foot and the lake open
+            top = h - 24
+        W.wrapped(lambda px, top=top, i=i: W.round_tree(band, px, h, top, 18 + (i % 3) * 4, 140 + i, W.DISTANT,
+                                                        (P.DIST_DD, P.DIST_DD), (4, 6)), x)
+    c.paste(W.haze(band, P.SKY_HAZE, 0.08))
+    # the lake, behind the near trees: a light rim, ripples
+    c.rect(0, h - 12, LAYER_W - 1, h - 1, P.WATER)
+    c.rect(0, h - 12, LAYER_W - 1, h - 12, P.WATER_L)
+    for k in range(24):
+        x, y = rnd() * LAYER_W, h - 10 + rnd() * 9
+        c.line((x, y), (x + 3 + rnd() * 3, y), P.WATER_L if k % 3 else P.WHITE)
+
+    def pine(layer, px, tall):
+        layer.rect(px - 1, h - 6, px + 1, h - 1, P.BARK_D)
+        for k in range(4):
+            t = h - 6 - tall + k * tall * 0.24
+            wdt = 3 + k * 2.2
+            layer.poly([(px - wdt, t + tall * 0.3), (px, t), (px + wdt, t + tall * 0.3)], P.KIT_GREEN_D)
+            layer.poly([(px - wdt * 0.2, t + 1), (px, t), (px + wdt * 0.9, t + tall * 0.28), (px + wdt * 0.2, t + tall * 0.28)],
+                       P.KIT_GREEN_DD)
+            layer.line((px - wdt + 1, t + tall * 0.3 - 1), (px - 1, t + 2), P.KIT_GREEN)
+    for x, tall in ((46, 40), (106, 36), (236, 44), (300, 34)):
+        W.piece(c, lambda layer, px, tall=tall: pine(layer, px, tall), x)
+
+    def cottage(layer, px):
+        base = h - 1
+        layer.rect(px - 9, base - 12, px + 9, base, P.CASTLE)
+        layer.rect(px + 4, base - 12, px + 9, base, P.CASTLE_D)
+        layer.poly([(px - 12, base - 11), (px - 2, base - 22), (px + 8, base - 22), (px + 12, base - 11)], P.RED)
+        layer.poly([(px + 2, base - 22), (px + 8, base - 22), (px + 12, base - 11), (px + 4, base - 11)], P.RED_D)
+        layer.line((px - 11, base - 12), (px - 2, base - 21), P.CAPE_L)
+        layer.rect(px - 6, base - 8, px - 3, base - 5, P.BARK_DD)
+        layer.rect(px - 5, base - 7, px - 4, base - 6, P.LANTERN)
+        layer.rect(px + 1, base - 7, px + 4, base, P.BARK)
+    W.piece(c, cottage, 72)
+
+    def bridge(layer, px, span):
+        deck = h - 16
+        for k in range(0, span + 1, 8):                       # piles in the water
+            layer.rect(px + k, deck, px + k + 1, h - 1, P.BARK_D)
+        layer.rect(px, deck, px + span, deck + 2, P.PLANK)
+        layer.rect(px, deck, px + span, deck, P.PLANK_L)
+        layer.rect(px, deck + 2, px + span, deck + 2, P.PLANK_D)
+        for k in range(0, span + 1, 6):                       # rail posts and two rails
+            layer.rect(px + k, deck - 8, px + k + 1, deck - 1, P.PLANK)
+            layer.px(px + k, deck - 8, P.PLANK_L)
+        layer.rect(px, deck - 7, px + span + 1, deck - 6, P.PLANK_L)
+        layer.rect(px, deck - 4, px + span + 1, deck - 4, P.PLANK)
+        for k in range(0, span, 12):                          # cross braces
+            layer.line((px + k, deck - 6), (px + k + 6, deck - 1), P.PLANK_D)
+    W.piece(c, lambda layer, px: bridge(layer, px, 52), 146)
+    W.piece(c, lambda layer, px: bridge(layer, px, 26), 22)
+
+    for k, (x, top, w) in enumerate(((128, 30, 26), (212, 22, 32), (268, 30, 26), (8, 34, 22))):
+        W.piece(c, lambda layer, px, top=top, w=w, k=k: W.round_tree(layer, px, h - 1, top, w, 160 + k,
+                                                                     size=(4, 7)), x)
+    return W.haze(c, P.SKY_L, 0.05)
+
+
+def menu_bushes() -> Canvas:
+    """Front edge of the start screen: round bushes heavy with pink, white, yellow and blue flowers."""
+    from characters.screens import flower
+    h = 26
+    c = Canvas(LAYER_W, h)
+    rnd = noise(55)
+    for i in range(12):
+        x = i * LAYER_W / 12 + rnd() * 10
+        w = 16 + rnd() * 16
+        tall = 10 + rnd() * 8
+
+        def bush(layer, px, w=w, tall=tall, i=i):
+            W.canopy(layer, px, h - tall / 2 + 1, w, tall + 2, 400 + i, size=(3, 6))
+        W.piece(c, bush, x)
+    colours = ((P.PINK, P.GOLD), (P.WHITE, P.GOLD), (P.YELLOW, P.ORANGE), (P.BLUE, P.YELLOW), (P.PINK, P.YELLOW))
+    for k in range(20):
+        x = rnd() * LAYER_W
+        y = h - 4 - rnd() * 10
+        petal, centre = colours[k % len(colours)]
+        layer = Canvas(LAYER_W, h)
+        W.wrapped(lambda px, y=y, petal=petal, centre=centre: flower(layer, px, y, petal, centre, P.CREAM_D), x)
+        c.paste(layer)
+    return c
+
+
 def menu() -> list[Sprite]:
-    """The start screen: a sunny morning over rooftops and gardens."""
-    horizon = Canvas(LAYER_W, 80)
-    hills(horizon, 80, 18, 6, (24, 46), P.BLUE_L)
-    rnd = noise(33)
-    for k in range(7):                                       # little houses on the hills
-        x = 20 + k * 46 + rnd() * 10
-        base = 58 - rnd() * 8
-        horizon.rect(x - 5, base, x + 5, 79, P.BLUE_L)
-        horizon.rect(x - 5, base - 9, x + 5, base, P.ICE_L)
-        horizon.poly([(x - 7, base - 9), (x, base - 15), (x + 7, base - 9)], P.PINK)
-        horizon.rect(x - 1, base - 5, x, base - 3, P.BLUE)
-
-    def garden(c, rnd):
-        for k in range(30):
-            x, y = rnd() * LAYER_W, 10 + rnd() * 14
-            c.px(x, y, (P.YELLOW, P.PINK, P.WHITE)[k % 3])
-        for k in range(4):                                   # balls of yarn left in the garden
-            x = 40 + k * 80 + rnd() * 20
-            c.ellipse(x, 22, 3, 3, (P.YARN, P.BLUE, P.GOLD, P.YARN_L)[k])
-            c.line((x - 2, 21), (x + 2, 23), P.WHITE)
-
+    """The start screen, in the Purrwood look: treehouse, castle and waterfall, a bridge, trees and flowers."""
     return [
-        single("bg_menu_sky", sky("menu", [P.BLUE, P.BLUE, P.BLUE_L])[0].anims["still"].frames[0]),
-        clouds("menu", 110, 17, P.WHITE, P.ICE_L),
-        puffs("menu", 32, P.WHITE, P.ICE_L),
-        single("bg_menu_horizon", horizon),
-        bushes("menu", 26, 19, P.GREEN, P.GREEN_L, garden),
+        single("bg_menu_sky", smooth_sky("menu", [P.SKY_TOP, P.SKY, P.SKY_L, P.SKY_L, P.SKY_HAZE])[0]
+               .anims["still"].frames[0]),
+        forest_clouds("bg_menu_puffs", 120, [(30, 40, 40, 18), (118, 92, 30, 13), (190, 30, 46, 20),
+                                             (262, 84, 34, 15), (310, 50, 26, 11)]),
+        single("bg_menu_clouds", menu_clouds()),
+        single("bg_menu_horizon", menu_horizon()),
+        single("bg_menu_bushes", menu_bushes()),
     ]
 
 

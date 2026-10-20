@@ -13,7 +13,7 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 
 | Sprite | Size | Animations (frames) |
 | --- | --- | --- |
-| hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
+| hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades); for the screens: peek 4 (lying on its belly on a ledge, paws flopped over the edge, cape draped over its back, blinks; the ledge is row 34), cheer 4 (one paw thrust up, "^ ^" eyes, open smile, cape flapping), sit_happy 4 (sitting, "^ ^" eyes, smile, tail swishing), ko 2 (flat on its side, "x x" eyes, tongue out, cape spread; 1 px twitch), ghost 4 (see-through pale blue spirit, gold halo, white wings, sad face, bobs 0-2 px; floats about 3-5 px above row 34). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
 | yarn | 12×12 | fly 4, impact 5 |
 | squirrel | 36×36 | walk 6, death 4. The Squirrel Thief: orange, cat-faced, teal scarf, huge curled tail, striding jointed legs; feet on row 34, x 18; covers its 18×24 hitbox |
 | acorn | 14×14 | roll 4, death 4 (12×11 hitbox) |
@@ -64,6 +64,18 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | fish | 16×12 | spin 6 |
 | yarn_basket | 28×28 | glow 4 |
 | medal | 32×32 | bronze 1, silver 1, gold 1 |
+| title_wreath | 200×64 | still 1. Leafy band behind the start-screen title; clear stadium-shaped hole 156×40 in the middle |
+| title_wreath_small | 160×52 | still 1. The same for "level complete"; clear hole 124×32 |
+| title_wreath_stone | 200×96 | still 1. Mossy grey boulder ringed with leaves and white flowers behind "game over"; its middle (about 140×52) is plain stone for the text |
+| icon_trophy, icon_cat, icon_retry, icon_home, icon_play, icon_paw, icon_lock | 16×16 | still 1 each. Button and badge icons |
+| confetti_red, confetti_yellow, confetti_blue, confetti_green | 8×8 | loop 6 (a paper piece spinning and flipping) |
+| sparkle_big | 12×12 | loop 4 (four-point twinkle swelling and shrinking) |
+| sunburst | 160×160 | still 1. Pale see-through rays (alpha 26-90), centred |
+| cat_silhouette | 44×36 | still 1. The hero's idle pose filled dark, same anchor as `hero` (x 22, row 34) |
+| sign_cat | 18×22 | still 1. Signpost with a cat-face plaque; foot on row 21, x 8 |
+| life_lost | 18×16 | still 1. Dark cat head with grey "x x" eyes |
+| leaf_drift | 10×8 | loop 4 (a leaf tumbling) |
+| stars_dizzy | 16×8 | loop 4 (three twinkles circling) |
 
 Also generated: `heart_full`, `heart_empty`; an `ability_<id>` icon (24×24) for `yarnShot`, `doublePounce`,
 `ghostDash` and `superPounce`; `spark_star|ember|feather` for the burst around the kitten (ember is a curl of
@@ -77,7 +89,12 @@ Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, 
 ground line); `ground_<theme>` (32×48), `ground_<theme>_earth` (32×36, stacked below it; it must tile vertically and continue from the ground tile's bottom row; the forest draws it as deep grey cobbles rather than reusing the tile's lower part) and `ground_<theme>_fill`; `ravine_<theme>` (the
 left wall of a ravine, mirrored for the right one), `ravine_<theme>_fill` (stretched between them; citadel's is
 a lava pool) and `ravine_<theme>_deep`. The start screen has its own backdrop: `bg_menu_sky`, `bg_menu_clouds`,
-`bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes`, over the forest ground. The app icon (the kitten's face
+`bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes`, over the forest ground, in the Purrwood look
+(`docs/concept/Purrfectly Dangerous Pixel Game Screens.png`): the treehouse at x 0-50 and the castle on its cliff with
+the waterfall at x 116-194 of the 110-tall `bg_menu_clouds` strip, so an upright screen (which shows about the first
+195 units) frames them as the reference does; `bg_menu_horizon` holds the forest band, the lake, a red-roofed cottage
+and the wooden bridges; `bg_menu_bushes` the flowering bushes. The screen pieces in the table above
+(`characters/screens.py`) carry no text: the game sets titles and labels over them from Lore.json. The app icon (the kitten's face
 and a ball of yarn) is drawn in `Tools/sprites/icon.py`. The table above is enforced by
 `Tools/sprites/tests/test_sprites.py` — change both.
 

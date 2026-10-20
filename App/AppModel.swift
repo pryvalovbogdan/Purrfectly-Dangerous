@@ -101,10 +101,10 @@ final class AppModel {
         lore.text(key)
     }
 
-    /// Interface wording (`ui.*` keys): Lore.json wins when it has the key, so every label can be
-    /// reworded there; `fallback` only covers keys the file does not have yet.
-    func ui(_ key: String, _ fallback: String) -> String {
-        lore.strings["ui.\(key)"] ?? fallback
+    /// Interface wording: the `ui.<key>` entry of Lore.json, so every label can be reworded there. A
+    /// missing key shows as itself on screen; ContentTests checks every key used in App/ exists.
+    func ui(_ key: String) -> String {
+        lore.text("ui.\(key)")
     }
 
     func isUnlocked(_ index: Int) -> Bool {
@@ -180,6 +180,16 @@ final class AppModel {
         isActive = active
         updateMusic()
     }
+
+    /// The cat skin picked on the CATS screen. Only skins the game has can be chosen.
+    func selectSkin(_ id: String) {
+        guard AppModel.skins.contains(id), save.selectedSkin != id else { return }
+        save.selectedSkin = id
+        store.save(save)
+    }
+
+    /// Skins the CATS screen offers, by neutral id; the first one is everyone's from the start.
+    static let skins = [SaveGame.defaultSkin]
 
     func setSound(on: Bool) {
         save.soundOn = on

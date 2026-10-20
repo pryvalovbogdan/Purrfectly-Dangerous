@@ -149,6 +149,12 @@ public struct LevelDefinition: Codable, Sendable, Equatable {
         self.slick = slick
         self.platforms = platforms
     }
+
+    /// Fish placed in the level: everything a run through it can collect (fish come only from the
+    /// level data, never from enemies or the boss).
+    public var fishTotal: Int {
+        items.lazy.filter { $0.kind == .fish }.count
+    }
 }
 
 public enum ContentError: Error, Equatable {

@@ -194,8 +194,11 @@ class HeroPose:
     ripple: float = 14       # how much the cape ripples
     tail: float = -35        # tail root angle above straight back (90 = up, negative = drooping)
     curl: float = 18         # how much the tail bends forward per segment
-    eye: str = "open"        # open | shut | wide | x | squint
+    eye: str = "open"        # open | shut | wide | x | squint | happy (closed "^ ^")
     mouth: bool = False
+    smile: bool = False      # a wide open happy mouth (overrides `mouth`)
+    tongue: bool = False     # tongue poking out under the nose (knocked out)
+    frown: bool = False      # a small sad mouth
     ears_back: bool = False
 
 
@@ -301,12 +304,26 @@ def _face(pose: HeroPose) -> list[list[str]]:
             "wide": [(x, y) for x0, n in ((7, 2), (13, 3)) for x in range(x0, x0 + n) for y in range(8, 12)],
             "squint": [(7, 9), (8, 10), (7, 11), (15, 9), (14, 10), (15, 11)],
             "x": [(6, 9), (8, 9), (7, 10), (6, 11), (8, 11), (13, 9), (15, 9), (14, 10), (13, 11), (15, 11)],
+            "sad": [(7, 10), (8, 10), (8, 11), (7, 11), (13, 10), (14, 10), (15, 10), (13, 11), (14, 11),
+                    (15, 11), (8, 9), (13, 9)],
+            "happy": [(6, 11), (7, 10), (8, 10), (9, 11), (13, 11), (14, 10), (15, 10), (16, 11)],
         }[pose.eye]
         for x, y in marks:
             rows[y][x] = "K"
         if pose.eye == "wide":
             rows[8][7] = rows[8][13] = rows[11][15] = "H"
-    if pose.mouth:                                           # a small open "o" under the nose
+    if pose.smile:                                           # a wide open "D" smile with a pink tongue
+        for x, y, ch in ((9, 12, "K"), (10, 12, "K"), (11, 12, "K"), (12, 12, "K"), (9, 13, "K"), (10, 13, "p"),
+                         (11, 13, "p"), (12, 13, "K"), (10, 14, "K"), (11, 14, "K"), (9, 14, "W"), (12, 14, "W")):
+            rows[y][x] = ch
+    elif pose.tongue:                                        # mouth open, tongue lolling out
+        for x, y, ch in ((10, 12, "K"), (11, 12, "K"), (10, 13, "P"), (11, 13, "P"), (10, 14, "p"), (11, 14, "P"),
+                         (12, 14, "p"), (11, 15, "p")):
+            rows[y][x] = ch
+    elif pose.frown:                                         # a little upside-down "u"
+        for x, y in ((9, 14), (10, 13), (11, 13), (12, 14)):
+            rows[y][x] = "K"
+    elif pose.mouth:                                         # a small open "o" under the nose
         for x, y in ((10, 12), (11, 12), (10, 13), (11, 13)):
             rows[y][x] = "p"
         rows[12][9] = rows[12][12] = "W"
@@ -662,8 +679,132 @@ def build() -> list[Sprite]:
     hurt = hero_frame(hurt_pose, extras=[hit_star(0)])
     hero.add("hurt", [tint(hurt, P.WHITE, 0.3), hero_frame(hurt_pose, extras=[hit_star(1)])], fps=10)
     hero.add("death", death_frames(hurt_pose), fps=8, loop=False)
+    screen_poses(hero)
 
     return [hero, yarn()]
+
+
+def draped_cape(angle: float, length: float, flap: float, ripple: float = 8, dx: float = -3, dy: float = 0):
+    """An extra that lays the cape over the cat's back (for lying poses, where the cape drawn behind the body
+    would be hidden): from the back of the neck, outlined on its own."""
+    def draw(c, joints):
+        nx, ny = joints["neck"]
+        layer = Canvas(*c.size)
+        _ribbon(layer, (nx + dx, ny + dy), angle, length, flap, ripple, 3.5, 5.5, P.CAPE, P.CAPE_D, P.CAPE_L)
+        c.paste(despeckle(layer).outline())
+    return draw
+
+
+def raised_paw(lift: float):
+    """An extra: the near front leg thrust up beside the head (the cat's own arm is too short to clear its big
+    head), fur with a light edge and a white paw on top."""
+    def draw(c, joints):
+        hx, hy = joints["head"]
+        layer = Canvas(*c.size)
+        base, tip = (hx + 6.5, hy + 6), (hx + 11, hy - 4 - lift)
+        layer.line(base, tip, P.GINGER, 3)
+        layer.line((base[0] - 1, base[1] - 1), (tip[0] - 1, tip[1]), P.GINGER_L)
+        layer.ellipse(tip[0] + 0.5, tip[1] - 0.5, 1.6, 1.6, P.FUR_WHITE)
+        layer.px(tip[0] + 1, tip[1] + 1, P.FUR_WHITE_D)
+        c.paste(layer.outline())
+    return draw
+
+
+def ledge_paws(c, joints):
+    """An extra: both front paws flopped over the ledge either side of the chin, toes on the ground row."""
+    hx, _ = joints["head"]
+    layer = Canvas(*c.size)
+    for x in (hx - 5, hx + 4):
+        layer.rect(x - 1, GROUND - 4, x + 1, GROUND - 1, P.GINGER)
+        layer.px(x - 1, GROUND - 4, P.GINGER_L)
+        layer.rect(x - 1, GROUND, x + 1, GROUND, P.FUR_WHITE)
+        layer.px(x, GROUND - 1, P.FUR_WHITE)
+        layer.px(x + 1, GROUND, P.FUR_WHITE_D)
+    c.paste(layer.outline())
+
+
+def screen_poses(hero: Sprite) -> None:
+    """Poses for the start, level-complete and game-over screens (not used in play)."""
+    # Peek: lying on its belly on top of the title, front paws flopped over the edge in front of its chin, the
+    # cape draped over its back, the tail tip flicking; blinks on the third frame.
+    peek = []
+    for k in range(4):
+        pose = HeroPose(near_leg=(-90, -95), far_leg=(-82, -88), near_arm=(78, 30), far_arm=(70, 20), reach=0.6,
+                        arm_behind=False, lean=90, length=1, head_dx=1, head_dy=1.5, cape=60, cape_len=6, ripple=0,
+                        tail=-6 + (0, 10, 18, 6)[k], curl=10, eye="shut" if k == 2 else "open")
+        peek.append(hero_frame(pose, extras=[draped_cape(98 + (0, 4, 6, 2)[k], 13, k * 1.5, 10), ledge_paws], dx=-4))
+    hero.add("peek", peek, fps=4)
+
+    # Cheer: standing tall, one paw thrust up beside its head, "^ ^" eyes and a wide open smile, cape flapping.
+    cheer = []
+    for k in range(4):
+        up = (0, 1, 0, 1)[k]
+        pose = HeroPose(near_leg=(6, 0), far_leg=(-8, -4), near_arm=(20, 40), far_arm=(-25, 20), lean=-4, lift=up,
+                        cape=100 + k * 12, cape_len=14, flap=k * 1.6, ripple=22, tail=-20 + up * 25, curl=16,
+                        eye="happy", smile=True)
+        cheer.append(hero_frame(pose, extras=[raised_paw(up)]))
+    hero.add("cheer", cheer, fps=8)
+
+    # Sitting on its haunches, paws together in front, "^ ^" eyes and a smile; the tail swishes along the
+    # ground and the cape stirs behind.
+    sit = []
+    for k in range(4):
+        pose = HeroPose(near_leg=(95, 5), far_leg=(85, 0), near_arm=(12, 5), far_arm=(4, 0), lean=-6, length=-0.5,
+                        cape=72 + (0, 6, 10, 6)[k], cape_len=12, flap=k * 1.6, ripple=10,
+                        tail=(-62, -48, -36, -48)[k], curl=(20, 16, 12, 16)[k], eye="happy", smile=True,
+                        head_dy=(0, 0, 0.6, 0.6)[k])
+        sit.append(hero_frame(pose))
+    hero.add("sit_happy", sit, fps=6)
+
+    # Knocked out: flat on its side, "x x" eyes, tongue out, cape spread over its back; a 1 px twitch of the
+    # hind paw and tail between the two frames.
+    ko = []
+    for k in range(2):
+        pose = HeroPose(near_leg=(-88, -92 + k * 8), far_leg=(-80, -86), near_arm=(88, 92), far_arm=(80, 86),
+                        arm_behind=True, lean=90, length=1, head_dx=1, head_dy=4, cape=60, cape_len=6, ripple=0,
+                        tail=-4 + k * 5, curl=6, eye="x", tongue=True, ears_back=True)
+        ko.append(hero_frame(pose, extras=[draped_cape(104, 14, 0.4 + k * 0.3, 6)], dx=-4))
+    hero.add("ko", ko, fps=3)
+
+    hero.add("ghost", [ghost_frame(k) for k in range(4)], fps=5)
+
+
+def ghost_frame(k: int) -> Image.Image:
+    """The cat's ghost: the hero's head with a sad face over a small body that trails off into a wisp, all pale
+    blue and see-through, a gold halo above and little white wings; bobs by up to 2 px."""
+    bob = (0, 1, 2, 1)[k]
+    c = Canvas(*SIZE)
+    x0, y0 = CX - 9, 5 + bob
+    hx, hy = x0 + HEAD_CENTRE[0], y0 + HEAD_CENTRE[1]
+    c.ellipse(hx - 1, hy + 8, 5, 4, P.GINGER)                         # body
+    c.ellipse(hx - 0.5, hy + 8.5, 2.5, 3, P.FUR_WHITE)                # chest
+    point, angle = (hx - 3, hy + 11), 200 + (k % 2) * 10               # wisp curling off to the left
+    for i in range(7):
+        rad = math.radians(angle)
+        point = (point[0] + math.cos(rad) * 1.2, point[1] - math.sin(rad) * 1.2)
+        size = 2.2 - i * 0.28
+        c.ellipse(point[0], point[1], size, size, P.GINGER)
+        angle -= 22
+    c.rect(hx + 1, hy + 10, hx + 3, hy + 11, P.FUR_WHITE)            # tiny paws held in front
+    _stamp(c, _face(HeroPose(eye="sad", frown=True)), x0, y0)
+    c.outline()
+    out = Canvas(*SIZE)
+    wings = Canvas(*SIZE)
+    flap = k % 2
+    for side in (-1, 1):
+        wx, wy = hx - 0.5 + side * 8, hy + 6
+        wings.poly([(wx, wy + 1), (wx + side * 4, wy - 5 - flap), (wx + side * 7, wy - 4 - flap),
+                    (wx + side * 6, wy), (wx + side * 2, wy + 2)], P.WHITE)
+        wings.line((wx + side * 2, wy - 1), (wx + side * 4, wy - 3 - flap), P.BLUE_L)
+    out.paste(ghostly(c.img, 215, cape=False))
+    out.paste(wings.outline(P.BLUE_D))
+    ty = int(y0 - 2)                                                   # a hollow gold ring
+    left, right = int(hx - 5), int(hx + 4)
+    out.rect(left + 1, ty - 1, right - 1, ty - 1, P.YELLOW)
+    out.px(left, ty, P.GOLD)
+    out.px(right, ty, P.GOLD)
+    out.rect(left + 1, ty + 1, right - 1, ty + 1, P.GOLD_D)
+    return out.img
 
 
 def death_frames(hurt_pose: HeroPose) -> list[Image.Image]:
