@@ -1,8 +1,8 @@
-# Privacy Policy — Simon the Dragon Slayer
+# Privacy Policy — Purrfectly Dangerous
 
 Last updated: 6 October 2026
 
-Simon the Dragon Slayer ("the game") is published by Bogdan Pryvalov. This policy explains what
+Purrfectly Dangerous ("the game") is published by Bogdan Pryvalov. This policy explains what
 the game does with your information. The short version: it collects nothing.
 
 ## Information the game collects
@@ -39,4 +39,4 @@ If this policy changes, the new version will be published at this address with a
 ## Contact
 
 Questions about this policy can be raised at
-<https://github.com/pryvalovbogdan/simon-the-dragon-slayer/issues>.
+<https://github.com/pryvalovbogdan/purrfectly-dangerous/issues>.

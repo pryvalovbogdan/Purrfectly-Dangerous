@@ -1,4 +1,4 @@
-name: SimonTheDragonSlayer
+name: PurrfectlyDangerous
 options:
   bundleIdPrefix: com.pryvalov
   deploymentTarget:
@@ -8,7 +8,7 @@ packages:
   GameCore:
     path: Packages/GameCore
 targets:
-  SimonTheDragonSlayer:
+  PurrfectlyDangerous:
     type: application
     platform: iOS
     sources:
@@ -18,12 +18,12 @@ targets:
     settings:
       base:
         # Must match the App ID registered in the Apple Developer account and App Store Connect.
-        PRODUCT_BUNDLE_IDENTIFIER: com.pryvalov.simonthedragonslayer
+        PRODUCT_BUNDLE_IDENTIFIER: com.pryvalov.purrfectlydangerous
         # Signing team picked in Xcode; kept here because the project file is regenerated.
         DEVELOPMENT_TEAM: Q8URUD52A2
         CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "1.1.1"
-        CURRENT_PROJECT_VERSION: "7"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
@@ -35,4 +35,4 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.arcade-games
         # Label under the home-screen icon. iOS cuts it off after about 12 characters, so this is a
         # short form of "game.title" in App/Resources/Lore.json.
-        INFOPLIST_KEY_CFBundleDisplayName: Dragon Slayer
+        INFOPLIST_KEY_CFBundleDisplayName: Purrfectly
