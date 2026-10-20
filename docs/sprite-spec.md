@@ -15,22 +15,22 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | --- | --- | --- |
 | hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
 | yarn | 12×12 | fly 4, impact 5 |
-| squirrel | 26×26 | walk 6, death 4 (the Squirrel Thief: orange, cat-faced, teal scarf, huge curled tail) |
-| acorn | 12×12 | roll 4, death 4 |
-| branch_squirrel | 32×32 | idle 2, throw 4, death 4 (the Squirrel Thief on a branch; ground line = top of its branch) |
-| acorn_thrown | 10×10 | fly 4 |
-| hedgehog | 28×22 | walk 4, curl 3, rolled 4, death 4 (the Spiky Hedgehog Cat: a cat face in a dome of spines) |
-| slime | 24×20 | walk 4 (squash and stretch), death 4. Green cat-eared slime; feet on row 18, x 12; covers its 14×10 hitbox |
-| mushroom_cat | 28×28 | idle 2, throw 4 (squats, then puffs spores), death 4. Feet on row 26, x 14; 14×16 hitbox |
+| squirrel | 36×36 | walk 6, death 4. The Squirrel Thief: orange, cat-faced, teal scarf, huge curled tail, striding jointed legs; feet on row 34, x 18; covers its 18×24 hitbox |
+| acorn | 14×14 | roll 4, death 4 (12×11 hitbox) |
+| branch_squirrel | 40×40 | idle 2, throw 4, death 4. The Squirrel Thief on a branch; ground line = top of its branch (row 32), x 20; 18×20 hitbox |
+| acorn_thrown | 14×14 | fly 4 (12×11 hitbox) |
+| hedgehog | 36×28 | walk 4, curl 3, rolled 4, death 4. The Spiky Hedgehog Cat: a cat face in a dome of sharp quills; feet on row 26, x 18; 20×15 hitbox |
+| slime | 30×24 | walk 4 (squash and stretch), death 4. Green cat-eared slime; feet on row 22, x 15; covers its 20×14 hitbox |
+| mushroom_cat | 34×34 | idle 2, throw 4 (squats, then puffs spores), death 4. Round cat under a red cap; feet on row 32, x 17; 18×22 hitbox |
 | spore | 10×10 | fly 4 (pink spore puff, about 8×8) |
-| forest_bat | 34×24 | fly 4, death 3. Brown cat-faced bat, purple wings; feet on row 18, x 17; 14×10 hitbox (wings stick out) |
-| plant_cat | 32×32 | idle 2 (closed bud), warn 2 (opening), bite 3 (wide, snap, recover), death 4. Roots on row 30, x 14; 14×22 hitbox |
-| bee_cat | 28×22 | fly 4, throw 3 (cocks, then thrusts its sting), death 4. Feet on row 19, x 13; 14×12 hitbox |
+| forest_bat | 46×32 | fly 4, death 3. Brown cat-faced bat, purple wings; feet on row 25, x 23; 18×14 hitbox (wings stick out) |
+| plant_cat | 40×42 | idle 2 (closed bud), warn 2 (opening), bite 3 (wide, snap, recover), death 4. Tall leafy stem; roots on row 40, x 18; 18×30 hitbox |
+| bee_cat | 38×30 | fly 4, throw 3 (cocks, then thrusts its sting), death 4. Feet on row 26, x 19; 18×16 hitbox |
 | sting | 12×6 | fly 4 (glowing yellow dart, about 8×4, point first) |
-| stump_cat | 28×30 | idle 2, throw 3, death 4 (sinks into the soil). Roots on row 28, x 14; 16×22 hitbox |
+| stump_cat | 34×38 | idle 2, throw 3, death 4 (sinks into the soil). Roots on row 36, x 17; 20×28 hitbox |
 | leaf | 10×8 | fly 4 (green leaf, about 8×6) |
-| snail_cat | 32×20 | walk 4, hide 3 (head goes into the shell), shell 2 (hidden, eyes peeking), death 4. Foot on row 18, x 15; 18×12 hitbox |
-| spider_cat | 32×44 | hang 2 (silk thread drawn up to the frame top), drop 2, walk 4, death 4. Feet on row 41, x 16; 14×12 hitbox |
+| snail_cat | 40×26 | walk 4, hide 3 (head goes into the shell), shell 2 (hidden, eyes peeking), death 4. Foot on row 24, x 20; 24×16 hitbox |
+| spider_cat | 50×56 | hang 2 (silk thread drawn up to the frame top), drop 2, walk 4, death 4. Long jointed legs; feet on row 52, x 25; 18×16 hitbox |
 | bush | 30×16 | still 1 |
 | stump | 22×26 | still 1 |
 | milk | 32×6 | still 1 (tiles horizontally; its bottom 3 rows sit on the turf) |

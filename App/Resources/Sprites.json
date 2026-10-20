@@ -52,8 +52,8 @@
   }
  },
  "acorn": {
-  "width": 12,
-  "height": 12,
+  "width": 14,
+  "height": 14,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -70,8 +70,8 @@
   }
  },
  "acorn_thrown": {
-  "width": 10,
-  "height": 10,
+  "width": 14,
+  "height": 14,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -101,10 +101,10 @@
   }
  },
  "bee_cat": {
-  "width": 28,
-  "height": 22,
-  "anchorX": 0.5179,
-  "anchorY": 0.0909,
+  "width": 38,
+  "height": 30,
+  "anchorX": 0.4868,
+  "anchorY": 0.1,
   "animations": {
    "fly": {
     "frames": 4,
@@ -736,10 +736,10 @@
   }
  },
  "branch_squirrel": {
-  "width": 32,
-  "height": 32,
-  "anchorX": 0.4844,
-  "anchorY": 0.1562,
+  "width": 40,
+  "height": 40,
+  "anchorX": 0.4875,
+  "anchorY": 0.175,
   "animations": {
    "idle": {
     "frames": 2,
@@ -880,10 +880,10 @@
   }
  },
  "forest_bat": {
-  "width": 34,
-  "height": 24,
-  "anchorX": 0.4853,
-  "anchorY": 0.2083,
+  "width": 46,
+  "height": 32,
+  "anchorX": 0.4891,
+  "anchorY": 0.1875,
   "animations": {
    "fly": {
     "frames": 4,
@@ -1280,10 +1280,10 @@
   }
  },
  "hedgehog": {
-  "width": 28,
-  "height": 22,
-  "anchorX": 0.4821,
-  "anchorY": 0.0455,
+  "width": 36,
+  "height": 28,
+  "anchorX": 0.4861,
+  "anchorY": 0.0357,
   "animations": {
    "walk": {
     "frames": 4,
@@ -1492,10 +1492,10 @@
   }
  },
  "mushroom_cat": {
-  "width": 28,
-  "height": 28,
-  "anchorX": 0.4821,
-  "anchorY": 0.0357,
+  "width": 34,
+  "height": 34,
+  "anchorX": 0.4853,
+  "anchorY": 0.0294,
   "animations": {
    "idle": {
     "frames": 2,
@@ -1556,10 +1556,10 @@
   }
  },
  "plant_cat": {
-  "width": 32,
-  "height": 32,
-  "anchorX": 0.5469,
-  "anchorY": 0.0312,
+  "width": 40,
+  "height": 42,
+  "anchorX": 0.5375,
+  "anchorY": 0.0238,
   "animations": {
    "idle": {
     "frames": 2,
@@ -1781,10 +1781,10 @@
   }
  },
  "slime": {
-  "width": 24,
-  "height": 20,
-  "anchorX": 0.4792,
-  "anchorY": 0.05,
+  "width": 30,
+  "height": 24,
+  "anchorX": 0.4833,
+  "anchorY": 0.0417,
   "animations": {
    "walk": {
     "frames": 4,
@@ -1799,10 +1799,10 @@
   }
  },
  "snail_cat": {
-  "width": 32,
-  "height": 20,
-  "anchorX": 0.5156,
-  "anchorY": 0.05,
+  "width": 40,
+  "height": 26,
+  "anchorX": 0.4875,
+  "anchorY": 0.0385,
   "animations": {
    "walk": {
     "frames": 4,
@@ -1897,10 +1897,10 @@
   }
  },
  "spider_cat": {
-  "width": 32,
-  "height": 44,
-  "anchorX": 0.4844,
-  "anchorY": 0.0455,
+  "width": 50,
+  "height": 56,
+  "anchorX": 0.49,
+  "anchorY": 0.0536,
   "animations": {
    "hang": {
     "frames": 2,
@@ -1938,10 +1938,10 @@
   }
  },
  "squirrel": {
-  "width": 26,
-  "height": 26,
-  "anchorX": 0.4808,
-  "anchorY": 0.0385,
+  "width": 36,
+  "height": 36,
+  "anchorX": 0.4861,
+  "anchorY": 0.0278,
   "animations": {
    "walk": {
     "frames": 6,
@@ -1982,10 +1982,10 @@
   }
  },
  "stump_cat": {
-  "width": 28,
-  "height": 30,
-  "anchorX": 0.4821,
-  "anchorY": 0.0333,
+  "width": 34,
+  "height": 38,
+  "anchorX": 0.4853,
+  "anchorY": 0.0263,
   "animations": {
    "idle": {
     "frames": 2,

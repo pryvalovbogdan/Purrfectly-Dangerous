@@ -125,48 +125,48 @@ extension ItemKind {
         // MARK: forest
         case .bush: ItemSpec(width: 22, height: 14, solid: true)
         case .stump: ItemSpec(width: 12, height: 24, solid: true)
-        case .squirrel: ItemSpec(width: 14, height: 18, xp: 10, velocity: -20, stompable: true, stompKills: true,
+        case .squirrel: ItemSpec(width: 18, height: 24, xp: 10, velocity: -20, stompable: true, stompKills: true,
                                  yarnable: true)
-        case .acorn: ItemSpec(width: 10, height: 9, xp: 10, velocity: -60, yarnable: true)
+        case .acorn: ItemSpec(width: 12, height: 11, xp: 10, velocity: -60, yarnable: true)
         case .branchSquirrel:
-            ItemSpec(width: 14, height: 16, baseY: 44, xp: 20, stompable: true, yarnable: true,
+            ItemSpec(width: 18, height: 20, baseY: 44, xp: 20, stompable: true, yarnable: true,
                      throwing: ThrowSpec(projectile: "acorn", interval: 2.0, range: 300, speed: 70, y: nil,
                                          width: 8, height: 8, arc: true))
-        case .hedgehog: ItemSpec(width: 16, height: 11, xp: 15, velocity: -18, stompable: true, stompKills: true,
+        case .hedgehog: ItemSpec(width: 20, height: 15, xp: 15, velocity: -18, stompable: true, stompKills: true,
                                  yarnable: true, curlsAt: 90)
-        case .slime: ItemSpec(width: 14, height: 10, xp: 10, velocity: -16, stompable: true, stompKills: true,
+        case .slime: ItemSpec(width: 20, height: 14, xp: 10, velocity: -16, stompable: true, stompKills: true,
                               yarnable: true)
         // Puffs a spore from the top of its cap; it drops ahead of the kitten and rolls on along the ground.
         case .mushroomCat:
-            ItemSpec(width: 14, height: 16, xp: 15, stompable: true, stompKills: true, yarnable: true,
-                     throwing: ThrowSpec(projectile: "spore", interval: 2.0, range: 300, speed: 60, y: 20,
+            ItemSpec(width: 18, height: 22, xp: 15, stompable: true, stompKills: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "spore", interval: 2.0, range: 300, speed: 60, y: 24,
                                          width: 6, height: 6, arc: true))
-        // As the haunted bat: swoops down to just over a standing kitten's head, never lower.
+        // Like the haunted bat: swoops down to just over a standing kitten's head (24), never lower.
         case .forestBat:
-            ItemSpec(width: 14, height: 10, baseY: 40, xp: 15, velocity: -40, yarnable: true,
-                     flight: FlightSpec(high: 40, low: 26, diveStart: 150, diveEnd: 70))
+            ItemSpec(width: 18, height: 14, baseY: 42, xp: 15, velocity: -40, yarnable: true,
+                     flight: FlightSpec(high: 42, low: 28, diveStart: 150, diveEnd: 70))
         // Shut (idle) it is harmless, open (warning) it is about to bite, biting (active) it hurts.
         // Its body is always there for yarn, whatever the cycle (see `RunnerWorld.hit(with:)`).
         case .plantCat:
-            ItemSpec(width: 14, height: 22, hp: 2, xp: 20, yarnable: true,
+            ItemSpec(width: 18, height: 30, hp: 2, xp: 20, yarnable: true,
                      cycle: CycleSpec(period: 2.0, activeFor: 0.6, warning: 0.5))
         // Hovers above a standing kitten and drifts in slowly, firing stings low along the ground.
         case .beeCat:
-            ItemSpec(width: 14, height: 12, baseY: 40, xp: 20, velocity: -10, yarnable: true,
+            ItemSpec(width: 18, height: 16, baseY: 40, xp: 20, velocity: -10, yarnable: true,
                      throwing: ThrowSpec(projectile: "sting", interval: 1.8, range: 300, speed: 90, y: 4,
                                          width: 8, height: 4))
         // A stump that is a turret: terrain (no Ghost Dash through it) that sends leaves along the ground.
         case .stumpCat:
-            ItemSpec(width: 16, height: 22, hp: 2, xp: 25, yarnable: true, solid: true,
+            ItemSpec(width: 20, height: 28, hp: 2, xp: 25, yarnable: true, solid: true,
                      throwing: ThrowSpec(projectile: "leaf", interval: 2.0, range: 300, speed: 80, y: 2,
                                          width: 8, height: 5))
         // Hides in its shell once close (the curler behaviour): no stomp, yarn bounces off; jump it.
-        case .snailCat: ItemSpec(width: 18, height: 12, xp: 15, velocity: -8, stompable: true, stompKills: true,
+        case .snailCat: ItemSpec(width: 24, height: 16, xp: 15, velocity: -8, stompable: true, stompKills: true,
                                  yarnable: true, curlsAt: 80)
         case .spiderCat:
-            ItemSpec(width: 14, height: 12, baseY: 60, xp: 20, velocity: -20, stompable: true, stompKills: true,
+            ItemSpec(width: 18, height: 16, baseY: 60, xp: 20, velocity: -20, stompable: true, stompKills: true,
                      yarnable: true,
-                     fall: FallSpec(trigger: 130, warning: 0.4, shardWidth: 14, shardHeight: 12, walksOnLanding: true))
+                     fall: FallSpec(trigger: 130, warning: 0.4, shardWidth: 18, shardHeight: 16, walksOnLanding: true))
         // MARK: frost
         case .icicle: ItemSpec(width: 8, height: 18, baseY: 70, fall: FallSpec(trigger: 130, warning: 0.35))
         case .snowball: ItemSpec(width: 14, height: 14, hp: 2, xp: 20, velocity: -60, yarnable: true)

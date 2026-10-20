@@ -53,11 +53,11 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | forest | `branch_squirrel` | Sits 44 up, lobs `acorn` hazards that land and roll on along the ground |
 | forest | `hedgehog` | Walker; within 90 of the hero it curls up: then no stomp, and yarn bounces off |
 | forest | `slime` | Slow walker (16/s); a stomp kills |
-| forest | `mushroom_cat` | Stands still; puffs a `spore` from 20 up every 2 s in range that drops ahead of the hero and rolls on along the ground; a stomp kills |
-| forest | `forest_bat` | As `bat`: flies at 40, swoops to 26 (just over a standing kitten) as it nears |
-| forest | `plant_cat` | Trap on the world clock: bites (22 high) for 0.6 s of every 2 s, open as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); no stomp; yarn hits it any time, 2 HP |
+| forest | `mushroom_cat` | Stands still; puffs a `spore` from 24 up (top of its cap) every 2 s in range that drops ahead of the hero and rolls on along the ground; a stomp kills |
+| forest | `forest_bat` | Like `bat`: flies at 42, swoops to 28 (just over a standing kitten) as it nears |
+| forest | `plant_cat` | Trap on the world clock: bites (30 high) for 0.6 s of every 2 s, open as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); no stomp; yarn hits it any time, 2 HP |
 | forest | `bee_cat` | Hovers 40 up, drifting in at 10/s; every 1.8 s in range fires a `sting` along the ground at 4 |
-| forest | `stump_cat` | Terrain, 22 tall; every 2 s in range sends a `leaf` along the ground at 2; 2 HP |
+| forest | `stump_cat` | Terrain, 28 tall; every 2 s in range sends a `leaf` along the ground at 2; 2 HP |
 | forest | `snail_cat` | Very slow walker (8/s); within 80 of the hero it hides in its shell: then no stomp, and yarn bounces off |
 | forest | `spider_cat` | Hangs 60 up, harmless and out of yarn's reach; 130 from the hero it blinks 0.4 s, drops, and walks in (20/s) as a walker; a stomp kills |
 | frost | `icicle` | Hangs 70 up; 130 from the hero it blinks 0.35 s, drops, and lies as low shards (14×6) |
@@ -65,9 +65,9 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | frost | `penguin` | Very fast slider; stomp is a safe bounce |
 | frost | `snowdrift` | Static, low |
 | haunted | `ghost_cat` | Drifts in high and down to the ground; visible 1.2 s of every 2 s and harmless otherwise; yarn passes through |
-| haunted | `bat` | Flies at 40, swoops to 18 (just over a standing kitten) as it nears |
+| haunted | `bat` | Flies at 40, swoops to 26 (just over a standing kitten) as it nears |
 | haunted | `skeleton_mouse` | Stands and throws low `bone` hazards; stomp kills; 2 HP |
-| haunted | `skull` | Flies straight in at 18, just over a standing kitten |
+| haunted | `skull` | Flies straight in at 26, just over a standing kitten |
 | haunted | `bell` | Hangs 56 up, harmless; every 2 s in range it sends a low `soundwave` hazard along the ground |
 | haunted | `tombstone` | Static, tall |
 | citadel | `vent` | Flame column (60 high) for 0.8 s of every 2.4 s, blinking 0.5 s before; harmless otherwise |
@@ -85,7 +85,7 @@ terrain (`bush`, `stump`, `stump_cat`, `snowdrift`, `tombstone`, `gear`, `crate_
 Pounce (level 5) defeats any walker or roller it touches and breaks a `crate_wall`.
 | `ravines[]` | Optional gaps in the ground: `at` is the left rim, `width` how far it spans. Needs sprites `ravine_<theme>`, `ravine_<theme>_fill` and `ravine_<theme>_deep` |
 
-Useful numbers: the kitten's hitbox is 18 wide and 16 tall. A full jump is 50 high and lasts
+Useful numbers: the kitten's hitbox is 16 wide and 24 tall. A full jump is 50 high and lasts
 0.67 s, so it covers `speed × 0.67` units (≈ 74 at speed 110). A tap hop is about 10 high. A full
 jump plus a Double Pounce at its top lasts about 1.08 s. A Super Pounce is 32 high, lasts 0.53 s
 and adds 140 to the speed while in the air. Leave roughly 110+ units between ground threats.
@@ -120,7 +120,7 @@ rim that it arrives about two seconds after it spawns (a goblin about 45 units, 
   every attack in a fixed order; yarn passes through the others.
 - An attack runs `telegraph` → `duration` (hazards and `summons` spawn at their `delay`) → `recover`.
 - Hazard `y` is its bottom edge: `0` makes a low hazard to jump, `42` a high one to run under
-  (the kitten's hitbox is 18 wide and 16 tall, so anything below 16 hits it standing).
+  (the kitten's hitbox is 16 wide and 24 tall, so anything below 24 hits it standing).
 - `closingSpeed` is how fast it approaches on screen. With `ahead` the hazard appears that far in
   front of the hero instead of at the boss; set `closingSpeed` to the level speed to pin it to the
   ground, and `arm` to the seconds it blinks as a warning first.

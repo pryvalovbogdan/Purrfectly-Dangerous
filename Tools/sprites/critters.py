@@ -81,50 +81,66 @@ def ear(c: Canvas, x: float, y: float, h: float, fur, inner=P.PINK, lean: float 
 
 
 def face(c: Canvas, x: float, y: float, eyes: str = "open", mouth: str = "w", gap: int = 4, eye=P.BLACK,
-         shine=P.WHITE, blush=P.PINK, nose=P.PINK_D, mouth_colour=P.OUTLINE) -> None:
+         shine=P.WHITE, blush=P.PINK, nose=P.PINK_D, mouth_colour=P.OUTLINE, size: int = 2) -> None:
     """A cute cat face seen three-quarters from the right. (x, y) is the top-left pixel of the near
-    eye's 2x2 block; the far eye sits `gap` px to its left.
+    eye's `size` x `size` block (2 or 3); the far eye sits `gap` px to its left.
 
     eyes: open (black with a shine), wide (taller), shut (happy arcs), x (defeated), angry (slanted),
     glow (coloured `eye` with no pupil shine).
     mouth: w (:3), smile, open (a small O), fangs, flat.
     """
+    s = size
     for ex in (x - gap, x):
         if eyes == "x":
             for dx, dy in ((0, 0), (2, 0), (1, 1), (0, 2), (2, 2)):   # a 3x3 cross
-                c.px(ex + dx - (1 if ex != x else 0), y + dy - 0.5, eye)
+                c.px(ex + dx - (1 if ex != x and s == 2 else 0), y + dy - 0.5, eye)
         elif eyes == "shut":
             c.px(ex, y + 1, eye)
             c.px(ex + 1, y, eye)
-            c.px(ex + 2, y + 1, eye) if ex == x else None
+            if ex == x or s == 3:
+                c.px(ex + 2, y + 1, eye)
         elif eyes == "angry":
-            c.rect(ex, y + 1, ex + 1, y + 1, eye)
-            c.px(ex + (1 if ex == x else 0), y, eye)
+            c.rect(ex, y + 1, ex + s - 1, y + s - 1, eye)     # slanted down toward the nose
+            c.px(ex if ex != x else ex + s - 1, y, eye)
         else:
-            c.rect(ex, y, ex + 1, y + 1, eye)
+            c.rect(ex, y, ex + s - 1, y + s - 1, eye)
             if eyes == "wide":
-                c.rect(ex, y - 1, ex + 1, y - 1, eye)
+                c.rect(ex, y - 1, ex + s - 1, y - 1, eye)
             if eyes != "glow":
-                c.px(ex + 1, y - (1 if eyes == "wide" else 0), shine)
+                c.px(ex + s - 1, y - (1 if eyes == "wide" else 0), shine)
+                if s == 3:
+                    c.px(ex, y + 2, P.GREY_D if eye == P.BLACK else eye)
     if blush:
-        c.px(x - gap - 1, y + 2, blush)
-        c.px(x + 2, y + 2, blush)
-    mx = x - gap / 2 + 0.5
+        c.px(x - gap - 1, y + s, blush)
+        c.px(x + s, y + s, blush)
+        if s == 3:
+            c.px(x - gap - 2, y + s, blush)
+            c.px(x + s + 1, y + s, blush)
+    mx = x - gap / 2 + (s - 1) / 2
+    my = y + s + (1 if s == 3 else 0)                       # big eyes leave a row before the nose
     if nose:
-        c.px(mx, y + 2, nose)
+        c.px(mx, my, nose)
     if mouth == "w":
-        c.px(mx - 1, y + 3, mouth_colour)
-        c.px(mx + 1, y + 3, mouth_colour)
+        c.px(mx - 1, my + 1, mouth_colour)
+        c.px(mx + 1, my + 1, mouth_colour)
+        if s == 3:
+            c.px(mx - 2, my, mouth_colour)
+            c.px(mx + 2, my, mouth_colour)
     elif mouth == "smile":
-        c.rect(mx - 1, y + 3, mx + 1, y + 3, mouth_colour)
+        c.rect(mx - 1, my + 1, mx + 1, my + 1, mouth_colour)
+        if s == 3:
+            c.px(mx - 2, my, mouth_colour)
+            c.px(mx + 2, my, mouth_colour)
     elif mouth == "open":
-        c.rect(mx - 0.5, y + 3, mx + 0.5, y + 4, P.RED_D)
+        c.rect(mx - 0.5, my + 1, mx + 0.5, my + (3 if s == 3 else 2), P.RED_D)
+        if s == 3:
+            c.px(mx, my + 3, P.PINK_D)
     elif mouth == "fangs":
-        c.rect(mx - 1, y + 3, mx + 1, y + 3, mouth_colour)
-        c.px(mx - 1, y + 4, P.WHITE)
-        c.px(mx + 1, y + 4, P.WHITE)
+        c.rect(mx - 1, my + 1, mx + 1, my + 1, mouth_colour)
+        c.px(mx - 1, my + 2, P.WHITE)
+        c.px(mx + 1, my + 2, P.WHITE)
     elif mouth == "flat":
-        c.rect(mx - 0.5, y + 3, mx + 0.5, y + 3, mouth_colour)
+        c.rect(mx - 0.5, my + 1, mx + 0.5, my + 1, mouth_colour)
 
 
 def sparkle(c: Canvas, x: float, y: float, colour=P.YELLOW, centre=P.WHITE, big: bool = False) -> None:

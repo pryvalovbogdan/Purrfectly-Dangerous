@@ -252,34 +252,34 @@ def chibi(c: Canvas, pose: HeroPose, cx: float, ground: float) -> dict:
 # the expression changes (see `_face`). Facing right, three-quarter view; the outline is added afterwards.
 #   F fur  L light  D shadow  S stripe  W white  w white shadow  P pink  p dark pink  K eye  H shine
 HEAD = (
-    "..D............F..",
-    "..DF..........FF..",
+    "...D...........F..",
+    "...DF.........FF..",
     "..DPF........FPF..",
-    ".DDPPF......FPPFF.",
-    ".DFPPPF....FPPPFF.",
-    "..DLLSLSFWWFSFFF..",
-    ".DLLLSLSFWWFSFFFF.",
-    "DFLLFFFFFWWFFFFFFF",
-    "DFFFFFFFFWWFFFFFFF",
-    "DFFFHKKFFWWFHKKFFF",
-    "DFFFKKKFWWWWKKKFFF",
-    "DSSFKKKWWPPWKKKWFF",
-    "DFFFFFWWpWWpWWWWFF",
-    ".DFFFFWWWppWWWWWF.",
-    ".DDFFFwWWWWWWWWFF.",
-    "..DDDDwwWWWWWWFD..",
-    "...DDDDwwwWWWFD...",
-    ".....DDDwwwDD.....",
+    "..DPPF......FPPF..",
+    ".DDPPFF....FPPPFF.",
+    "..DLLSLSFFWWFSFF..",
+    ".DLLLSLSFFWWFSFFF.",
+    "DFLLFFFFFFWWFFFFFF",
+    "DFFFFFFFFFWWFFFFFF",
+    "DFFFFFFHKFWWFHKKFF",
+    "DFFFFFFKKWWWWKKKFF",
+    "DSSFFFFKKWPPWKKKWF",
+    ".DFFFFFWWpWWpWWWWF",
+    "DDFFFFWWWWppWWWWWF",
+    ".DDFFFwWWWWWWWWWF.",
+    "..DDDDwwWWWWWWWF..",
+    "...DDDDwwwWWWWD...",
+    ".....DDDwwwwD.....",
 )
 EARS_BACK = (
     "..................",
     "..................",
-    "DD..............FF",
-    ".DDPF........FPFF.",
-    "..DPPF......FPPF..",
+    ".DD.............FF",
+    "..DDPF.......FPFF.",
+    "...DPPF.....FPPF..",
 )
 HEAD_CENTRE = (8.5, 11)          # the stamp pixel that sits on the head joint
-FAR_EYE, NEAR_EYE = (4, 9), (12, 9)
+FAR_EYE, NEAR_EYE = (7, 9), (13, 9)    # three-quarter view: the far eye is narrower
 STAMP_COLOURS = {"F": P.GINGER, "L": P.GINGER_L, "D": P.GINGER_D, "S": P.GINGER_DD, "W": P.FUR_WHITE,
                  "w": P.FUR_WHITE_D, "P": P.PINK, "p": P.PINK_D, "K": P.BLACK, "H": P.WHITE}
 assert all(len(row) == 18 for row in HEAD + EARS_BACK)
@@ -297,20 +297,20 @@ def _face(pose: HeroPose) -> list[list[str]]:
                     if rows[y][x] in "KH":
                         rows[y][x] = "F"
         marks = {
-            "shut": [(4, 10), (5, 10), (6, 10), (12, 10), (13, 10), (14, 10)],
-            "wide": [(x, y) for x0 in (4, 12) for x in range(x0, x0 + 3) for y in range(8, 12)],
-            "squint": [(4, 9), (5, 10), (4, 11), (14, 9), (13, 10), (14, 11)],
-            "x": [(4, 9), (6, 9), (5, 10), (4, 11), (6, 11), (12, 9), (14, 9), (13, 10), (12, 11), (14, 11)],
+            "shut": [(7, 10), (8, 10), (13, 10), (14, 10), (15, 10)],
+            "wide": [(x, y) for x0, n in ((7, 2), (13, 3)) for x in range(x0, x0 + n) for y in range(8, 12)],
+            "squint": [(7, 9), (8, 10), (7, 11), (15, 9), (14, 10), (15, 11)],
+            "x": [(6, 9), (8, 9), (7, 10), (6, 11), (8, 11), (13, 9), (15, 9), (14, 10), (13, 11), (15, 11)],
         }[pose.eye]
         for x, y in marks:
             rows[y][x] = "K"
         if pose.eye == "wide":
-            rows[8][4] = rows[8][12] = rows[11][6] = rows[11][14] = "H"
+            rows[8][7] = rows[8][13] = rows[11][15] = "H"
     if pose.mouth:                                           # a small open "o" under the nose
-        for x, y in ((9, 12), (10, 12), (9, 13), (10, 13)):
+        for x, y in ((10, 12), (11, 12), (10, 13), (11, 13)):
             rows[y][x] = "p"
-        rows[12][8] = rows[12][11] = "W"
-        rows[13][9] = "K"
+        rows[12][9] = rows[12][12] = "W"
+        rows[13][10] = "K"
     return rows
 
 
@@ -392,8 +392,10 @@ def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
         return hand
 
     body = Canvas(*c.size)
-    # Far limbs in shadow.
-    leg(along(0.5, -1.2), pose.far_leg, fur_d, white_d, body)
+    # Far limbs in shadow; each leg outlined on its own so strides read clearly against the body.
+    layer = Canvas(*c.size)
+    leg(along(0.5, -1.2), pose.far_leg, fur_d, white_d, layer)
+    body.paste(despeckle(layer).outline())
     far_hand = arm((shoulder[0] - front[0] * 2, shoulder[1] - front[1] * 2), pose.far_arm, fur_d, white_d, body)
 
     # Torso: a small round body, shadowed along the back, with a white chest and belly in front.
@@ -412,8 +414,10 @@ def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
         body.ellipse(p[0], p[1], 1.9 - t * 0.4, 1.9 - t * 0.4, white)
     for d in (2.0, 4.0):                                    # two tabby bands over the back
         body.line(along(d, -3.0), along(d + 0.5, -1.6), stripe)
-    leg(along(0.8, 0.6), pose.near_leg, fur, white, body)
     c.paste(despeckle(body))
+    layer = Canvas(*c.size)
+    leg(along(0.8, 0.6), pose.near_leg, fur, white, layer)
+    c.paste(despeckle(layer).outline())
 
     near_hand = None
     if pose.arm_behind:
@@ -457,23 +461,30 @@ def hero_frame(pose: HeroPose, extras=(), under=(), dx: float = 0) -> Image.Imag
     return c.img
 
 
-def running(phase: float, amount: float = 1.0, **overrides) -> HeroPose:
-    """A bouncy upright run: legs and arms scissor, the cape streams and ripples."""
-    s, co = math.sin(phase), math.cos(phase)
+# One leg through the 8-frame run, as (thigh, shin) angles. The other leg is the same four frames later.
+# 0 contact (reaching out front), 1 down (weight on it), 2 passing (under the body), 3 push-off,
+# 4 kick (paw flicked up behind), 5 swing (tucked), 6 reach, 7 flight (stretched forward).
+RUN_LEG = ((52, 22), (28, 0), (2, -12), (-38, -48), (-58, -110), (-5, -95), (45, -10), (64, 36))
+RUN_BOB = (0, 1, 0, 0, 0, 1, 0, 0)        # head drops on the down frames; the body rises in flight
+RUN_LIFT = (0, 0, 0, 1, 0, 0, 0, 1)          # 3 and 7 are flight frames: both feet off the ground
+RUN_DX = -4                                  # hips back, so the leaning body and head centre on the anchor
 
-    def leg(p):
-        thigh = math.sin(p) * 55 * amount
-        knee = 55 * max(0.0, -math.cos(p)) * amount + 6
-        return (thigh, thigh - knee)
 
-    def arm(p):
-        upper = -math.sin(p) * 55 * amount + 15
-        return (upper, upper + 55)
+def running(frame: int, **overrides) -> HeroPose:
+    """A driving run leaning forward: wide strides, a flight frame each step, arms swinging against the legs,
+    the cape streaming flat and rippling, the tail trailing."""
+    near, far = RUN_LEG[frame % 8], RUN_LEG[(frame + 4) % 8]
 
-    pose = HeroPose(near_leg=leg(phase), far_leg=leg(phase + math.pi), near_arm=arm(phase),
-                    far_arm=arm(phase + math.pi), lean=10, lift=1.2 * abs(co) * amount,
-                    head_dy=0.6 * abs(s), cape=100 + 6 * math.sin(phase * 2), cape_len=13, flap=phase * 2,
-                    ripple=16, tail=-62 + 8 * math.sin(phase + 1), curl=15)
+    phase = frame / 8 * math.tau
+
+    def arm(p):                                    # front paws reach out under the chin, against the legs
+        upper = 62 - 38 * math.cos(p)
+        return (upper, upper - 25 + 30 * max(0.0, math.cos(p)))
+
+    pose = HeroPose(near_leg=near, far_leg=far, near_arm=arm(phase + math.pi), far_arm=arm(phase), reach=1.0,
+                    arm_behind=False, lean=45, length=3.5, head_dx=0,
+                    head_dy=RUN_BOB[frame % 8], lift=RUN_LIFT[frame % 8], cape=118 - 3 * RUN_BOB[frame % 8],
+                    cape_len=16, flap=phase * 2, ripple=20, tail=-14 + 8 * math.sin(phase * 2), curl=7)
     return replace(pose, **overrides)
 
 
@@ -527,7 +538,7 @@ def speed_lines(i: int, colours=(P.WHITE, P.CREAM), reach: float = 6):
 def build() -> list[Sprite]:
     hero = Sprite("hero", SIZE, cx=CX, ground=GROUND)
 
-    hero.add("run", [hero_frame(running(i / 8 * math.tau)) for i in range(8)], fps=14)
+    hero.add("run", [hero_frame(running(i), dx=RUN_DX) for i in range(8)], fps=14)
 
     def dust(n):
         def draw(c, joints):
@@ -536,13 +547,15 @@ def build() -> list[Sprite]:
                 c.rect(x, y - 1, x + 1, y, P.GREY_L)
         return draw
 
-    # Skids to a halt: leans back, front paw braced, the cape swinging forward.
+    # Skids to a halt: carried forward by the run, then sits back on its heels with a front paw braced, the
+    # cape flying on over its back and settling.
     stop = []
-    for i, (lean, cape) in enumerate(((-14, 105), (-16, 135), (-10, 120), (-4, 95))):
-        stop.append(hero_frame(HeroPose(near_leg=(40, 25), far_leg=(-15, -35), near_arm=(70, 100),
-                                        far_arm=(50, 90), lean=lean, cape=cape, flap=i * 1.3, ripple=20,
-                                        tail=-15, ears_back=i < 2, eye="squint" if i < 2 else "open"),
-                               extras=[dust((1, 2, 2, 1)[i])]))
+    for i, (lean, cape, head) in enumerate(((30, 110, 1), (8, 140, 0), (-10, 125, 0), (-4, 100, 0))):
+        stop.append(hero_frame(HeroPose(near_leg=(48, 30), far_leg=(-20, -50), near_arm=(100, 85), far_arm=(88, 75),
+                                        reach=1.2, arm_behind=False, lean=lean, length=1.5 if i == 0 else 0,
+                                        head_dy=head, cape=cape, cape_len=14, flap=i * 1.3, ripple=20, tail=-15,
+                                        curl=10, ears_back=i < 2, eye="squint" if i < 2 else "open"),
+                               extras=[dust((1, 2, 2, 1)[i])], dx=-3 if i == 0 else 0))
     hero.add("stop", stop, fps=10, loop=False)
 
     # Stands at ease: breathing, the cape stirring, the tail swishing; blinks on the last frame.
@@ -551,12 +564,14 @@ def build() -> list[Sprite]:
         for k, (dy, e) in enumerate(((0, "open"), (0, "open"), (0.6, "open"), (0.6, "shut")))
     ], fps=4)
 
-    # Leaves the ground with the legs tucked up, arms reaching; the cape trails down behind.
+    # Springs up leaning into it: hind legs tucked, front paws reaching ahead, the cape streaming back and down.
     hero.add("jump", [
-        hero_frame(HeroPose(near_leg=(75, -15), far_leg=(55, -35), near_arm=(105, 125), far_arm=(95, 120), reach=0.4,
-                            lean=6, cape=55, flap=0.0, ripple=16, tail=-70, curl=14)),
-        hero_frame(HeroPose(near_leg=(80, -5), far_leg=(60, -25), near_arm=(100, 120), far_arm=(90, 115), reach=0.4,
-                            lean=4, cape=65, flap=1.5, ripple=16, tail=-60, curl=15)),
+        hero_frame(HeroPose(near_leg=(70, -20), far_leg=(50, -40), near_arm=(105, 95), far_arm=(92, 85), reach=1.2,
+                            arm_behind=False, lean=28, length=1.5, cape=78, cape_len=15, flap=0.0, ripple=18,
+                            tail=-45, curl=12), dx=-2),
+        hero_frame(HeroPose(near_leg=(80, -10), far_leg=(60, -30), near_arm=(112, 100), far_arm=(100, 90), reach=1.2,
+                            arm_behind=False, lean=22, length=1.5, cape=88, cape_len=15, flap=1.5, ripple=18,
+                            tail=-35, curl=13), dx=-2),
     ], fps=8)
     # Coming down: arms up, legs reaching for the ground, cape lifting above.
     hero.add("fall", [
@@ -607,8 +622,8 @@ def build() -> list[Sprite]:
     # Ghost Dash: a see-through blue-white copy trailing after-images and speed lines.
     dash = []
     for i in range(4):
-        pose = running(math.pi / 2 + i * math.pi / 2, 1.1, lean=18, cape_len=10)
-        body = hero_frame(pose, dx=2)
+        pose = running(i * 2 + 1, lean=20, cape_len=10, lift=0)
+        body = hero_frame(pose, dx=4)
         frame = Image.new("RGBA", SIZE, P.CLEAR)
         for offset, alpha in ((-6, 70),):
             ghost = Image.new("RGBA", SIZE, P.CLEAR)

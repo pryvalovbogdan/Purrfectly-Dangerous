@@ -24,9 +24,9 @@ def hazard(name: str, frames: list, fps: int = 10) -> Sprite:
 
 def ice(c: Canvas, base, tip, width: float, bright: bool = False) -> None:
     if bright:
-        crystal(c, base, tip, width, light=P.WHITE, mid=P.ICE_L, dark=P.CYAN)
+        crystal(c, base, tip, width, light=P.WHITE, mid=P.GL2_CRY_L, dark=P.GL2_CRY)
     else:
-        crystal(c, base, tip, width, light=P.ICE_L, mid=P.CYAN, dark=P.BLUE)
+        crystal(c, base, tip, width, light=P.GL2_CRY_L, mid=P.GL2_CRY, dark=P.GL2_CRY_D)
 
 
 def acorns() -> list[Sprite]:
@@ -78,8 +78,8 @@ def frost() -> list[Sprite]:
         for k, (x, y, length) in enumerate(((2, 6, 13), (17, 4, 11), (32, 7, 13), (47, 5, 11))):
             yy = y + ((i + k) % 2) * 0.6
             ice(c, (x + length, yy), (x, yy), 2.6, bright=(i + k) % 2 == 0)
-            c.px(x + length + 2 + i, yy, P.ICE_L)                  # frost trail
-        fan.append(c.outline(P.GL_EDGE))
+            c.px(x + length + 2 + i, yy, P.GL2_CRY)                  # frost trail
+        fan.append(c.outline(P.GL2_EDGE))
 
     spike = []                                                   # a crystal bursting from the iced floor
     for i, height in enumerate((16, 15)):
@@ -87,7 +87,7 @@ def frost() -> list[Sprite]:
         ice(c, (6, 17), (6, 17 - height), 2.8, bright=i == 0)
         ice(c, (4, 17), (1.5, 8), 1.4)
         ice(c, (8, 17), (10.5, 10), 1.4)
-        spike.append(c.outline(P.GL_EDGE))
+        spike.append(c.outline(P.GL2_EDGE))
 
     breath = []                                                  # the freezing cloud rolling along the ground
     for i in range(3):
@@ -98,13 +98,13 @@ def frost() -> list[Sprite]:
             x = 5 + k * 4.1
             rad = 5.5 - k * 0.32 + rnd() * 0.8
             puffs.append((x + rnd() - 0.5, 12 - rad, rad))
-        for layer, colour in enumerate((P.GL_WING, P.BLUE_L, P.ICE_L, P.WHITE)):
+        for layer, colour in enumerate((P.GL2_MEM, P.GL2_MEM_L, P.BLUE_L, P.WHITE)):
             for x, y, rad in puffs:
                 rr = rad * (1 - layer * 0.25)
                 c.ellipse(x - layer * 0.6, y - layer * 0.6, rr, rr * 0.9, colour)
         for k in range(5):
             c.px(4 + rnd() * 34, 2 + rnd() * 6, P.WHITE)
-        breath.append(see_through(c.outline(P.GL_WING_D).img, 240))
+        breath.append(c.outline(P.GL2_EDGE).img)
     return [hazard("shard", fan, fps=8), hazard("ice_spike", spike, fps=6), hazard("breath", breath, fps=10)]
 
 

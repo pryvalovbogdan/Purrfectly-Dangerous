@@ -519,10 +519,8 @@ def forest_ravine() -> list[Sprite]:
         wall.px(reach, y, P.EARTH_D if y < 16 else P.STONE_D)
         if y % 5 == 0:
             wall.rect(0, y, reach - 1, y, P.EARTH_DD if y < 16 else P.STONE_DD)
-    for y in range(26, 48):                                  # wet rock under the water line
-        reach = 1 + int(rnd() * 2)
-        wall.rect(0, y, reach, y, P.WATER_DD)
-        wall.px(reach, y, P.WATER_D)
+    wall.rect(0, 27, 1, 47, P.WATER_DD)                      # wet rock under the water line: one clean edge,
+    wall.rect(2, 27, 2, 47, P.WATER_D)                       # since ragged pixels here read as glitches
     wall.rect(0, 26, 3, 26, P.WHITE)                         # foam where the water meets the rock
     wall.px(4, 26, P.WATER_L)
     wall.rect(0, 0, 6, 5, P.KIT_GREEN)                       # turf lip with tufts hanging over the edge

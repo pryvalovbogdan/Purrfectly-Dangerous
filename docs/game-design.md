@@ -58,7 +58,7 @@ Walkers and rollers turn back at a rim. No ravines in a boss fight.
 | `hedgehog` | hedgehog | walks; curls into a spiky ball when close (~90 units): curled, it can't be stomped and yarn bounces off | jump clear of it, or yarn/stomp before it curls |
 | `slime` | forest slime | creeps slowly toward the kitten | stomp (kills), yarn, or hop |
 | `mushroom_cat` | mushroom cat | stands still; puffs a spore from its cap that drops ahead of the kitten and rolls on along the ground | hop the spore; stomp (kills) or yarn |
-| `forest_bat` | forest bat | flies in at head height and swoops, but never lower than just over a standing kitten (26) | stay down or jump late; yarn |
+| `forest_bat` | forest bat | flies in at head height and swoops, but never lower than just over a standing kitten (28) | stay down or jump late; yarn |
 | `plant_cat` | biting plant | trap on a fixed cycle (world clock): shut and harmless, opens (warning), then bites; can't be stomped. Yarn hits it in any state, 2 HP | pass while shut, jump it, or 2 yarn |
 | `bee_cat` | bee cat | hovers above head height (~40), drifting slowly in, firing stings low along the ground | jump the stings; yarn it from a jump |
 | `stump_cat` | stump cat | terrain like `stump` (no Ghost Dash through it), a turret sending leaves along the ground, 2 HP | jump the leaves and the stump; 2 yarn |

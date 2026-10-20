@@ -385,10 +385,12 @@ import Testing
 
     @Test func forestCreaturesHaveTheirIdsAndHitboxes() {
         let expected: [(ItemKind, String, Double, Double, Int)] = [
-            (.slime, "slime", 14, 10, 10), (.mushroomCat, "mushroom_cat", 14, 16, 15),
-            (.forestBat, "forest_bat", 14, 10, 15), (.plantCat, "plant_cat", 14, 22, 20),
-            (.beeCat, "bee_cat", 14, 12, 20), (.stumpCat, "stump_cat", 16, 22, 25),
-            (.snailCat, "snail_cat", 18, 12, 15), (.spiderCat, "spider_cat", 14, 12, 20),
+            (.squirrel, "squirrel", 18, 24, 10), (.branchSquirrel, "branch_squirrel", 18, 20, 20),
+            (.hedgehog, "hedgehog", 20, 15, 15), (.acorn, "acorn", 12, 11, 10),
+            (.slime, "slime", 20, 14, 10), (.mushroomCat, "mushroom_cat", 18, 22, 15),
+            (.forestBat, "forest_bat", 18, 14, 15), (.plantCat, "plant_cat", 18, 30, 20),
+            (.beeCat, "bee_cat", 18, 16, 20), (.stumpCat, "stump_cat", 20, 28, 25),
+            (.snailCat, "snail_cat", 24, 16, 15), (.spiderCat, "spider_cat", 18, 16, 20),
         ]
         for (kind, id, width, height, xp) in expected {
             #expect(kind.rawValue == id)
@@ -432,7 +434,8 @@ import Testing
             events += world.step(Input(), dt: dt)
             if let bat = world.entities.first(where: { $0.kind == .forestBat }) { lowest = min(lowest, bat.y) }
         }
-        #expect(lowest >= 26)
+        #expect(lowest >= 28)
+        #expect(lowest > world.tuning.heroHeight)
         #expect(lowest < ItemKind.forestBat.spec.baseY)
         #expect(!hit(events))
     }
