@@ -1,4 +1,4 @@
-"""The app icon: the kitten's face over a ball of yarn, drawn at 64x64 so it stays bold when the
+"""The app icon: the caped kitten's face (white blaze and muzzle, red scarf) with a ball of yarn, drawn at 64x64 so it stays bold when the
 system shrinks it to a home-screen or settings icon."""
 from __future__ import annotations
 
@@ -25,6 +25,12 @@ def draw_icon() -> Image.Image:
         c.px(x, y, P.WHITE)
 
     c = Canvas(64, 64)                                       # the kitten, outlined on its own layer
+    # The red cape flaring out behind the shoulders, and the scarf knotted at the neck.
+    c.poly([(16, 48), (2, 58), (0, 63), (63, 63), (61, 58), (47, 48)], P.CAPE_D)
+    c.poly([(16, 48), (6, 57), (4, 63), (24, 63)], P.CAPE)
+    c.poly([(47, 48), (57, 57), (59, 63), (40, 63)], P.CAPE)
+    c.ellipse(31.5, 60, 12, 6, P.GINGER)                     # chest under the chin, white bib
+    c.ellipse(31.5, 62, 7, 4, P.FUR_WHITE)
     # Ears.
     for side in (-1, 1):
         bx = 31.5 + side * 15
@@ -38,8 +44,10 @@ def draw_icon() -> Image.Image:
         c.poly([(31.5 + side * 23, 38), (31.5 + side * 28, 42), (31.5 + side * 22, 45)], P.GINGER)
     c.ellipse(31.5, 47, 20, 5, P.GINGER_D)                   # shade under the chin
     c.ellipse(31.5, 45, 22, 5, P.GINGER)
-    for dx in (-6, 0, 6):                                    # forehead stripes
-        c.rect(31 + dx, 17, 32 + dx, 23 - abs(dx) // 3, P.GINGER_DD)
+    c.ellipse(24, 20, 6, 2.5, P.GINGER_L)                    # light on the crown
+    for dx in (-8, 8):                                       # forehead stripes, either side of the blaze
+        c.rect(31 + dx, 17, 32 + dx, 22, P.GINGER_DD)
+    c.poly([(30, 15), (33, 15), (36, 38), (27, 38)], P.FUR_WHITE)   # white blaze down to the muzzle
     for side in (-1, 1):                                     # cheek stripes
         for k in range(2):
             c.line((31.5 + side * 24, 34 + k * 4), (31.5 + side * 18, 35 + k * 4), P.GINGER_DD, 2)
@@ -48,20 +56,28 @@ def draw_icon() -> Image.Image:
     for side in (-1, 1):
         ex = 31.5 + side * 10
         c.ellipse(ex, 33, 6, 7, P.OUTLINE)
-        c.ellipse(ex, 33, 5, 6, P.LEAF_L)
-        c.ellipse(ex, 34, 3, 5, P.BLACK)
+        c.ellipse(ex, 33, 5, 6, P.BLACK)
         c.rect(ex - 3, 28, ex - 1, 30, P.WHITE)
         c.px(ex + 2, 37, P.WHITE)
+        c.px(ex + 1, 37, P.GREY_D)
 
     # Muzzle, nose and mouth, whiskers.
-    c.ellipse(31.5, 43, 9, 5.5, P.CREAM)
+    c.ellipse(31.5, 43, 12, 6.5, P.FUR_WHITE)
+    c.ellipse(31.5, 47, 9, 3.5, P.FUR_WHITE)
+    c.rect(22, 47, 23, 48, P.FUR_WHITE_D)
+    c.rect(40, 47, 41, 48, P.FUR_WHITE_D)
     c.poly([(29, 39), (34, 39), (31.5, 42)], P.PINK)
     c.line((31.5, 42), (31.5, 44), P.OUTLINE)
     c.line((31.5, 44), (28.5, 46), P.OUTLINE)
     c.line((31.5, 44), (34.5, 46), P.OUTLINE)
     for side in (-1, 1):
         for k in (-1, 1):
-            c.line((31.5 + side * 10, 43 + k), (31.5 + side * 19, 41 + k * 3), P.WHITE)
+            c.line((31.5 + side * 13, 43 + k), (31.5 + side * 21, 41 + k * 3), P.WHITE)
+    c.poly([(14, 49), (49, 49), (47, 54), (16, 54)], P.CAPE)     # scarf
+    c.rect(16, 52, 47, 54, P.CAPE_D)
+    c.rect(20, 50, 44, 50, P.CAPE_L)
+    c.ellipse(21, 54, 3, 2.5, P.CAPE)                          # knot and its hanging end
+    c.poly([(19, 56), (23, 56), (22, 63), (17, 62)], P.CAPE_D)
 
     # A ball of yarn in the corner, its loose thread trailing off.
     c.outline()

@@ -1268,9 +1268,9 @@
  },
  "hero": {
   "width": 44,
-  "height": 28,
-  "anchorX": 0.5341,
-  "anchorY": 0.0357,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
   "animations": {
    "run": {
     "frames": 8,

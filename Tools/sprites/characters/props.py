@@ -145,7 +145,11 @@ def ability_icons() -> list[Sprite]:
         ghost.poly([(11 + k * 3, 19), (12.5 + k * 3, 23), (14 + k * 3, 19)], P.ICE_L)
     ghost.rect(12, 10, 13, 12, P.ICE_D)
     ghost.rect(18, 10, 19, 12, P.ICE_D)
+    ghost.px(13, 10, P.WHITE)                                # shine, like the hero's eyes
+    ghost.px(19, 10, P.WHITE)
     ghost.px(15.5, 14, P.PINK)
+    ghost.line((10, 17), (21, 17), P.CAPE, 2)                # the hero's red scarf, knotted
+    ghost.rect(10, 19, 11, 20, P.CAPE_D)
     ghost.px(11, 3, P.CYAN)
     ghost.px(19, 3, P.CYAN)
     ghost_icon = see_through(ghost.outline(P.BLUE_D).img, 230)

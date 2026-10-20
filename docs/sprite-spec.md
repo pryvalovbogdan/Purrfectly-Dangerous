@@ -13,7 +13,7 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 
 | Sprite | Size | Animations (frames) |
 | --- | --- | --- |
-| hero | 44×28 | run 8, stop 4, idle 4 (sits), jump 2, fall 2, double 4 (curled flip), throw 4, dash 4 (see-through, after-images), pounce 4 (stretched leap), hurt 2, death 6 |
+| hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
 | yarn | 12×12 | fly 4, impact 5 |
 | squirrel | 26×26 | walk 6, death 4 |
 | acorn | 12×12 | roll 4, death 4 |
@@ -72,7 +72,9 @@ and a ball of yarn) is drawn in `Tools/sprites/icon.py`. The table above is enfo
 
 ## How characters are drawn
 
-Characters are posed, not painted. The kitten (and the ghost cats) come from `characters/hero.py`'s
+Characters are posed, not painted. The hero is an upright chibi cat drawn by `characters/hero.py`'s
+`chibi(canvas, HeroPose, cx, ground)`: leg and arm angles, torso lean (90 = flat out), cape angle and ripple,
+tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The ghost cats use the four-legged
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline

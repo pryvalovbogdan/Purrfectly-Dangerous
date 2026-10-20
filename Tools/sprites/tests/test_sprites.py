@@ -15,7 +15,7 @@ import export  # noqa: E402
 
 # sprite -> (size, {animation: frames}). Mirrors docs/sprite-spec.md; change both together.
 SPEC = {
-    "hero": ((44, 28), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "double": 4, "throw": 4, "dash": 4,
+    "hero": ((44, 36), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "double": 4, "throw": 4, "dash": 4,
                         "pounce": 4, "hurt": 2, "death": 6}),
     "yarn": ((12, 12), {"fly": 4, "impact": 5}),
     # World 1, forest
@@ -98,6 +98,19 @@ def test_big_creatures_are_not_clipped(sprites, name):
             edges = {"left": (0, 0, 1, height), "right": (width - 1, 0, width, height), "top": (0, 0, width, 1)}
             for edge, box in edges.items():
                 assert alpha.crop(box).getbbox() is None, f"{name}/{anim}[{index}] touches the {edge} edge"
+
+
+def test_hero_stands_on_its_ground_line(sprites):
+    """Grounded hero poses put their feet on the anchor row (plus the outline below it), and no frame reaches
+    lower, so the bottom edge never clips a paw, cape or tail."""
+    hero = sprites["hero"]
+    for anim in ("idle", "stop", "throw"):
+        for index, frame in enumerate(hero.anims[anim].frames):
+            assert frame.getbbox()[3] == hero.ground + 2, f"hero/{anim}[{index}] is not standing on the ground"
+    for anim, data in hero.anims.items():
+        for index, frame in enumerate(data.frames):
+            box = frame.getbbox()
+            assert box is None or box[3] <= hero.ground + 2, f"hero/{anim}[{index}] reaches below the ground"
 
 
 def test_output_is_deterministic(sprites):
