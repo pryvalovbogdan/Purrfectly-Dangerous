@@ -1,431 +1,142 @@
 {
- "id": "level_02",
- "nameKey": "level.2.name",
- "background": "frost",
- "speed": 120,
- "length": 6300,
- "entryHeroLevel": 3,
- "boss": "boss_icedragon",
- "bossRewardLevel": 4,
- "ravines": [
-  {
-   "at": 1150,
-   "width": 40
-  },
-  {
-   "at": 2330,
-   "width": 44
-  },
-  {
-   "at": 2850,
-   "width": 40
-  },
-  {
-   "at": 2960,
-   "width": 40
-  },
-  {
-   "at": 4420,
-   "width": 44
-  },
-  {
-   "at": 5160,
-   "width": 40
-  },
-  {
-   "at": 5270,
-   "width": 40
-  },
-  {
-   "at": 5900,
-   "width": 48
-  }
- ],
- "items": [
-  {
-   "at": 220,
-   "kind": "fish"
-  },
-  {
-   "at": 236,
-   "kind": "fish"
-  },
-  {
-   "at": 252,
-   "kind": "fish"
-  },
-  {
-   "at": 268,
-   "kind": "fish"
-  },
-  {
-   "at": 400,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 560,
-   "kind": "penguin"
-  },
-  {
-   "at": 720,
-   "kind": "icicle"
-  },
-  {
-   "at": 880,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 870,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 884,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 898,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 912,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 926,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 1060,
-   "kind": "snowball"
-  },
-  {
-   "at": 1245,
-   "kind": "snowball"
-  },
-  {
-   "at": 1260,
-   "kind": "fish"
-  },
-  {
-   "at": 1276,
-   "kind": "fish"
-  },
-  {
-   "at": 1292,
-   "kind": "fish"
-  },
-  {
-   "at": 1308,
-   "kind": "fish"
-  },
-  {
-   "at": 1400,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 1560,
-   "kind": "icicle"
-  },
-  {
-   "at": 1720,
-   "kind": "penguin"
-  },
-  {
-   "at": 1860,
-   "kind": "penguin"
-  },
-  {
-   "at": 2040,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 2030,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 2044,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 2058,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 2072,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 2086,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 2240,
-   "kind": "snowball"
-  },
-  {
-   "at": 2460,
-   "kind": "icicle"
-  },
-  {
-   "at": 2620,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 2780,
-   "kind": "penguin"
-  },
-  {
-   "at": 2925,
-   "kind": "penguin"
-  },
-  {
-   "at": 2940,
-   "kind": "fish"
-  },
-  {
-   "at": 2956,
-   "kind": "fish"
-  },
-  {
-   "at": 2972,
-   "kind": "fish",
-   "y": 36
-  },
-  {
-   "at": 2988,
-   "kind": "fish",
-   "y": 46
-  },
-  {
-   "at": 3100,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 3280,
-   "kind": "snowball"
-  },
-  {
-   "at": 3480,
-   "kind": "icicle"
-  },
-  {
-   "at": 3640,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 3630,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3644,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3658,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 3672,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3686,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3820,
-   "kind": "snowball"
-  },
-  {
-   "at": 3980,
-   "kind": "fish"
-  },
-  {
-   "at": 3996,
-   "kind": "fish"
-  },
-  {
-   "at": 4012,
-   "kind": "fish"
-  },
-  {
-   "at": 4028,
-   "kind": "fish"
-  },
-  {
-   "at": 3980,
-   "kind": "icicle"
-  },
-  {
-   "at": 4140,
-   "kind": "penguin"
-  },
-  {
-   "at": 4290,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 4300,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 4304,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 4318,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 4332,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 4346,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 4516,
-   "kind": "penguin"
-  },
-  {
-   "at": 4660,
-   "kind": "snowball"
-  },
-  {
-   "at": 4860,
-   "kind": "icicle"
-  },
-  {
-   "at": 4940,
-   "kind": "fish"
-  },
-  {
-   "at": 4956,
-   "kind": "fish"
-  },
-  {
-   "at": 4972,
-   "kind": "fish"
-  },
-  {
-   "at": 4988,
-   "kind": "fish"
-  },
-  {
-   "at": 5060,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 5235,
-   "kind": "penguin"
-  },
-  {
-   "at": 5430,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5440,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 5444,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5458,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 5472,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5486,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5600,
-   "kind": "snowball"
-  },
-  {
-   "at": 5800,
-   "kind": "icicle"
-  },
-  {
-   "at": 6040,
-   "kind": "penguin"
-  },
-  {
-   "at": 6170,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 6180,
-   "kind": "snowdrift"
-  },
-  {
-   "at": 6184,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 6198,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 6212,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 6226,
-   "kind": "fish",
-   "y": 14
-  }
- ],
- "slick": [
-  {
-   "at": 1880,
-   "width": 130,
-   "kind": "ice"
-  }
- ],
- "platforms": [
-  {
-   "at": 4410,
-   "width": 64,
-   "y": 14,
-   "mode": "crumbles",
-   "crumbleAfter": 0.4,
-   "kind": "ice_ledge"
-  }
- ]
+  "id": "level_02",
+  "nameKey": "level.2.name",
+  "background": "frost",
+  "speed": 120,
+  "length": 6450,
+  "entryHeroLevel": 3,
+  "boss": "boss_icedragon",
+  "bossRewardLevel": 4,
+  "ravines": [
+    {"at": 1780, "width": 40},
+    {"at": 2260, "width": 82},
+    {"at": 3160, "width": 112},
+    {"at": 3760, "width": 84},
+    {"at": 5000, "width": 48},
+    {"at": 5190, "width": 70},
+    {"at": 5900, "width": 120}
+  ],
+  "slick": [
+    {"at": 1220, "width": 150, "kind": "ice"},
+    {"at": 2800, "width": 150, "kind": "ice"},
+    {"at": 4640, "width": 170, "kind": "ice"}
+  ],
+  "platforms": [
+    {"at": 2000, "width": 48, "y": 14, "mode": "crumbles", "kind": "ice_ledge", "crumbleAfter": 0.4},
+    {"at": 3180, "width": 48, "y": 14, "mode": "crumbles", "kind": "ice_ledge", "crumbleAfter": 0.4},
+    {"at": 5916, "width": 48, "y": 16, "mode": "crumbles", "kind": "ice_ledge", "crumbleAfter": 0.4}
+  ],
+  "items": [
+    {"at": 260, "kind": "fish"},
+    {"at": 276, "kind": "fish"},
+    {"at": 292, "kind": "fish"},
+    {"at": 308, "kind": "fish"},
+    {"at": 423, "kind": "fish", "y": 22},
+    {"at": 437, "kind": "fish", "y": 38},
+    {"at": 450, "kind": "snowdrift"},
+    {"at": 450, "kind": "fish", "y": 44},
+    {"at": 463, "kind": "fish", "y": 38},
+    {"at": 477, "kind": "fish", "y": 22},
+    {"at": 620, "kind": "fish"},
+    {"at": 636, "kind": "fish"},
+    {"at": 652, "kind": "fish"},
+    {"at": 720, "kind": "icicle"},
+    {"at": 980, "kind": "snowball"},
+    {"at": 1060, "kind": "fish"},
+    {"at": 1076, "kind": "fish"},
+    {"at": 1092, "kind": "fish"},
+    {"at": 1240, "kind": "fish"},
+    {"at": 1260, "kind": "fish"},
+    {"at": 1280, "kind": "fish"},
+    {"at": 1300, "kind": "fish"},
+    {"at": 1320, "kind": "fish"},
+    {"at": 1340, "kind": "fish"},
+    {"at": 1540, "kind": "fish", "y": 40},
+    {"at": 1560, "kind": "penguin"},
+    {"at": 1773, "kind": "fish", "y": 22},
+    {"at": 1787, "kind": "fish", "y": 38},
+    {"at": 1800, "kind": "fish", "y": 44},
+    {"at": 1813, "kind": "fish", "y": 38},
+    {"at": 1827, "kind": "fish", "y": 22},
+    {"at": 2008, "kind": "fish", "y": 32},
+    {"at": 2024, "kind": "fish", "y": 32},
+    {"at": 2040, "kind": "fish", "y": 32},
+    {"at": 2256, "kind": "fish", "y": 29},
+    {"at": 2274, "kind": "fish", "y": 44},
+    {"at": 2292, "kind": "fish", "y": 70},
+    {"at": 2310, "kind": "fish", "y": 84},
+    {"at": 2328, "kind": "fish", "y": 78},
+    {"at": 2346, "kind": "fish", "y": 52},
+    {"at": 2540, "kind": "fish", "y": 32},
+    {"at": 2560, "kind": "snowdrift"},
+    {"at": 2560, "kind": "fish", "y": 44},
+    {"at": 2580, "kind": "fish", "y": 32},
+    {"at": 2640, "kind": "icicle"},
+    {"at": 2820, "kind": "fish"},
+    {"at": 2844, "kind": "fish"},
+    {"at": 2868, "kind": "fish"},
+    {"at": 2892, "kind": "fish"},
+    {"at": 2960, "kind": "penguin"},
+    {"at": 3190, "kind": "fish", "y": 34},
+    {"at": 3206, "kind": "fish", "y": 34},
+    {"at": 3230, "kind": "fish", "y": 32},
+    {"at": 3250, "kind": "fish", "y": 44},
+    {"at": 3270, "kind": "fish", "y": 32},
+    {"at": 3440, "kind": "snowball"},
+    {"at": 3460, "kind": "fish"},
+    {"at": 3476, "kind": "fish"},
+    {"at": 3492, "kind": "fish"},
+    {"at": 3560, "kind": "icicle"},
+    {"at": 3756, "kind": "fish", "y": 29},
+    {"at": 3774, "kind": "fish", "y": 44},
+    {"at": 3792, "kind": "fish", "y": 70},
+    {"at": 3810, "kind": "fish", "y": 84},
+    {"at": 3828, "kind": "fish", "y": 78},
+    {"at": 3846, "kind": "fish", "y": 52},
+    {"at": 4020, "kind": "fish", "y": 32},
+    {"at": 4040, "kind": "snowdrift"},
+    {"at": 4040, "kind": "fish", "y": 44},
+    {"at": 4060, "kind": "fish", "y": 32},
+    {"at": 4180, "kind": "penguin"},
+    {"at": 4330, "kind": "icicle"},
+    {"at": 4420, "kind": "icicle"},
+    {"at": 4500, "kind": "fish"},
+    {"at": 4516, "kind": "fish"},
+    {"at": 4532, "kind": "fish"},
+    {"at": 4723, "kind": "fish", "y": 22},
+    {"at": 4737, "kind": "fish", "y": 38},
+    {"at": 4750, "kind": "snowdrift"},
+    {"at": 4750, "kind": "fish", "y": 44},
+    {"at": 4763, "kind": "fish", "y": 38},
+    {"at": 4777, "kind": "fish", "y": 22},
+    {"at": 4997, "kind": "fish", "y": 22},
+    {"at": 5011, "kind": "fish", "y": 38},
+    {"at": 5024, "kind": "fish", "y": 44},
+    {"at": 5037, "kind": "fish", "y": 38},
+    {"at": 5051, "kind": "fish", "y": 22},
+    {"at": 5110, "kind": "snowball"},
+    {"at": 5183, "kind": "fish", "y": 33},
+    {"at": 5204, "kind": "fish", "y": 49},
+    {"at": 5225, "kind": "fish", "y": 80},
+    {"at": 5246, "kind": "fish", "y": 82},
+    {"at": 5267, "kind": "fish", "y": 57},
+    {"at": 5450, "kind": "penguin"},
+    {"at": 5573, "kind": "fish", "y": 22},
+    {"at": 5587, "kind": "fish", "y": 38},
+    {"at": 5600, "kind": "snowdrift"},
+    {"at": 5600, "kind": "fish", "y": 44},
+    {"at": 5613, "kind": "fish", "y": 38},
+    {"at": 5627, "kind": "fish", "y": 22},
+    {"at": 5760, "kind": "icicle"},
+    {"at": 5926, "kind": "fish", "y": 36},
+    {"at": 5942, "kind": "fish", "y": 36},
+    {"at": 5975, "kind": "fish", "y": 32},
+    {"at": 5995, "kind": "fish", "y": 44},
+    {"at": 6015, "kind": "fish", "y": 32},
+    {"at": 6150, "kind": "snowball"},
+    {"at": 6220, "kind": "fish"},
+    {"at": 6236, "kind": "fish"},
+    {"at": 6252, "kind": "fish"},
+    {"at": 6268, "kind": "fish"}
+  ]
 }

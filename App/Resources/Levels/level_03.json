@@ -1,304 +1,131 @@
 {
- "id": "level_03",
- "nameKey": "level.3.name",
- "background": "haunted",
- "speed": 130,
- "length": 6900,
- "entryHeroLevel": 4,
- "boss": "boss_phantom",
- "bossRewardLevel": 5,
- "ravines": [
-  {
-   "at": 1920,
-   "width": 48
-  },
-  {
-   "at": 4100,
-   "width": 44
-  },
-  {
-   "at": 4214,
-   "width": 44
-  },
-  {
-   "at": 4900,
-   "width": 48
-  },
-  {
-   "at": 5800,
-   "width": 52
-  },
-  {
-   "at": 6340,
-   "width": 44
-  },
-  {
-   "at": 6454,
-   "width": 44
-  }
- ],
- "items": [
-  {
-   "at": 220,
-   "kind": "fish"
-  },
-  {
-   "at": 236,
-   "kind": "fish"
-  },
-  {
-   "at": 252,
-   "kind": "fish"
-  },
-  {
-   "at": 268,
-   "kind": "fish"
-  },
-  {
-   "at": 420,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 640,
-   "kind": "skeleton_mouse"
-  },
-  {
-   "at": 820,
-   "kind": "bell"
-  },
-  {
-   "at": 1040,
-   "kind": "skull"
-  },
-  {
-   "at": 1220,
-   "kind": "bat"
-  },
-  {
-   "at": 1400,
-   "kind": "skeleton_mouse"
-  },
-  {
-   "at": 1390,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 1404,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 1418,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 1432,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 1446,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 1600,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 1820,
-   "kind": "tombstone"
-  },
-  {
-   "at": 2040,
-   "kind": "fish"
-  },
-  {
-   "at": 2056,
-   "kind": "fish"
-  },
-  {
-   "at": 2072,
-   "kind": "fish"
-  },
-  {
-   "at": 2088,
-   "kind": "fish"
-  },
-  {
-   "at": 2200,
-   "kind": "bell"
-  },
-  {
-   "at": 2440,
-   "kind": "tombstone"
-  },
-  {
-   "at": 2620,
-   "kind": "bat"
-  },
-  {
-   "at": 2800,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 2980,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 3200,
-   "kind": "skeleton_mouse"
-  },
-  {
-   "at": 3190,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3204,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3218,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 3232,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3246,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3400,
-   "kind": "tombstone"
-  },
-  {
-   "at": 3640,
-   "kind": "bell"
-  },
-  {
-   "at": 3880,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 4060,
-   "kind": "bat"
-  },
-  {
-   "at": 4190,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 4400,
-   "kind": "fish"
-  },
-  {
-   "at": 4416,
-   "kind": "fish"
-  },
-  {
-   "at": 4432,
-   "kind": "fish"
-  },
-  {
-   "at": 4448,
-   "kind": "fish"
-  },
-  {
-   "at": 4420,
-   "kind": "skeleton_mouse"
-  },
-  {
-   "at": 4600,
-   "kind": "bell"
-  },
-  {
-   "at": 4800,
-   "kind": "skull"
-  },
-  {
-   "at": 5140,
-   "kind": "bat"
-  },
-  {
-   "at": 5290,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5300,
-   "kind": "skeleton_mouse"
-  },
-  {
-   "at": 5304,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5318,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 5332,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5346,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5480,
-   "kind": "tombstone"
-  },
-  {
-   "at": 5700,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 5952,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 6060,
-   "kind": "tombstone"
-  },
-  {
-   "at": 6220,
-   "kind": "bell"
-  },
-  {
-   "at": 6420,
-   "kind": "ghost_cat"
-  },
-  {
-   "at": 6680,
-   "kind": "bat"
-  },
-  {
-   "at": 6790,
-   "kind": "skeleton_mouse"
-  }
- ],
- "platforms": [
-  {
-   "at": 4890,
-   "width": 70,
-   "y": 14,
-   "mode": "blinks",
-   "period": 2.4,
-   "solidFor": 1.6,
-   "kind": "vanish"
-  }
- ]
+  "id": "level_03",
+  "nameKey": "level.3.name",
+  "background": "haunted",
+  "speed": 130,
+  "length": 7050,
+  "entryHeroLevel": 4,
+  "boss": "boss_phantom",
+  "bossRewardLevel": 5,
+  "ravines": [
+    {"at": 2360, "width": 46},
+    {"at": 2820, "width": 120},
+    {"at": 4300, "width": 88},
+    {"at": 5150, "width": 50},
+    {"at": 5340, "width": 100},
+    {"at": 6200, "width": 90}
+  ],
+  "platforms": [
+    {"at": 2560, "width": 48, "y": 14, "mode": "blinks", "kind": "vanish"},
+    {"at": 2840, "width": 48, "y": 14, "mode": "blinks", "kind": "vanish", "offset": 0.6},
+    {"at": 5350, "width": 48, "y": 16, "mode": "blinks", "kind": "vanish", "offset": 1.2}
+  ],
+  "items": [
+    {"at": 260, "kind": "fish"},
+    {"at": 276, "kind": "fish"},
+    {"at": 292, "kind": "fish"},
+    {"at": 308, "kind": "fish"},
+    {"at": 421, "kind": "fish", "y": 22},
+    {"at": 436, "kind": "fish", "y": 38},
+    {"at": 450, "kind": "tombstone"},
+    {"at": 450, "kind": "fish", "y": 44},
+    {"at": 464, "kind": "fish", "y": 38},
+    {"at": 479, "kind": "fish", "y": 22},
+    {"at": 700, "kind": "fish"},
+    {"at": 716, "kind": "fish"},
+    {"at": 732, "kind": "fish"},
+    {"at": 748, "kind": "fish"},
+    {"at": 760, "kind": "bat"},
+    {"at": 1000, "kind": "fish"},
+    {"at": 1016, "kind": "fish"},
+    {"at": 1032, "kind": "fish"},
+    {"at": 1048, "kind": "fish"},
+    {"at": 1064, "kind": "fish"},
+    {"at": 1080, "kind": "skull"},
+    {"at": 1420, "kind": "bell"},
+    {"at": 1700, "kind": "fish"},
+    {"at": 1716, "kind": "fish"},
+    {"at": 1732, "kind": "fish"},
+    {"at": 1800, "kind": "ghost_cat"},
+    {"at": 2100, "kind": "fish", "y": 40},
+    {"at": 2120, "kind": "skeleton_mouse"},
+    {"at": 2354, "kind": "fish", "y": 22},
+    {"at": 2369, "kind": "fish", "y": 38},
+    {"at": 2383, "kind": "fish", "y": 44},
+    {"at": 2397, "kind": "fish", "y": 38},
+    {"at": 2412, "kind": "fish", "y": 22},
+    {"at": 2568, "kind": "fish", "y": 32},
+    {"at": 2584, "kind": "fish", "y": 32},
+    {"at": 2600, "kind": "fish", "y": 32},
+    {"at": 2850, "kind": "fish", "y": 34},
+    {"at": 2866, "kind": "fish", "y": 34},
+    {"at": 2893, "kind": "fish", "y": 32},
+    {"at": 2915, "kind": "fish", "y": 44},
+    {"at": 2937, "kind": "fish", "y": 32},
+    {"at": 3071, "kind": "fish", "y": 22},
+    {"at": 3086, "kind": "fish", "y": 38},
+    {"at": 3100, "kind": "tombstone"},
+    {"at": 3100, "kind": "fish", "y": 44},
+    {"at": 3114, "kind": "fish", "y": 38},
+    {"at": 3129, "kind": "fish", "y": 22},
+    {"at": 3160, "kind": "bat"},
+    {"at": 3380, "kind": "skull"},
+    {"at": 3380, "kind": "fish"},
+    {"at": 3396, "kind": "fish"},
+    {"at": 3412, "kind": "fish"},
+    {"at": 3428, "kind": "fish"},
+    {"at": 3460, "kind": "skull"},
+    {"at": 3700, "kind": "bell"},
+    {"at": 3768, "kind": "fish", "y": 32},
+    {"at": 3790, "kind": "tombstone"},
+    {"at": 3790, "kind": "fish", "y": 44},
+    {"at": 3812, "kind": "fish", "y": 32},
+    {"at": 4000, "kind": "ghost_cat", "cycleOffset": 0.7},
+    {"at": 4080, "kind": "ghost_cat", "cycleOffset": 1.4},
+    {"at": 4295, "kind": "fish", "y": 29},
+    {"at": 4315, "kind": "fish", "y": 44},
+    {"at": 4334, "kind": "fish", "y": 70},
+    {"at": 4354, "kind": "fish", "y": 84},
+    {"at": 4373, "kind": "fish", "y": 78},
+    {"at": 4393, "kind": "fish", "y": 52},
+    {"at": 4560, "kind": "skeleton_mouse"},
+    {"at": 4600, "kind": "fish"},
+    {"at": 4616, "kind": "fish"},
+    {"at": 4632, "kind": "fish"},
+    {"at": 4680, "kind": "tombstone"},
+    {"at": 4880, "kind": "bat"},
+    {"at": 4960, "kind": "skull"},
+    {"at": 5146, "kind": "fish", "y": 22},
+    {"at": 5161, "kind": "fish", "y": 38},
+    {"at": 5175, "kind": "fish", "y": 44},
+    {"at": 5189, "kind": "fish", "y": 38},
+    {"at": 5204, "kind": "fish", "y": 22},
+    {"at": 5260, "kind": "skeleton_mouse"},
+    {"at": 5600, "kind": "bell"},
+    {"at": 5600, "kind": "fish"},
+    {"at": 5616, "kind": "fish"},
+    {"at": 5632, "kind": "fish"},
+    {"at": 5648, "kind": "fish"},
+    {"at": 5680, "kind": "ghost_cat", "cycleOffset": 0.3},
+    {"at": 5921, "kind": "fish", "y": 22},
+    {"at": 5936, "kind": "fish", "y": 38},
+    {"at": 5950, "kind": "tombstone"},
+    {"at": 5950, "kind": "fish", "y": 44},
+    {"at": 5964, "kind": "fish", "y": 38},
+    {"at": 5979, "kind": "fish", "y": 22},
+    {"at": 6020, "kind": "bat"},
+    {"at": 6196, "kind": "fish", "y": 29},
+    {"at": 6216, "kind": "fish", "y": 44},
+    {"at": 6235, "kind": "fish", "y": 70},
+    {"at": 6255, "kind": "fish", "y": 84},
+    {"at": 6274, "kind": "fish", "y": 78},
+    {"at": 6294, "kind": "fish", "y": 52},
+    {"at": 6450, "kind": "skull"},
+    {"at": 6520, "kind": "skeleton_mouse"},
+    {"at": 6750, "kind": "ghost_cat", "cycleOffset": 1.0},
+    {"at": 6820, "kind": "fish"},
+    {"at": 6836, "kind": "fish"},
+    {"at": 6852, "kind": "fish"},
+    {"at": 6868, "kind": "fish"}
+  ]
 }

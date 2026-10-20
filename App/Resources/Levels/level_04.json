@@ -1,347 +1,114 @@
 {
- "id": "level_04",
- "nameKey": "level.4.name",
- "background": "citadel",
- "speed": 140,
- "length": 7500,
- "entryHeroLevel": 5,
- "boss": "boss_mecha",
- "bossRewardLevel": 5,
- "ravines": [
-  {
-   "at": 700,
-   "width": 50
-  },
-  {
-   "at": 1900,
-   "width": 56
-  },
-  {
-   "at": 4170,
-   "width": 56
-  },
-  {
-   "at": 4296,
-   "width": 54
-  },
-  {
-   "at": 5200,
-   "width": 54
-  },
-  {
-   "at": 6160,
-   "width": 56
-  },
-  {
-   "at": 6900,
-   "width": 54
-  },
-  {
-   "at": 7024,
-   "width": 54
-  }
- ],
- "items": [
-  {
-   "at": 220,
-   "kind": "fish"
-  },
-  {
-   "at": 236,
-   "kind": "fish"
-  },
-  {
-   "at": 252,
-   "kind": "fish"
-  },
-  {
-   "at": 268,
-   "kind": "fish"
-  },
-  {
-   "at": 420,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 600,
-   "kind": "gear"
-  },
-  {
-   "at": 590,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 604,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 618,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 632,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 646,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 850,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 1020,
-   "kind": "debris"
-  },
-  {
-   "at": 1200,
-   "kind": "cannon"
-  },
-  {
-   "at": 1440,
-   "kind": "vent"
-  },
-  {
-   "at": 1620,
-   "kind": "gear"
-  },
-  {
-   "at": 1860,
-   "kind": "piston"
-  },
-  {
-   "at": 2040,
-   "kind": "gear"
-  },
-  {
-   "at": 2030,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 2044,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 2058,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 2072,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 2086,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 2260,
-   "kind": "crate_wall"
-  },
-  {
-   "at": 2420,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 2640,
-   "kind": "debris"
-  },
-  {
-   "at": 2820,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 3040,
-   "kind": "gear"
-  },
-  {
-   "at": 3280,
-   "kind": "cannon"
-  },
-  {
-   "at": 3520,
-   "kind": "crate_wall"
-  },
-  {
-   "at": 3700,
-   "kind": "piston"
-  },
-  {
-   "at": 3880,
-   "kind": "gear"
-  },
-  {
-   "at": 3870,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3884,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3898,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 3912,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3926,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 4100,
-   "kind": "gear"
-  },
-  {
-   "at": 4262,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 4540,
-   "kind": "debris"
-  },
-  {
-   "at": 4720,
-   "kind": "vent"
-  },
-  {
-   "at": 4860,
-   "kind": "fish"
-  },
-  {
-   "at": 4876,
-   "kind": "fish"
-  },
-  {
-   "at": 4892,
-   "kind": "fish"
-  },
-  {
-   "at": 4908,
-   "kind": "fish"
-  },
-  {
-   "at": 4900,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 5080,
-   "kind": "cannon"
-  },
-  {
-   "at": 5340,
-   "kind": "debris"
-  },
-  {
-   "at": 5500,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 5670,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5680,
-   "kind": "gear"
-  },
-  {
-   "at": 5684,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5698,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 5712,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5726,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5860,
-   "kind": "crate_wall"
-  },
-  {
-   "at": 6040,
-   "kind": "gear"
-  },
-  {
-   "at": 6296,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 6440,
-   "kind": "piston"
-  },
-  {
-   "at": 6590,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 6600,
-   "kind": "vent"
-  },
-  {
-   "at": 6604,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 6618,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 6632,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 6646,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 6780,
-   "kind": "cannon"
-  },
-  {
-   "at": 6990,
-   "kind": "mech_mouse"
-  },
-  {
-   "at": 7200,
-   "kind": "debris"
-  },
-  {
-   "at": 7340,
-   "kind": "gear"
-  }
- ]
+  "id": "level_04",
+  "nameKey": "level.4.name",
+  "background": "citadel",
+  "speed": 140,
+  "length": 7600,
+  "entryHeroLevel": 5,
+  "boss": "boss_mecha",
+  "bossRewardLevel": 5,
+  "ravines": [
+    {"at": 980, "width": 50},
+    {"at": 2650, "width": 95},
+    {"at": 3900, "width": 60},
+    {"at": 4120, "width": 70},
+    {"at": 5750, "width": 96},
+    {"at": 6650, "width": 60},
+    {"at": 6840, "width": 80}
+  ],
+  "items": [
+    {"at": 260, "kind": "fish"},
+    {"at": 276, "kind": "fish"},
+    {"at": 292, "kind": "fish"},
+    {"at": 308, "kind": "fish"},
+    {"at": 419, "kind": "fish", "y": 22},
+    {"at": 434, "kind": "fish", "y": 38},
+    {"at": 450, "kind": "gear"},
+    {"at": 450, "kind": "fish", "y": 44},
+    {"at": 466, "kind": "fish", "y": 38},
+    {"at": 481, "kind": "fish", "y": 22},
+    {"at": 680, "kind": "fish"},
+    {"at": 696, "kind": "fish"},
+    {"at": 712, "kind": "fish"},
+    {"at": 760, "kind": "vent"},
+    {"at": 974, "kind": "fish", "y": 22},
+    {"at": 989, "kind": "fish", "y": 38},
+    {"at": 1005, "kind": "fish", "y": 44},
+    {"at": 1021, "kind": "fish", "y": 38},
+    {"at": 1036, "kind": "fish", "y": 22},
+    {"at": 1260, "kind": "piston"},
+    {"at": 1500, "kind": "fish"},
+    {"at": 1516, "kind": "fish"},
+    {"at": 1532, "kind": "fish"},
+    {"at": 1548, "kind": "fish"},
+    {"at": 1564, "kind": "fish"},
+    {"at": 1600, "kind": "cannon"},
+    {"at": 1869, "kind": "fish", "y": 14},
+    {"at": 1884, "kind": "fish", "y": 28},
+    {"at": 1900, "kind": "crate_wall"},
+    {"at": 1900, "kind": "fish", "y": 34},
+    {"at": 1916, "kind": "fish", "y": 28},
+    {"at": 1931, "kind": "fish", "y": 14},
+    {"at": 2150, "kind": "debris"},
+    {"at": 2400, "kind": "fish", "y": 40},
+    {"at": 2420, "kind": "mech_mouse"},
+    {"at": 2644, "kind": "fish", "y": 29},
+    {"at": 2666, "kind": "fish", "y": 44},
+    {"at": 2686, "kind": "fish", "y": 70},
+    {"at": 2708, "kind": "fish", "y": 84},
+    {"at": 2728, "kind": "fish", "y": 78},
+    {"at": 2750, "kind": "fish", "y": 52},
+    {"at": 2900, "kind": "gear"},
+    {"at": 3000, "kind": "vent", "cycleOffset": 0.5},
+    {"at": 3250, "kind": "cannon"},
+    {"at": 3330, "kind": "debris"},
+    {"at": 3560, "kind": "crate_wall"},
+    {"at": 3680, "kind": "mech_mouse"},
+    {"at": 3899, "kind": "fish", "y": 22},
+    {"at": 3914, "kind": "fish", "y": 38},
+    {"at": 3930, "kind": "fish", "y": 44},
+    {"at": 3946, "kind": "fish", "y": 38},
+    {"at": 3961, "kind": "fish", "y": 22},
+    {"at": 4040, "kind": "mech_mouse"},
+    {"at": 4106, "kind": "fish", "y": 33},
+    {"at": 4130, "kind": "fish", "y": 49},
+    {"at": 4155, "kind": "fish", "y": 80},
+    {"at": 4180, "kind": "fish", "y": 82},
+    {"at": 4204, "kind": "fish", "y": 57},
+    {"at": 4400, "kind": "piston", "cycleOffset": 0.8},
+    {"at": 4489, "kind": "fish", "y": 22},
+    {"at": 4504, "kind": "fish", "y": 38},
+    {"at": 4520, "kind": "gear"},
+    {"at": 4520, "kind": "fish", "y": 44},
+    {"at": 4536, "kind": "fish", "y": 38},
+    {"at": 4551, "kind": "fish", "y": 22},
+    {"at": 4760, "kind": "vent", "cycleOffset": 1.0},
+    {"at": 4880, "kind": "vent", "cycleOffset": 1.6},
+    {"at": 5100, "kind": "crate_wall"},
+    {"at": 5240, "kind": "debris"},
+    {"at": 5450, "kind": "cannon"},
+    {"at": 5520, "kind": "mech_mouse"},
+    {"at": 5746, "kind": "fish", "y": 29},
+    {"at": 5766, "kind": "fish", "y": 44},
+    {"at": 5788, "kind": "fish", "y": 70},
+    {"at": 5808, "kind": "fish", "y": 84},
+    {"at": 5830, "kind": "fish", "y": 78},
+    {"at": 5850, "kind": "fish", "y": 52},
+    {"at": 6000, "kind": "piston", "cycleOffset": 0.3},
+    {"at": 6140, "kind": "crate_wall"},
+    {"at": 6350, "kind": "gear"},
+    {"at": 6460, "kind": "debris"},
+    {"at": 6760, "kind": "mech_mouse"},
+    {"at": 6831, "kind": "fish", "y": 33},
+    {"at": 6856, "kind": "fish", "y": 49},
+    {"at": 6880, "kind": "fish", "y": 80},
+    {"at": 6904, "kind": "fish", "y": 82},
+    {"at": 6929, "kind": "fish", "y": 57},
+    {"at": 7100, "kind": "vent", "cycleOffset": 0.2},
+    {"at": 7250, "kind": "cannon"},
+    {"at": 7350, "kind": "fish"},
+    {"at": 7366, "kind": "fish"},
+    {"at": 7382, "kind": "fish"},
+    {"at": 7398, "kind": "fish"}
+  ]
 }

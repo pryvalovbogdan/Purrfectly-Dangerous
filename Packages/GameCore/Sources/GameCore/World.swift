@@ -8,9 +8,9 @@ public struct Tuning: Sendable, Equatable {
     public var doubleJumpScale = 0.9
     /// A jump pressed this long before landing still triggers.
     public var jumpBuffer = 0.1
-    /// The kitten's hitbox.
-    public var heroWidth = 18.0
-    public var heroHeight = 16.0
+    /// The kitten's hitbox: body and head of the 32×32 caped cat (ears and cape do not count).
+    public var heroWidth = 16.0
+    public var heroHeight = 24.0
     /// Yarn speed relative to the hero.
     public var yarnSpeed = 260.0
     public var yarnCooldown = 0.35

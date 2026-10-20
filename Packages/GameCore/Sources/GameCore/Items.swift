@@ -141,13 +141,13 @@ extension ItemKind {
                      flight: FlightSpec(high: 44, low: 2, diveStart: 150, diveEnd: 80))
         case .bat:
             ItemSpec(width: 14, height: 10, baseY: 40, xp: 15, velocity: -40, yarnable: true,
-                     flight: FlightSpec(high: 40, low: 18, diveStart: 150, diveEnd: 70))
+                     flight: FlightSpec(high: 40, low: 26, diveStart: 150, diveEnd: 70))
         case .skeletonMouse:
             ItemSpec(width: 14, height: 14, hp: 2, xp: 25, stompable: true, stompKills: true, yarnable: true,
                      throwing: ThrowSpec(projectile: "bone", interval: 1.8, range: 300, speed: 90, y: 2,
                                          width: 8, height: 5))
         // A projectile on its own: flies straight in at head height, just over a kitten on the ground.
-        case .skull: ItemSpec(width: 10, height: 10, baseY: 18, velocity: -80)
+        case .skull: ItemSpec(width: 10, height: 10, baseY: 26, velocity: -80)
         case .bell:
             ItemSpec(width: 12, height: 14, baseY: 56, hurtsOnTouch: false,
                      throwing: ThrowSpec(projectile: "soundwave", interval: 2.0, range: 300, speed: 80, y: 0,
@@ -158,8 +158,8 @@ extension ItemKind {
         case .vent: ItemSpec(width: 12, height: 60, cycle: CycleSpec(period: 2.4, activeFor: 0.8, warning: 0.5))
         case .piston: ItemSpec(width: 20, height: 70, cycle: CycleSpec(period: 2.0, activeFor: 0.6, warning: 0.4))
         case .cannon:
-            ItemSpec(width: 14, height: 12, baseY: 24, hp: 2, xp: 25, yarnable: true,
-                     throwing: ThrowSpec(projectile: "cannonball", interval: 2.2, range: 320, speed: 110, y: 20,
+            ItemSpec(width: 14, height: 12, baseY: 30, hp: 2, xp: 25, yarnable: true,
+                     throwing: ThrowSpec(projectile: "cannonball", interval: 2.2, range: 320, speed: 110, y: 26,
                                          width: 8, height: 8))
         case .debris: ItemSpec(width: 12, height: 12, baseY: 70, fall: FallSpec(trigger: 130, warning: 0.35))
         case .mechMouse: ItemSpec(width: 18, height: 12, hp: 2, xp: 30, velocity: -80, stompable: true,

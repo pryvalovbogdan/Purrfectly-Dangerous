@@ -1,425 +1,110 @@
 {
- "id": "level_01",
- "nameKey": "level.1.name",
- "background": "forest",
- "speed": 110,
- "length": 5400,
- "entryHeroLevel": 1,
- "boss": "boss_squirrel",
- "bossRewardLevel": 3,
- "shrineLevel": 2,
- "ravines": [
-  {
-   "at": 500,
-   "width": 28
-  },
-  {
-   "at": 1420,
-   "width": 30
-  },
-  {
-   "at": 3110,
-   "width": 34
-  },
-  {
-   "at": 3800,
-   "width": 32
-  },
-  {
-   "at": 4500,
-   "width": 36
-  },
-  {
-   "at": 5060,
-   "width": 36
-  }
- ],
- "items": [
-  {
-   "at": 220,
-   "kind": "fish"
-  },
-  {
-   "at": 236,
-   "kind": "fish"
-  },
-  {
-   "at": 252,
-   "kind": "fish"
-  },
-  {
-   "at": 268,
-   "kind": "fish"
-  },
-  {
-   "at": 420,
-   "kind": "bush"
-  },
-  {
-   "at": 560,
-   "kind": "fish"
-  },
-  {
-   "at": 576,
-   "kind": "fish"
-  },
-  {
-   "at": 592,
-   "kind": "fish"
-  },
-  {
-   "at": 608,
-   "kind": "fish"
-  },
-  {
-   "at": 700,
-   "kind": "stump"
-  },
-  {
-   "at": 690,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 704,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 718,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 732,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 746,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 900,
-   "kind": "squirrel"
-  },
-  {
-   "at": 1060,
-   "kind": "bush"
-  },
-  {
-   "at": 1200,
-   "kind": "fish"
-  },
-  {
-   "at": 1216,
-   "kind": "fish"
-  },
-  {
-   "at": 1232,
-   "kind": "fish"
-  },
-  {
-   "at": 1248,
-   "kind": "fish"
-  },
-  {
-   "at": 1330,
-   "kind": "stump"
-  },
-  {
-   "at": 1320,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 1334,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 1348,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 1362,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 1376,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 1500,
-   "kind": "branch_squirrel"
-  },
-  {
-   "at": 1680,
-   "kind": "stump"
-  },
-  {
-   "at": 1840,
-   "kind": "bush"
-  },
-  {
-   "at": 1980,
-   "kind": "squirrel"
-  },
-  {
-   "at": 2100,
-   "kind": "fish"
-  },
-  {
-   "at": 2116,
-   "kind": "fish"
-  },
-  {
-   "at": 2132,
-   "kind": "fish"
-  },
-  {
-   "at": 2148,
-   "kind": "fish"
-  },
-  {
-   "at": 2240,
-   "kind": "stump"
-  },
-  {
-   "at": 2230,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 2244,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 2258,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 2272,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 2286,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 2400,
-   "kind": "hedgehog"
-  },
-  {
-   "at": 2540,
-   "kind": "bush"
-  },
-  {
-   "at": 2700,
-   "kind": "yarn_basket"
-  },
-  {
-   "at": 2900,
-   "kind": "squirrel"
-  },
-  {
-   "at": 3040,
-   "kind": "acorn"
-  },
-  {
-   "at": 3200,
-   "kind": "stump"
-  },
-  {
-   "at": 3190,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3204,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3218,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 3232,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 3246,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 3380,
-   "kind": "branch_squirrel"
-  },
-  {
-   "at": 3480,
-   "kind": "fish"
-  },
-  {
-   "at": 3496,
-   "kind": "fish"
-  },
-  {
-   "at": 3512,
-   "kind": "fish"
-  },
-  {
-   "at": 3528,
-   "kind": "fish"
-  },
-  {
-   "at": 3540,
-   "kind": "bush"
-  },
-  {
-   "at": 3700,
-   "kind": "squirrel"
-  },
-  {
-   "at": 3884,
-   "kind": "squirrel"
-  },
-  {
-   "at": 3960,
-   "kind": "fish"
-  },
-  {
-   "at": 3976,
-   "kind": "fish"
-  },
-  {
-   "at": 3992,
-   "kind": "fish"
-  },
-  {
-   "at": 4008,
-   "kind": "fish"
-  },
-  {
-   "at": 4070,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 4080,
-   "kind": "stump"
-  },
-  {
-   "at": 4084,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 4098,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 4112,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 4126,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 4240,
-   "kind": "hedgehog"
-  },
-  {
-   "at": 4400,
-   "kind": "bush"
-  },
-  {
-   "at": 4620,
-   "kind": "squirrel"
-  },
-  {
-   "at": 4780,
-   "kind": "bush"
-  },
-  {
-   "at": 4940,
-   "kind": "acorn"
-  },
-  {
-   "at": 5130,
-   "kind": "fish"
-  },
-  {
-   "at": 5146,
-   "kind": "fish"
-  },
-  {
-   "at": 5162,
-   "kind": "fish"
-  },
-  {
-   "at": 5178,
-   "kind": "fish"
-  },
-  {
-   "at": 5230,
-   "kind": "fish",
-   "y": 14
-  },
-  {
-   "at": 5240,
-   "kind": "stump"
-  },
-  {
-   "at": 5244,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5258,
-   "kind": "fish",
-   "y": 40
-  },
-  {
-   "at": 5272,
-   "kind": "fish",
-   "y": 30
-  },
-  {
-   "at": 5286,
-   "kind": "fish",
-   "y": 14
-  }
- ],
- "slick": [
-  {
-   "at": 1110,
-   "width": 120,
-   "kind": "milk"
-  }
- ],
- "platforms": [
-  {
-   "at": 3790,
-   "width": 52,
-   "y": 12,
-   "mode": "crumbles",
-   "kind": "bridge"
-  }
- ]
+  "id": "level_01",
+  "nameKey": "level.1.name",
+  "background": "forest",
+  "speed": 110,
+  "length": 5650,
+  "entryHeroLevel": 1,
+  "shrineLevel": 2,
+  "boss": "boss_squirrel",
+  "bossRewardLevel": 3,
+  "ravines": [
+    {"at": 1600, "width": 28},
+    {"at": 3180, "width": 88},
+    {"at": 5150, "width": 40},
+    {"at": 5330, "width": 36}
+  ],
+  "slick": [
+    {"at": 2080, "width": 140, "kind": "milk"},
+    {"at": 4580, "width": 130, "kind": "milk"}
+  ],
+  "platforms": [
+    {"at": 2960, "width": 48, "y": 12, "mode": "crumbles", "kind": "bridge"},
+    {"at": 3196, "width": 48, "y": 12, "mode": "crumbles", "kind": "bridge"}
+  ],
+  "items": [
+    {"at": 260, "kind": "fish"},
+    {"at": 276, "kind": "fish"},
+    {"at": 292, "kind": "fish"},
+    {"at": 432, "kind": "fish", "y": 32},
+    {"at": 450, "kind": "bush"},
+    {"at": 450, "kind": "fish", "y": 44},
+    {"at": 468, "kind": "fish", "y": 32},
+    {"at": 702, "kind": "fish", "y": 32},
+    {"at": 720, "kind": "stump"},
+    {"at": 720, "kind": "fish", "y": 44},
+    {"at": 738, "kind": "fish", "y": 32},
+    {"at": 900, "kind": "bush"},
+    {"at": 1060, "kind": "stump"},
+    {"at": 1310, "kind": "fish", "y": 40},
+    {"at": 1330, "kind": "squirrel"},
+    {"at": 1596, "kind": "fish", "y": 32},
+    {"at": 1614, "kind": "fish", "y": 44},
+    {"at": 1632, "kind": "fish", "y": 32},
+    {"at": 1850, "kind": "acorn"},
+    {"at": 2120, "kind": "fish"},
+    {"at": 2144, "kind": "fish"},
+    {"at": 2168, "kind": "fish"},
+    {"at": 2420, "kind": "hedgehog"},
+    {"at": 2640, "kind": "squirrel"},
+    {"at": 2782, "kind": "fish", "y": 32},
+    {"at": 2800, "kind": "bush"},
+    {"at": 2800, "kind": "fish", "y": 44},
+    {"at": 2818, "kind": "fish", "y": 32},
+    {"at": 2984, "kind": "fish", "y": 30},
+    {"at": 3214, "kind": "fish", "y": 30},
+    {"at": 3244, "kind": "fish", "y": 26},
+    {"at": 3262, "kind": "fish", "y": 38},
+    {"at": 3280, "kind": "fish", "y": 26},
+    {"at": 3500, "kind": "branch_squirrel"},
+    {"at": 3682, "kind": "fish", "y": 32},
+    {"at": 3700, "kind": "stump"},
+    {"at": 3700, "kind": "fish", "y": 44},
+    {"at": 3718, "kind": "fish", "y": 32},
+    {"at": 3880, "kind": "yarn_basket"},
+    {"at": 3940, "kind": "fish"},
+    {"at": 3956, "kind": "fish"},
+    {"at": 3972, "kind": "fish"},
+    {"at": 3988, "kind": "fish"},
+    {"at": 4080, "kind": "squirrel"},
+    {"at": 4140, "kind": "squirrel"},
+    {"at": 4220, "kind": "fish"},
+    {"at": 4236, "kind": "fish"},
+    {"at": 4252, "kind": "fish"},
+    {"at": 4330, "kind": "acorn"},
+    {"at": 4426, "kind": "fish", "y": 22},
+    {"at": 4438, "kind": "fish", "y": 38},
+    {"at": 4450, "kind": "bush"},
+    {"at": 4450, "kind": "fish", "y": 44},
+    {"at": 4462, "kind": "fish", "y": 38},
+    {"at": 4474, "kind": "fish", "y": 22},
+    {"at": 4590, "kind": "fish"},
+    {"at": 4610, "kind": "fish"},
+    {"at": 4630, "kind": "fish"},
+    {"at": 4650, "kind": "fish"},
+    {"at": 4700, "kind": "hedgehog"},
+    {"at": 4880, "kind": "branch_squirrel"},
+    {"at": 4966, "kind": "fish", "y": 22},
+    {"at": 4978, "kind": "fish", "y": 38},
+    {"at": 4990, "kind": "bush"},
+    {"at": 4990, "kind": "fish", "y": 44},
+    {"at": 5002, "kind": "fish", "y": 38},
+    {"at": 5014, "kind": "fish", "y": 22},
+    {"at": 5146, "kind": "fish", "y": 22},
+    {"at": 5158, "kind": "fish", "y": 38},
+    {"at": 5170, "kind": "fish", "y": 44},
+    {"at": 5182, "kind": "fish", "y": 38},
+    {"at": 5194, "kind": "fish", "y": 22},
+    {"at": 5262, "kind": "squirrel"},
+    {"at": 5324, "kind": "fish", "y": 22},
+    {"at": 5336, "kind": "fish", "y": 38},
+    {"at": 5348, "kind": "fish", "y": 44},
+    {"at": 5360, "kind": "fish", "y": 38},
+    {"at": 5372, "kind": "fish", "y": 22},
+    {"at": 5440, "kind": "fish"},
+    {"at": 5456, "kind": "fish"},
+    {"at": 5472, "kind": "fish"},
+    {"at": 5488, "kind": "fish"},
+    {"at": 5504, "kind": "fish"}
+  ]
 }
