@@ -8,6 +8,8 @@ struct GameResult: Equatable {
     var xp: Int
     var heroLevel: Int
     var hearts: Int
+    /// Fish picked up in this level.
+    var fish: Int
     /// Abilities gained during this run, in unlock order.
     var unlocked: [Ability]
 }
@@ -97,6 +99,12 @@ final class AppModel {
 
     func text(_ key: String) -> String {
         lore.text(key)
+    }
+
+    /// Interface wording (`ui.*` keys): Lore.json wins when it has the key, so every label can be
+    /// reworded there; `fallback` only covers keys the file does not have yet.
+    func ui(_ key: String, _ fallback: String) -> String {
+        lore.strings["ui.\(key)"] ?? fallback
     }
 
     func isUnlocked(_ index: Int) -> Bool {

@@ -40,20 +40,22 @@ struct MenuBackground: View {
     }
 }
 
-/// The game's name as a chunky two-line logo with a dark outline.
+/// The game's name (or any heading) as a chunky two-line logo with a dark outline.
 struct PixelTitle: View {
     let text: String
     let size: CGFloat
     var alignment = HorizontalAlignment.leading
     /// One flat colour instead of the two-tone logo fill; used for numerals.
     var tint: Color?
+    /// Text with at least this many words is set on two lines.
+    var splitFrom = 3
 
     private static let outline: [CGSize] = [-1, 0, 1].flatMap { x in [-1, 0, 1].map { CGSize(width: x, height: $0) } }
         + [CGSize(width: 0, height: 2)]
 
     private var lines: [String] {
         let words = text.uppercased().split(separator: " ")
-        guard words.count > 2 else { return [text.uppercased()] }
+        guard words.count >= splitFrom else { return [text.uppercased()] }
         let first = words.count / 2
         return [words.prefix(first).joined(separator: " "), words.dropFirst(first).joined(separator: " ")]
     }

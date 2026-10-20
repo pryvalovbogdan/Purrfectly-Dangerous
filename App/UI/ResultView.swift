@@ -53,7 +53,8 @@ struct ResultView: View {
     }
 
     private func title(size: CGFloat) -> some View {
-        PixelTitle(text: result.won ? "Level cleared" : "Game over", size: size, alignment: .center)
+        PixelTitle(text: result.won ? model.ui("level_cleared", "Level complete") : model.ui("game_over", "Game over"),
+                   size: size, alignment: .center)
     }
 
     /// On a wide, short screen the small print goes between the medal and the numbers to save height.
@@ -61,23 +62,23 @@ struct ResultView: View {
         VStack(spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    label("MEDAL")
-                    MedalView(medal: medal)
+                    label(model.ui("medal", "MEDAL"))
+                    MedalStars(medal: medal)
                 }
                 if notesBeside {
                     noteLines.padding(.top, 24).padding(.leading, 10)
                 }
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
-                    label("SCORE")
+                    label(model.ui("score", "SCORE"))
                     PixelTitle(text: "\(score)", size: 28, tint: .menuPaper).fixedSize()
                     HStack(spacing: 6) {
                         if counts, score > 0, score >= savedBest {
-                            Text("NEW").font(.pixel(9)).foregroundStyle(Color.menuPaper)
+                            Text(model.ui("new_best", "NEW")).font(.pixel(9)).foregroundStyle(Color.menuPaper)
                                 .padding(.horizontal, 4).padding(.vertical, 2)
                                 .background(Color.red, in: Rectangle())
                         }
-                        label("BEST")
+                        label(model.ui("best", "BEST"))
                     }
                     .padding(.top, 4)
                     PixelTitle(text: "\(best)", size: 28, tint: .menuPaper).fixedSize()
@@ -107,38 +108,60 @@ struct ResultView: View {
 
     /// The small print under the numbers: how far the run got, and anything it unlocked.
     private var notes: [String] {
-        if let run = model.endless { return ["LEVELS \(run.cleared)"] }
-        let abilities = result.won ? result.unlocked.map { "NEW: \(model.text("ability.\($0.rawValue)").uppercased())" } : []
-        return [model.text(level.nameKey).uppercased()] + abilities
+        let fish = "\(model.ui("fish", "FISH")) ×\(result.fish)"
+        if let run = model.endless { return ["\(model.ui("levels", "LEVELS")) \(run.cleared)", fish] }
+        let abilities = result.won
+            ? result.unlocked.map { "\(model.ui("new_ability", "NEW ABILITY")): \(model.text("ability.\($0.rawValue)").uppercased())" }
+            : []
+        return [model.text(level.nameKey).uppercased(), fish] + abilities
     }
 
     @ViewBuilder private var buttons: some View {
         if model.endless != nil {
-            ResultButton(title: "RETRY") { model.startEndless() }
+            ResultButton(title: model.ui("retry", "RETRY")) { model.startEndless() }
         } else {
             if result.won, model.isUnlocked(levelIndex + 1) {
-                ResultButton(title: "NEXT LEVEL") { model.start(level: levelIndex + 1) }
+                ResultButton(title: model.ui("next_level", "NEXT LEVEL")) { model.start(level: levelIndex + 1) }
             }
-            ResultButton(title: "RETRY") { model.start(level: levelIndex) }
+            ResultButton(title: model.ui("retry", "RETRY")) { model.start(level: levelIndex) }
         }
-        ResultButton(title: "MENU") { model.quit() }
+        ResultButton(title: model.ui("menu", "MENU")) { model.quit() }
     }
 }
 
-/// The medal earned, drawn from the sprite atlas, or an empty slot when there is none.
-private struct MedalView: View {
+/// The medal earned as one to three stars (bronze, silver, gold); empty outlines when there is none.
+struct MedalStars: View {
     let medal: Medal?
+    var size: CGFloat = 30
+
+    private var stars: Int {
+        switch medal {
+        case .gold: 3
+        case .silver: 2
+        case .bronze: 1
+        case nil: 0
+        }
+    }
 
     var body: some View {
-        Group {
-            if let medal {
-                SpriteImage(sprite: "medal", animation: medal.rawValue)
-            } else {
-                Circle().stroke(Color.menuInk.opacity(0.35), style: StrokeStyle(lineWidth: 3, dash: [6, 5])).padding(8)
+        HStack(spacing: size * 0.12) {
+            ForEach(0..<3, id: \.self) { index in
+                Group {
+                    if index < stars {
+                        SpriteImage(sprite: "spark_star", animation: "still")
+                    } else {
+                        SpriteImage(sprite: "spark_star", animation: "still")
+                            .colorMultiply(.black).opacity(0.3)
+                    }
+                }
+                .frame(width: size, height: size)
+                // The middle star stands a little higher, like a podium.
+                .offset(y: index == 1 ? -size * 0.2 : 0)
             }
         }
-        .frame(width: 72, height: 72)
-        .accessibilityLabel(medal.map { "\($0.rawValue) medal" } ?? "No medal")
+        .padding(.top, size * 0.2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(stars) of 3 stars")
     }
 }
 

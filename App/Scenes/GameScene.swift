@@ -3,7 +3,7 @@ import SpriteKit
 import UIKit
 
 /// Draws a `RunnerWorld` and feeds it touches. All rules live in GameCore; nothing here decides
-/// whether the hero is hit or an enemy dies.
+/// whether the kitten is hit or an enemy dies.
 final class GameScene: SKScene {
     private static let step = 1.0 / 60
     /// How the playfield is framed for one orientation.
@@ -26,6 +26,15 @@ final class GameScene: SKScene {
         static func `for`(_ viewSize: CGSize) -> Framing {
             viewSize.height > viewSize.width ? narrow : wide
         }
+    }
+
+    /// A one-way ledge drawn as a row of its sprite's tiles.
+    private struct PlatformView {
+        let index: Int
+        let sprite: String
+        let node: SKNode
+        let tiles: [SKSpriteNode]
+        let height: CGFloat
     }
 
     private var framing: Framing
@@ -60,20 +69,27 @@ final class GameScene: SKScene {
     private var unlocked: [Ability] = []
 
     private var parallax: [ParallaxNode] = []
-    private var ravineNodes: [(ravine: Ravine, node: SKNode)] = []
+    private var groundNodes: [(at: Double, width: Double, node: SKNode)] = []
     /// The hero went down a ravine: the drop is animated here, so `renderHero` leaves them alone.
     private var fell = false
     private let scenery = SKNode()
     private let actors = SKNode()
     private var hero: ActorNode!
-    private var bossNode: ActorNode?
+    /// One node per boss copy; index 0 stands at the boss position, the rest are the phantom's decoys.
+    private var bossNodes: [ActorNode] = []
     private var entityNodes: [Int: ActorNode] = [:]
     private var hazardNodes: [Int: ActorNode] = [:]
     private var shotNodes: [Int: ActorNode] = [:]
-    /// Shards in flight from a boss to where an arming hazard will appear, with their flight time.
-    private var launchNodes: [Int: (node: ActorNode, flight: Double)] = [:]
+    private var platformViews: [PlatformView] = []
+    /// World time each crumbling ledge was landed on, to pace its crumble frames.
+    private var crumbleStart: [Int: Double] = [:]
+    /// Sprite for hazards an enemy threw, keyed by hazard id (an acorn from a branch is not a boss acorn).
+    private var thrownSprite: [Int: String] = [:]
     private var hurtUntil = 0.0
-    private var castUntil = 0.0
+    private var throwUntil = 0.0
+    private var bossHurtUntil = 0.0
+    private var doubleJumping = false
+    private var wasPouncing = false
     private var bannerUntil = 0.0
     private var awardUntil = 0.0
 
@@ -146,6 +162,7 @@ final class GameScene: SKScene {
         buildScenery()
         actors.zPosition = 10
         addChild(actors)
+        buildPlatforms()
         hero = ActorNode(sprite: "hero", library: library)
         hero.zPosition = 5
         hero.play("run")
@@ -158,15 +175,16 @@ final class GameScene: SKScene {
     private func buildScenery() {
         scenery.removeAllChildren()
         parallax.removeAll()
+        groundNodes.removeAll()
         let theme = world.level.background
         if library.textures("bg_\(theme)_sky", "still").isEmpty { backgroundColor = .darkGray }
         parallax = LevelBackdrop.build(theme: theme, size: size, groundY: groundY, library: library, into: scenery)
         buildRavines(theme: theme)
+        buildSlickZones()
     }
 
     /// Pits drawn over the ground strip, one per ravine; `render()` moves them with the level.
     private func buildRavines(theme: String) {
-        ravineNodes.removeAll()
         let name = "ravine_\(theme)"
         guard let wall = library.textures(name, "still").first, let sheet = library.sheet(name),
               let dark = library.textures("\(name)_fill", "still").first else { return }
@@ -194,7 +212,55 @@ final class GameScene: SKScene {
                 node.addChild(side)
             }
             scenery.addChild(node)
-            ravineNodes.append((ravine, node))
+            groundNodes.append((ravine.at, ravine.width, node))
+        }
+    }
+
+    /// Spilled milk and ice: the zone's sprite repeated along the ground.
+    private func buildSlickZones() {
+        for zone in world.slick {
+            let name = zone.kind ?? "milk"
+            guard let texture = library.textures(name, "still").first, let sheet = library.sheet(name) else { continue }
+            let node = SKNode()
+            node.zPosition = -3.5
+            for left in Self.tileOffsets(span: zone.width, tile: Double(sheet.width)) {
+                let tile = SKSpriteNode(texture: texture, size: CGSize(width: sheet.width, height: sheet.height))
+                tile.anchorPoint = CGPoint(x: 0, y: sheet.anchorY)
+                tile.position = CGPoint(x: CGFloat(left), y: groundY)
+                node.addChild(tile)
+            }
+            scenery.addChild(node)
+            groundNodes.append((zone.at, zone.width, node))
+        }
+    }
+
+    /// Left edges of whole tiles covering `span`: side by side, the last one pulled back so the row
+    /// ends flush with the span instead of hanging past it.
+    private static func tileOffsets(span: Double, tile: Double) -> [Double] {
+        guard span > tile else { return [(span - tile) / 2] }
+        let count = Int((span / tile).rounded(.up))
+        return (0..<count).map { min(Double($0) * tile, span - tile).rounded() }
+    }
+
+    /// Ledges live with the actors (the kitten stands on them); they do not depend on screen size.
+    private func buildPlatforms() {
+        for (index, platform) in world.platforms.enumerated() {
+            let name = platform.kind ?? "bridge"
+            let sheet = library.sheet(name)
+            let tileSize = CGSize(width: sheet?.width ?? 48, height: sheet?.height ?? 8)
+            let node = SKNode()
+            node.zPosition = 1
+            var tiles: [SKSpriteNode] = []
+            for left in Self.tileOffsets(span: platform.width, tile: Double(tileSize.width)) {
+                let tile = SKSpriteNode(texture: nil, color: sheet == nil ? .magenta : .clear, size: tileSize)
+                tile.anchorPoint = .zero
+                tile.position.x = CGFloat(left)
+                node.addChild(tile)
+                tiles.append(tile)
+            }
+            actors.addChild(node)
+            platformViews.append(PlatformView(index: index, sprite: name, node: node, tiles: tiles,
+                                              height: tileSize.height))
         }
     }
 
@@ -211,8 +277,7 @@ final class GameScene: SKScene {
         fireHeld = held
     }
 
-    /// Paw button: a tap is a Ghost Dash, a hold then release a Super Pounce. No on-screen button
-    /// calls this yet; the HUD work adds one.
+    /// Paw button: a tap is a Ghost Dash, a hold then release a Super Pounce.
     func setPaw(held: Bool) {
         if held && !pawHeld { pawPending = true }
         pawHeld = held
@@ -250,20 +315,36 @@ final class GameScene: SKScene {
         let won = world.phase == .won
         play(won ? .win : .lose)
         let result = GameResult(won: won, score: world.score, xp: world.stats.xp, heroLevel: world.stats.level,
-                                hearts: world.stats.hearts,
+                                hearts: world.stats.hearts, fish: world.fishCollected,
                                 unlocked: unlocked)
         run(.sequence([.wait(forDuration: won ? 0.6 : 1.4), .run { [onFinish] in onFinish(result) }]))
     }
 
     // MARK: - Events
 
+    /// Sprite of what each thrower throws.
+    private static let thrownBy: [ItemKind: String] = [
+        .branchSquirrel: "acorn_thrown", .skeletonMouse: "bone", .cannon: "cannonball", .bell: "hazard_wave",
+    ]
+    /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
+    private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave"]
+
     private func handle(_ events: [GameEvent]) {
         for event in events {
             switch event {
             case .jumped(let double):
                 play(double ? .doubleJump : .jump)
+                if double {
+                    doubleJumping = true
+                    hero.play("double", restart: true)
+                }
             case .landed:
-                break
+                doubleJumping = false
+                if wasPouncing {
+                    wasPouncing = false
+                    play(.thump)
+                    burst("spark_star", count: 6, radius: 20, at: CGPoint(x: framing.heroScreenX, y: screenY(world.heroY) + 2))
+                }
             case .heroHit:
                 hurtUntil = world.time + 0.3
                 play(.hurt)
@@ -280,33 +361,71 @@ final class GameScene: SKScene {
             case .enemyDefeated(let id, _):
                 retire(entityNodes.removeValue(forKey: id))
             case .fish(let id):
-                play(.coin)
+                play(.fish)
                 if let node = entityNodes.removeValue(forKey: id) {
+                    burst("spark_star", count: 5, radius: 14, at: CGPoint(x: node.position.x, y: node.position.y + 6))
                     node.run(.sequence([.group([.moveBy(x: 0, y: 14, duration: 0.2), .fadeOut(withDuration: 0.2)]),
                                         .removeFromParent()]))
                 }
             case .yarnBasket:
-                break
+                play(.fish)
+                if let node = entityNodes.values.first(where: { $0.spriteName == ItemKind.yarnBasket.rawValue }) {
+                    burst("spark_ember", count: 8, radius: 26, at: CGPoint(x: node.position.x, y: node.position.y + node.size.height / 2))
+                }
             case .leveledUp(let level, let ability):
                 play(.levelUp)
                 if let ability {
                     unlocked.append(ability)
                     award(ability)
                 } else {
-                    showBanner("LEVEL \(level)")
+                    showBanner("LV \(level)")
                 }
             case .yarnThrown:
-                castUntil = world.time + 0.3
-                play(.fire)
-            case .dashed, .pounced:
-                play(.charged)
+                throwUntil = world.time + 0.25
+                hero.play("throw", restart: true)
+                play(.yarn)
+            case .dashed:
+                play(.dash)
+            case .pounced:
+                wasPouncing = true
+                play(.pounce)
             case .wallBroken(let id):
-                play(.impact)
-                retire(entityNodes.removeValue(forKey: id))
+                play(.crash)
+                haptics.impactOccurred()
+                if let node = entityNodes.removeValue(forKey: id) {
+                    node.play("break") { [weak node] in
+                        node?.run(.sequence([.fadeOut(withDuration: 0.2), .removeFromParent()]))
+                    }
+                }
             case .yarnBounced:
                 play(.block)
-            case .curled, .threw, .bellRang, .trapFired, .fallWarning, .shattered, .platformCrumbling:
+            case .curled(let id):
+                play(.curl)
+                entityNodes[id]?.play("curl") { [weak node = entityNodes[id]] in node?.play("rolled") }
+            case .threw(let id):
+                guard let entity = world.entities.first(where: { $0.id == id }) else { break }
+                tagThrownHazard(from: entity)
+                let node = entityNodes[id]
+                let name = node?.has("throw") == true ? "throw" : "fire"
+                node?.play(name, restart: true) { [weak node] in node?.play(Self.defaultAnimation[entity.kind] ?? "idle") }
+                if entity.kind == .cannon { play(.cannon) }
+            case .bellRang(let id):
+                play(.bell)
+                guard let entity = world.entities.first(where: { $0.id == id }) else { break }
+                tagThrownHazard(from: entity)
+                let node = entityNodes[id]
+                node?.play("ring", restart: true) { [weak node] in node?.play("idle") }
+            case .trapFired(let id):
+                if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) {
+                    play(entity.kind == .piston ? .slam : .flame)
+                }
+            case .fallWarning:
                 break
+            case .shattered(let id):
+                if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.shatter) }
+            case .platformCrumbling(let index):
+                crumbleStart[index] = world.time
+                play(.crumble)
             case .yarnGone(let id, let hit):
                 guard let node = shotNodes.removeValue(forKey: id) else { break }
                 if hit {
@@ -322,16 +441,36 @@ final class GameScene: SKScene {
                 break
             case .bossHit:
                 play(.bossHit)
-                bossNode?.flash()
+                bossHurtUntil = world.time + 0.25
+                trueBossNode?.flash()
             case .bossBlocked:
                 play(.block)
-                bossNode?.flash(.gray, duration: 0.06)
+                trueBossNode?.flash(.gray, duration: 0.06)
             case .bossDefeated:
-                bossNode?.play("death")
+                let real = trueBossNode
+                real?.play("death")
+                for node in bossNodes where node !== real {
+                    node.run(.sequence([.fadeOut(withDuration: 0.3), .removeFromParent()]))
+                }
             case .levelComplete:
                 break
             }
         }
+    }
+
+    /// Remembers which sprite the hazard `entity` just threw should use. The new hazard is the one
+    /// not yet drawn nearest to where throws start (just in front of the thrower).
+    private func tagThrownHazard(from entity: Entity) {
+        guard let sprite = Self.thrownBy[entity.kind] else { return }
+        let fresh = world.hazards.filter { hazardNodes[$0.id] == nil && thrownSprite[$0.id] == nil }
+        if let hazard = fresh.min(by: { abs($0.x - (entity.x - 10)) < abs($1.x - (entity.x - 10)) }) {
+            thrownSprite[hazard.id] = sprite
+        }
+    }
+
+    private func isOnScreen(_ worldX: Double) -> Bool {
+        let x = screenX(worldX)
+        return x > -20 && x < size.width + 20
     }
 
     /// Drops the hero out of sight. The crop keeps them behind the ground on either side of the pit.
@@ -368,12 +507,29 @@ final class GameScene: SKScene {
         }
     }
 
+    /// A ring of small sprites flying out from `origin` and fading.
+    private func burst(_ sprite: String, count: Int, radius: CGFloat, at origin: CGPoint) {
+        guard let texture = library.textures(sprite, "still").first else { return }
+        for index in 0..<count {
+            let angle = CGFloat(index) / CGFloat(count) * 2 * .pi + 0.3
+            let node = SKSpriteNode(texture: texture)
+            node.position = origin
+            node.zPosition = 7
+            actors.addChild(node)
+            let fly = SKAction.moveBy(x: cos(angle) * radius, y: sin(angle) * radius, duration: 0.35)
+            fly.timingMode = .easeOut
+            node.run(.sequence([.group([fly, .sequence([.wait(forDuration: 0.2), .fadeOut(withDuration: 0.15)])]),
+                                .removeFromParent()]))
+        }
+    }
+
     /// A new ability is the big moment of a run: an award card on the HUD and a burst around the hero.
     private func award(_ ability: Ability) {
         hud.award = ability
         awardUntil = world.time + 2.6
         hero.flash(.yellow, duration: 0.25)
-        let origin = CGPoint(x: hero.position.x, y: hero.position.y + 18)
+        // Centred on the kitten's body, whatever size its frame is.
+        let origin = CGPoint(x: hero.position.x, y: hero.position.y + hero.size.height / 2)
 
         if let star = library.textures("spark_star", "still").first {
             let count = 10
@@ -390,12 +546,12 @@ final class GameScene: SKScene {
                                     .removeFromParent()]))
             }
         }
-        // Feathers for the jump, embers for the rest.
+        // Feathers for the pounce, curls of yarn for the rest.
         let rising = ability == .doublePounce ? "spark_feather" : "spark_ember"
         if let texture = library.textures(rising, "still").first {
             for (index, offset) in [-16, 9, -5, 15, -11, 3, 12, -8].enumerated() {
                 let node = SKSpriteNode(texture: texture)
-                node.position = CGPoint(x: origin.x + CGFloat(offset), y: hero.position.y + CGFloat(index % 3) * 6)
+                node.position = CGPoint(x: origin.x + CGFloat(offset), y: hero.position.y + CGFloat(index % 3) * hero.size.height / 5)
                 node.zPosition = 7
                 node.alpha = 0
                 actors.addChild(node)
@@ -429,10 +585,11 @@ final class GameScene: SKScene {
 
     private func render() {
         for layer in parallax { layer.scroll(to: CGFloat(scroll)) }
-        for (ravine, node) in ravineNodes {
-            node.position.x = screenX(ravine.at).rounded()
-            node.isHidden = node.position.x > size.width || node.position.x + CGFloat(ravine.width) < 0
+        for (at, width, node) in groundNodes {
+            node.position.x = screenX(at).rounded()
+            node.isHidden = node.position.x > size.width || node.position.x + CGFloat(width) < 0
         }
+        renderPlatforms()
         renderHero()
         renderEntities()
         renderHazards()
@@ -457,10 +614,18 @@ final class GameScene: SKScene {
         case .running, .boss:
             if world.time < hurtUntil {
                 hero.play("hurt")
-            } else if world.time < castUntil {
-                hero.play("cast")
+            } else if world.isDashing {
+                hero.play("dash")
+            } else if world.pouncing {
+                hero.play("pounce")
+            } else if world.time < throwUntil {
+                // Started by the throw itself; it plays through once.
             } else if !world.onGround {
-                hero.play(world.heroVY > 0 ? "jump" : "fall")
+                if doubleJumping, world.heroVY > 0 {
+                    hero.play("double")
+                } else {
+                    hero.play(world.heroVY > 0 ? "jump" : "fall")
+                }
             } else {
                 hero.play("run")
             }
@@ -471,6 +636,7 @@ final class GameScene: SKScene {
         .squirrel: "walk", .hedgehog: "walk", .skeletonMouse: "idle", .branchSquirrel: "idle", .cannon: "idle",
         .acorn: "roll", .snowball: "roll", .penguin: "slide", .mechMouse: "run",
         .ghostCat: "float", .bat: "fly", .skull: "fly", .bell: "idle", .gear: "spin",
+        .vent: "idle", .piston: "up", .icicle: "hang", .debris: "hang",
         .fish: "spin", .yarnBasket: "glow",
     ]
 
@@ -481,8 +647,9 @@ final class GameScene: SKScene {
             let node = entityNodes[entity.id] ?? makeEntityNode(entity)
             node.position = CGPoint(x: screenX(entity.x), y: screenY(entity.y))
             node.xScale = entity.reversed ? -1 : 1
-            // Placeholder until the HUD/visual pass: a phasing ghost shows faintly while it is not there.
-            node.alpha = entity.state == .hidden ? 0.2 : 1
+            node.alpha = 1
+            node.colorBlendFactor = 0
+            animate(node, for: entity)
         }
         for (id, node) in entityNodes where !seen.contains(id) {
             node.removeFromParent()
@@ -490,13 +657,90 @@ final class GameScene: SKScene {
         }
     }
 
+    /// Animations that follow an entity's state rather than an event.
+    private func animate(_ node: ActorNode, for entity: Entity) {
+        let blink = Int(world.time * 12) % 2 == 0
+        switch entity.kind {
+        case .vent, .piston:
+            let names = entity.kind == .vent ? ["idle", "warn", "fire"] : ["up", "warn", "slam"]
+            switch entity.state {
+            case .warning: node.play(names[1])
+            case .active: node.play(names[2])
+            default: node.play(names[0])
+            }
+        case .icicle, .debris:
+            switch entity.state {
+            case .warning:
+                node.play("hang")
+                // About to drop: flash white so it reads as a warning, not scenery.
+                node.color = .white
+                node.colorBlendFactor = blink ? 0.7 : 0
+            case .active: node.play("fall")
+            case .landed: node.play("shatter")
+            default: node.play("hang")
+            }
+        case .ghostCat:
+            switch entity.state {
+            case .hidden:
+                // Blinks out, then only a faint shimmer shows where it drifts.
+                if node.current == "float" { node.play("fade") }
+                if !node.isBusy { node.alpha = 0.12 }
+            case .warning:
+                if node.current == "fade", !node.isBusy { node.play("float") }
+                node.alpha = blink ? 0.6 : 0.25
+            default:
+                node.play("float")
+            }
+        case .hedgehog:
+            if entity.state == .curled, node.current == "walk" {
+                node.play("curl") { [weak node] in node?.play("rolled") }
+            }
+        default:
+            break
+        }
+    }
+
     private func makeEntityNode(_ entity: Entity) -> ActorNode {
         let node = ActorNode(sprite: entity.kind.rawValue, library: library)
-        node.zPosition = entity.kind == .yarnBasket ? 1 : 3
+        node.zPosition = entity.kind == .yarnBasket ? 1 : (entity.kind == .crateWall ? 4 : 3)
         node.play(Self.defaultAnimation[entity.kind] ?? "still")
         actors.addChild(node)
         entityNodes[entity.id] = node
         return node
+    }
+
+    /// Ledges follow `platformState`: whole while solid, crumble frames paced over the crumble time,
+    /// and gone once they give way. A blinking ledge flickers through its fading frames before it vanishes.
+    private func renderPlatforms() {
+        for view in platformViews {
+            let platform = world.platforms[view.index]
+            view.node.position = CGPoint(x: screenX(platform.at).rounded(), y: screenY(platform.y) - view.height)
+            let state = world.platformState(view.index)
+            var texture: SKTexture?
+            switch (platform.mode, state) {
+            case (_, .solid):
+                texture = (library.textures(view.sprite, "still").first ?? library.textures(view.sprite, "solid").first)
+            case (.blinks, .crumbling):
+                let frames = library.textures(view.sprite, "fading")
+                texture = frames.isEmpty ? nil : frames[Int(world.time * 8) % frames.count]
+            case (_, .crumbling):
+                let frames = library.textures(view.sprite, "crumble")
+                let elapsed = world.time - (crumbleStart[view.index] ?? world.time)
+                let span = platform.crumbleAfter ?? Platform.defaultCrumbleAfter
+                // All but the last frame while it still holds; the last one as it drops away.
+                let index = Int(elapsed / span * Double(max(frames.count - 1, 1)))
+                texture = frames.isEmpty ? nil : frames[min(index, max(frames.count - 2, 0))]
+            case (.crumbles, .gone):
+                let frames = library.textures(view.sprite, "crumble")
+                let goneAt = (crumbleStart[view.index] ?? 0) + (platform.crumbleAfter ?? Platform.defaultCrumbleAfter)
+                texture = world.time - goneAt < 0.15 ? frames.last : nil
+            case (_, .gone):
+                texture = nil
+            }
+            view.node.isHidden = texture == nil || view.node.position.x > size.width
+                || view.node.position.x + CGFloat(platform.width) < 0
+            for tile in view.tiles { tile.texture = texture }
+        }
     }
 
     private func renderHazards() {
@@ -507,7 +751,8 @@ final class GameScene: SKScene {
             if let existing = hazardNodes[hazard.id] {
                 node = existing
             } else {
-                node = ActorNode(sprite: "hazard_\(hazard.kind)", library: library)
+                let sprite = thrownSprite[hazard.id] ?? Self.projectileSprite[hazard.kind] ?? "hazard_\(hazard.kind)"
+                node = ActorNode(sprite: sprite, library: library)
                 node.zPosition = 4
                 node.play("fly")
                 actors.addChild(node)
@@ -516,53 +761,14 @@ final class GameScene: SKScene {
             node.position = CGPoint(x: screenX(hazard.x), y: screenY(hazard.y))
             // A hazard that is still arming is only a warning: faint and blinking.
             node.alpha = hazard.isArmed ? 1 : (Int(world.time * 12) % 2 == 0 ? 0.25 : 0.55)
-            renderLaunch(for: hazard)
         }
         for (id, node) in hazardNodes where !seen.contains(id) {
             node.removeFromParent()
             hazardNodes[id] = nil
         }
-        for (id, launch) in launchNodes where !seen.contains(id) {
-            launch.node.removeFromParent()
-            launchNodes[id] = nil
+        for id in thrownSprite.keys where !seen.contains(id) && hazardNodes[id] == nil {
+            thrownSprite[id] = nil
         }
-    }
-
-    /// Where a boss's mouth is, in boss-local units from its anchor, for hazards it spits out.
-    private static let launchMouth: [String: (hazard: String, x: Double, y: Double)] = [
-        "boss_icedragon": ("ice_spike", -64, 64),
-    ]
-
-    /// Shows a shard arcing from the boss's mouth onto an arming hazard, landing as it arms.
-    private func renderLaunch(for hazard: Hazard) {
-        guard let state = world.bossState, let mouth = Self.launchMouth[state.id], mouth.hazard == hazard.kind,
-              library.animation("hazard_\(hazard.kind)_shot", "fly") != nil else { return }
-        if hazard.isArmed {
-            if let launch = launchNodes[hazard.id] {
-                launch.node.isHidden = true
-            }
-            return
-        }
-        let launch: (node: ActorNode, flight: Double)
-        if let existing = launchNodes[hazard.id] {
-            launch = existing
-        } else {
-            let node = ActorNode(sprite: "hazard_\(hazard.kind)_shot", library: library)
-            node.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-            node.zPosition = 6
-            node.play("fly")
-            actors.addChild(node)
-            launch = (node, hazard.arm)
-            launchNodes[hazard.id] = launch
-        }
-        let t = launch.flight > 0 ? min(1, max(0, 1 - hazard.arm / launch.flight)) : 1
-        let start = (x: state.x + mouth.x, y: state.y + mouth.y)
-        let end = (x: hazard.x, y: hazard.y + hazard.height / 2)
-        // A high lob: up out of the mouth, then down onto the spot.
-        let peak = max(start.y, end.y) + 24
-        let x = start.x + (end.x - start.x) * t
-        let y = (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * (2 * peak - (start.y + end.y) / 2) + t * t * end.y
-        launch.node.position = CGPoint(x: screenX(x), y: screenY(y))
     }
 
     private func renderShots() {
@@ -582,44 +788,78 @@ final class GameScene: SKScene {
         }
     }
 
-    /// Animation a boss plays for an attack; "*" is the fallback for that boss.
+    /// Animation a boss plays for an attack. Names not listed fall back to an animation whose name
+    /// is part of the attack's name, then to the boss's "*".
     private static let attackAnimation: [String: [String: String]] = [
-        "boss_squirrel": ["*": "throw"],
-        "boss_icedragon": ["shard_fan": "tail", "dive": "spit", "*": "breath"],
-        "boss_phantom": ["spectral_wave": "cast", "*": "summon"],
-        "boss_mecha": ["*": "attack"],
+        "boss_squirrel": ["acorn_arc": "throw", "acorn_roll": "roll", "giant_acorn": "climb", "*": "throw"],
+        "boss_icedragon": ["shard_fan": "shards", "freezing_breath": "breath", "dive": "dive", "*": "breath"],
+        "boss_phantom": ["summon_ghosts": "summon", "spectral_waves": "teleport", "split": "split", "*": "summon"],
+        "boss_mecha": ["rockets": "rockets", "tail_sweep": "tail", "core_barrage": "core", "*": "rockets"],
     ]
+
+    private func attackAnimation(boss: String, attack: String) -> String {
+        let table = Self.attackAnimation[boss] ?? [:]
+        if let name = table[attack] { return name }
+        let own = library.sheet(boss)?.animations.keys.sorted() ?? []
+        if let name = own.first(where: { !["idle", "hurt", "death"].contains($0) && attack.contains($0) }) { return name }
+        return table["*"] ?? "idle"
+    }
+
+    /// The copy that takes damage.
+    private var trueBossNode: ActorNode? {
+        guard let state = world.bossState, !bossNodes.isEmpty else { return bossNodes.first }
+        return bossNodes[min(state.trueCopy, bossNodes.count - 1)]
+    }
 
     private func renderBoss() {
         guard let state = world.bossState else { return }
-        let node: ActorNode
-        if let bossNode {
-            node = bossNode
-        } else {
-            node = ActorNode(sprite: state.id, library: library)
-            node.zPosition = 2
-            node.play("idle")
-            actors.addChild(node)
-            bossNode = node
+        if state.action != .dead {
+            while bossNodes.count < state.copies {
+                let node = ActorNode(sprite: state.id, library: library)
+                node.zPosition = 2
+                node.play(bossNodes.isEmpty ? "idle" : (node.has("teleport") ? "teleport" : "idle"))
+                actors.addChild(node)
+                bossNodes.append(node)
+            }
+            while bossNodes.count > state.copies {
+                bossNodes.removeLast().removeFromParent()
+            }
         }
         // Slides in from off-screen during the intro.
         let entering = state.action == .intro ? max(0, 1 - state.actionTime / world.tuning.bossIntro) : 0
-        node.position = CGPoint(x: screenX(state.x) + CGFloat(entering) * 180, y: groundY)
+        let xs = state.copyXs
+        let core = world.boss.map { boss in boss.armoredAbove.map { state.hpFraction <= $0 } ?? false } ?? false
+        let rest = core && bossNodes.first?.has("core") == true ? "core" : "idle"
 
-        switch state.action {
-        case .dead:
-            break
-        case .intro:
-            node.play("idle")
-        case .telegraph:
-            // The wind-up is the first frames of the attack animation, so it reads as a warning.
-            let table = Self.attackAnimation[state.id] ?? [:]
-            let name = table[state.attackName] ?? table["*"] ?? "idle"
-            if node.current != name { node.play(name) }
-        case .attack:
-            break
-        case .recover:
-            if !node.isBusy { node.play(node.has("stunned") ? "stunned" : "idle") }
+        for (index, node) in bossNodes.enumerated() {
+            let x = xs.indices.contains(index) ? xs[index] : state.x
+            node.position = CGPoint(x: screenX(x) + CGFloat(entering) * 180, y: groundY)
+            guard state.action != .dead else { continue }
+            if state.copies > 1, index == state.trueCopy, node.has("split") {
+                // The real one glows; the look-alikes act out the attack.
+                if !(node.current == "teleport" && node.isBusy) { node.play("split") }
+                node.alpha = 1
+                continue
+            }
+            node.alpha = state.copies > 1 ? 0.7 : 1
+            switch state.action {
+            case .dead:
+                break
+            case .intro:
+                node.play(world.time < bossHurtUntil ? "hurt" : "idle")
+            case .telegraph, .attack:
+                // The wind-up is the first frames of the attack animation, so it reads as a warning.
+                var name = attackAnimation(boss: state.id, attack: state.attackName)
+                // Only the real copy glows; look-alikes stand idle through a split.
+                if name == "split", state.copies > 1 { name = "idle" }
+                if node.current != name, !(node.current == "teleport" && node.isBusy) { node.play(name) }
+            case .recover:
+                if world.time < bossHurtUntil, node.has("hurt") {
+                    node.play("hurt")
+                } else if !node.isBusy || node.current == "hurt" {
+                    node.play(rest)
+                }
+            }
         }
     }
 
@@ -628,6 +868,7 @@ final class GameScene: SKScene {
         show(\.hearts, stats.hearts)
         show(\.maxHearts, stats.maxHearts)
         show(\.heroLevel, stats.level)
+        show(\.fish, world.fishCollected)
         if let needed = Progression.xpToNext(fromXP: stats.xp) {
             let floor = Progression.xp(forLevel: stats.level)
             show(\.xpFraction, Double(stats.xp - floor) / Double(stats.xp - floor + needed))
@@ -635,9 +876,13 @@ final class GameScene: SKScene {
             show(\.xpFraction, 1)
         }
         show(\.canFire, stats.has(.yarnShot))
-        show(\.canCharge, stats.has(.superPounce))
+        show(\.canDash, stats.has(.ghostDash))
+        show(\.canPounce, stats.has(.superPounce))
+        show(\.dashReady, world.canDash)
         show(\.canDoubleJump, stats.has(.doublePounce))
-        show(\.chargeFraction, min(1, world.pawCharge / world.tuning.chargeTime))
+        // Quantised so the ring does not redraw the SwiftUI overlay on every frame of a hold.
+        let charge = stats.has(.superPounce) ? min(1, world.pawCharge / world.tuning.chargeTime) : 0
+        show(\.pounceCharge, (charge * 20).rounded() / 20)
         if let boss = world.bossState, world.phase == .boss {
             show(\.bossName, text("\(boss.id).name"))
             show(\.bossFraction, boss.hpFraction)

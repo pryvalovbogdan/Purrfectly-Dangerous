@@ -29,6 +29,7 @@ struct GameView: View {
             HUDView(hud: hud,
                     jump: { scene?.setJump(held: $0) },
                     fire: { scene?.setFire(held: $0) },
+                    paw: { scene?.setPaw(held: $0) },
                     quit: { model.quit() })
         }
         // Leaving the app mid-level pauses it, so the player comes back to the resume screen, not a
@@ -74,9 +75,11 @@ extension GameView {
 }
 
 private struct HUDView: View {
+    @Environment(AppModel.self) private var model
     let hud: GameHUD
     let jump: (Bool) -> Void
     let fire: (Bool) -> Void
+    let paw: (Bool) -> Void
     let quit: () -> Void
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
@@ -87,16 +90,27 @@ private struct HUDView: View {
         ZStack {
             VStack(spacing: 6) {
                 HStack(alignment: .top, spacing: 12) {
-                    HStack(spacing: 4) {
-                        ForEach(0..<hud.maxHearts, id: \.self) { index in
-                            Image(systemName: index < hud.hearts ? "heart.fill" : "heart")
-                                .foregroundStyle(index < hud.hearts ? Color.red : Color.white.opacity(0.5))
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 3) {
+                            ForEach(0..<hud.maxHearts, id: \.self) { index in
+                                SpriteImage(sprite: index < hud.hearts ? "heart_full" : "heart_empty", animation: "still")
+                                    .frame(width: 22, height: 20)
+                            }
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(hud.hearts) of \(hud.maxHearts) hearts")
+                        FishCount(count: hud.fish)
                     }
+                    // A dark backing keeps the counters readable over clouds and snow.
+                    .padding(6)
+                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("LV \(hud.heroLevel)").font(.pixel(13))
+                        Text("LV \(hud.heroLevel)").font(.pixel(13)).outlined()
                         Bar(fraction: hud.xpFraction, color: .yellow).frame(width: 90, height: 6)
                     }
+                    .padding(.top, 2)
+                    .padding(6)
+                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
                     Spacer()
                     Button {
                         hud.isPaused.toggle()
@@ -110,9 +124,11 @@ private struct HUDView: View {
                 }
                 if let boss = hud.bossName {
                     VStack(spacing: 2) {
-                        Text(boss.uppercased()).font(.pixel(11))
+                        Text(boss.uppercased()).font(.pixel(11)).outlined()
                         Bar(fraction: hud.bossFraction, color: .red).frame(maxWidth: 240).frame(height: 8)
                     }
+                    .padding(6)
+                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
                 }
                 if let banner = hud.banner {
                     Text(banner)
@@ -133,29 +149,51 @@ private struct HUDView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
 
-            // Only these two buttons take game input: fire on the left, jump on the right.
+            // Only these buttons take game input: yarn (with the paw above it) on the left, jump on the right.
             VStack {
                 Spacer()
                 HStack(alignment: .bottom) {
-                    if hud.canFire {
-                        HoldButton(onChange: fire) {
-                            ZStack {
-                                Circle().fill(.black.opacity(0.15))
-                                Circle().trim(from: 0, to: hud.canCharge ? hud.chargeFraction : 0)
-                                    .stroke(Color.orange, lineWidth: 5)
-                                    .rotationEffect(.degrees(-90))
-                                Image(systemName: "flame.fill").font(.largeTitle).foregroundStyle(.orange)
+                    VStack(spacing: upright ? 0 : -14) {
+                        if hud.canDash {
+                            HoldButton(onChange: paw) {
+                                ZStack {
+                                    Circle().fill(.black.opacity(0.15))
+                                    if hud.canPounce {
+                                        Circle().stroke(Color.white.opacity(0.25), lineWidth: 5)
+                                        Circle().trim(from: 0, to: hud.pounceCharge)
+                                            .stroke(hud.pounceCharge >= 1 ? Color.yellow : Color.pink, lineWidth: 5)
+                                            .rotationEffect(.degrees(-90))
+                                    }
+                                    SpriteImage(sprite: hud.pounceCharge >= 1 ? "ability_superPounce" : "ability_ghostDash",
+                                                animation: "still")
+                                        .frame(width: 48, height: 48)
+                                        .opacity(hud.dashReady || hud.pounceCharge > 0 ? 1 : 0.4)
+                                }
                             }
+                            .accessibilityLabel(model.text("ability.ghostDash"))
+                            .accessibilityHint(hud.canPounce ? model.text("ability.superPounce") : "")
                         }
-                        .accessibilityLabel("Fireball")
+                        if hud.canFire {
+                            HoldButton(onChange: fire) {
+                                ZStack {
+                                    Circle().fill(.black.opacity(0.15))
+                                    SpriteImage(sprite: "ability_yarnShot", animation: "still")
+                                        .frame(width: 48, height: 48)
+                                }
+                            }
+                            .accessibilityLabel(model.text("ability.yarnShot"))
+                        }
                     }
                     Spacer()
                     HoldButton(onChange: jump) {
                         ZStack {
                             Circle().fill(.black.opacity(0.15))
-                            if hud.canDoubleJump { FlameRing() }
-                            SpriteImage(sprite: "ability_\(Ability.doublePounce.rawValue)", animation: "still")
-                                .frame(width: 48, height: 48)
+                            if hud.canDoubleJump { PounceRing() }
+                            // A plain arrow reads as "jump" at a glance; a second one once it can pounce again in the air.
+                            Image(systemName: hud.canDoubleJump ? "chevron.up.2" : "chevron.up")
+                                .font(.system(size: 38, weight: .black))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: 2)
                         }
                     }
                     .accessibilityLabel("Jump")
@@ -170,13 +208,27 @@ private struct HUDView: View {
             if hud.isPaused {
                 Color.black.opacity(0.6).ignoresSafeArea()
                 VStack(spacing: 18) {
-                    Text("PAUSED").font(.pixel(28))
-                    Button("RESUME") { hud.isPaused = false }.buttonStyle(PixelButton())
-                    Button("QUIT TO MENU", action: quit).buttonStyle(PixelButton(tint: .gray))
+                    Text(model.ui("paused", "PAUSED")).font(.pixel(28))
+                    Button(model.ui("resume", "RESUME")) { hud.isPaused = false }.buttonStyle(PixelButton())
+                    Button(model.ui("quit", "QUIT TO MENU"), action: quit).buttonStyle(PixelButton(tint: .gray))
                 }
             }
         }
         .foregroundStyle(.white)
+    }
+}
+
+/// The fish counter: a fish and "×N".
+private struct FishCount: View {
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 4) {
+            SpriteImage(sprite: "fish", animation: "spin").frame(width: 24, height: 18)
+            Text("×\(count)").font(.pixel(14)).outlined()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(count) fish")
     }
 }
 
@@ -202,25 +254,25 @@ private struct HoldButton<Label: View>: View {
     }
 }
 
-/// A ring of fire that spins and flickers around the jump button once the double jump is won.
-private struct FlameRing: View {
+/// A soft ring of yarn colours that turns around the jump button once Double Pounce is won.
+private struct PounceRing: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private let colors: [Color] = [.red, .orange, .yellow, .orange, .red, .orange, .yellow, .orange, .red]
+    private let colors: [Color] = [.pink, .purple, .cyan, .pink, .yellow, .pink]
 
     var body: some View {
         TimelineView(.animation(paused: reduceMotion)) { context in
             let t = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate
-            let flicker = 0.5 + 0.5 * sin(t * 9) * sin(t * 5.3)
+            let pulse = 0.5 + 0.5 * sin(t * 3)
             ZStack {
                 Circle()
                     .stroke(AngularGradient(colors: colors, center: .center), lineWidth: 5)
-                    .rotationEffect(.radians(t * 2.5))
-                    .blur(radius: 4 + 3 * flicker)
+                    .rotationEffect(.radians(t * 1.5))
+                    .blur(radius: 3 + 2 * pulse)
                 Circle()
-                    .stroke(AngularGradient(colors: colors, center: .center), lineWidth: 4)
-                    .rotationEffect(.radians(-t * 1.7))
+                    .stroke(AngularGradient(colors: colors, center: .center), lineWidth: 3)
+                    .rotationEffect(.radians(-t * 1.1))
             }
-            .opacity(0.75 + 0.25 * flicker)
+            .opacity(0.7 + 0.3 * pulse)
         }
         .allowsHitTesting(false)
     }
@@ -235,7 +287,7 @@ private struct AwardCard: View {
         HStack(spacing: 12) {
             SpriteImage(sprite: "ability_\(ability.rawValue)", animation: "still").frame(width: 48, height: 48)
             VStack(alignment: .leading, spacing: 2) {
-                Text("NEW ABILITY").font(.pixel(10)).foregroundStyle(Color.menuInk.opacity(0.75))
+                Text(model.ui("new_ability", "NEW ABILITY")).font(.pixel(10)).foregroundStyle(Color.menuInk.opacity(0.75))
                 PixelTitle(text: model.text("ability.\(ability.rawValue)"), size: 20).fixedSize()
             }
         }
@@ -273,6 +325,13 @@ struct PixelButton: ButtonStyle {
             .padding(.vertical, 10)
             .background(tint.opacity(configuration.isPressed ? 0.6 : 1), in: Rectangle())
             .overlay(Rectangle().stroke(.black, lineWidth: 2))
+    }
+}
+
+extension View {
+    /// A one-pixel dark edge so HUD text stays readable over bright snow or sky.
+    func outlined() -> some View {
+        shadow(color: .black.opacity(0.8), radius: 0, x: 1, y: 1).shadow(color: .black.opacity(0.5), radius: 0, x: -1, y: 0)
     }
 }
 

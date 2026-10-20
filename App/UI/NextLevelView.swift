@@ -68,11 +68,11 @@ struct NextLevelView: View {
     }
 
     private var subtitle: String {
-        guard let run = model.endless else { return "NEXT LEVEL" }
+        guard let run = model.endless else { return model.ui("next_level", "NEXT LEVEL") }
         if run.startsNewLoop {
             return Self.loopTitle(run)
         }
-        return "LEVEL \(levelIndex + 1) OF \(model.levels.count)"
+        return "\(model.ui("level", "LEVEL")) \(levelIndex + 1) / \(model.levels.count)"
     }
 
     /// "LOOP 2 — SPEED ×1.15". Always a dot, whatever the phone's region writes for decimals.
@@ -86,13 +86,13 @@ struct NextLevelView: View {
         let hero = model.startingStats(for: levelIndex)
         return HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                label("SCORE")
+                label(model.ui("score", "SCORE"))
                 PixelTitle(text: "\(run?.score ?? 0)", size: 28, tint: .menuPaper).fixedSize()
-                label("LEVELS \(run?.cleared ?? 0)").padding(.top, 4)
+                label("\(model.ui("levels", "LEVELS")) \(run?.cleared ?? 0)").padding(.top, 4)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 8) {
-                label("HERO LV \(hero.level)")
+                label("\(model.text("hero.name").uppercased()) LV \(hero.level)")
                 HStack(spacing: 4) {
                     ForEach(0..<hero.maxHearts, id: \.self) { index in
                         Image(systemName: index < hero.hearts ? "heart.fill" : "heart")
@@ -115,7 +115,7 @@ struct NextLevelView: View {
 
     /// Starts the level now; the bar running out along its bottom shows when it would start anyway.
     private var goButton: some View {
-        ResultButton(title: "GO") { model.continueEndless() }
+        ResultButton(title: model.ui("go", "GO")) { model.continueEndless() }
             .overlay(alignment: .bottomLeading) {
                 GeometryReader { proxy in
                     Rectangle().fill(Color.menuPaper.opacity(0.8))

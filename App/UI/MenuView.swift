@@ -14,13 +14,13 @@ struct MenuView: View {
             GeometryReader { proxy in
                 if sideBySide {
                     HStack(alignment: .top, spacing: 24) {
-                        PixelTitle(text: model.text("game.title"), size: 34)
+                        TitleBlock(size: 34, alignment: .leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         actions.frame(width: min(330, proxy.size.width * 0.44)).frame(maxHeight: .infinity)
                     }
                 } else {
                     VStack(spacing: 0) {
-                        PixelTitle(text: model.text("game.title"), size: 40, alignment: .center)
+                        TitleBlock(size: 40, alignment: .center)
                             .padding(.top, 64)
                         Spacer(minLength: 0)
                         actions.frame(height: proxy.size.height * (MenuScene.narrowGroundShare - 0.05), alignment: .top)
@@ -47,6 +47,26 @@ struct MenuView: View {
     }
 }
 
+/// The game's name over its tagline.
+private struct TitleBlock: View {
+    @Environment(AppModel.self) private var model
+    let size: CGFloat
+    let alignment: HorizontalAlignment
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: 10) {
+            PixelTitle(text: model.text("game.title"), size: size, alignment: alignment, splitFrom: 2)
+            Text(model.text("game.tagline"))
+                .font(.pixel(13))
+                .foregroundStyle(Color.menuPaper)
+                .multilineTextAlignment(alignment == .center ? .center : .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.menuInk.opacity(0.55), in: Capsule())
+        }
+    }
+}
+
 /// Starts an endless run: every level in order, round and round.
 private struct StartButton: View {
     @Environment(AppModel.self) private var model
@@ -57,12 +77,12 @@ private struct StartButton: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("START").font(.pixel(24))
+                    Text(model.ui("start", "START")).font(.pixel(24))
                     Text(model.text("mode.endless.name")).font(.pixel(10))
                 }
                 Spacer()
                 if model.save.bestEndlessScore > 0 {
-                    Text("BEST \(model.save.bestEndlessScore)").font(.pixel(11))
+                    Text("\(model.ui("best", "BEST")) \(model.save.bestEndlessScore)").font(.pixel(11))
                 }
                 Image(systemName: "play.fill")
             }
@@ -71,7 +91,7 @@ private struct StartButton: View {
             .padding(.vertical, 13)
             .modifier(MenuPanel(fill: .orange))
         }
-        .accessibilityLabel("Start, \(model.text("mode.endless.name"))")
+        .accessibilityLabel("\(model.ui("start", "START")), \(model.text("mode.endless.name"))")
     }
 }
 
@@ -89,7 +109,7 @@ private struct LevelRow: View {
                 Text(model.text(level.nameKey).uppercased()).font(.pixel(13)).lineLimit(1).minimumScaleFactor(0.7)
                 Spacer()
                 if let best = model.save.bestScores[level.id] {
-                    Text("BEST \(best)").font(.pixel(10))
+                    Text("\(model.ui("best", "BEST")) \(best)").font(.pixel(10))
                 }
                 Image(systemName: "play.fill").font(.caption)
             }

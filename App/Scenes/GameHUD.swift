@@ -9,13 +9,19 @@ final class GameHUD {
     var hearts = 3
     var maxHearts = 3
     var heroLevel = 1
+    /// Fish picked up this level.
+    var fish = 0
     /// Progress toward the next hero level, 0...1 (1 at max level).
     var xpFraction = 0.0
     var canFire = false
-    var canCharge = false
+    /// The paw button shows once Ghost Dash is unlocked.
+    var canDash = false
+    /// False while the dash is cooling down.
+    var dashReady = true
+    var canPounce = false
     var canDoubleJump = false
     /// How far the paw is charged toward a Super Pounce, 0...1.
-    var chargeFraction = 0.0
+    var pounceCharge = 0.0
     var bossName: String?
     var bossFraction = 1.0
     var banner: String?

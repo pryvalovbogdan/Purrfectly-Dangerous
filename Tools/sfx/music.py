@@ -1,55 +1,53 @@
-"""The start and end screens' theme: an original, loopable 8-bit track (standard library only).
+"""The start and end screens' theme: an original, loopable, cosy chiptune (standard library only).
 
-Bright and driving with a warm, slightly worn sound: F sharp major at 164 BPM, pulse-wave lead,
-sixteenth-note arpeggios, a pumping triangle bass and noise drums, with a slow tape wobble and an
-echo on the lead. The loop is rendered so its end runs straight into its start.
+Warm and unhurried, like a cat asleep in the sun: F major at 96 BPM with a gentle swing, a soft
+triangle-and-pulse lead, music-box arpeggios, a round triangle bass and brushed drums. Under it all
+runs a low "purr": filtered noise pulsing at about 24 times a second, breathing in and out with each
+bar. The loop is rendered so its end runs straight into its start, and every sound comes from fixed
+formulas and a fixed-seed noise generator, so the track is identical on every build.
 """
 import math
 
 RATE = 22050
-BPM = 164
+BPM = 96
 EIGHTH = 60 / BPM / 2
 BAR = EIGHTH * 8
+SWING = 0.12  # share of an eighth that off-beat eighths are pushed late
 
 # Chords as (bass root midi, chord tones for the arpeggio).
 CHORDS = {
-    "F#": (42, [66, 70, 73, 78]),
-    "C#": (37, [61, 65, 68, 73]),
-    "D#m": (39, [63, 66, 70, 75]),
-    "B": (35, [59, 63, 66, 71]),
-    "A#m": (34, [58, 61, 65, 70]),
+    "F": (41, [65, 69, 72, 77]),
+    "Dm": (38, [62, 65, 69, 74]),
+    "Bb": (46, [62, 65, 70, 74]),
+    "C": (36, [60, 64, 67, 72]),
+    "Am": (45, [60, 64, 69, 72]),
+    "Gm": (43, [62, 67, 70, 74]),
 }
 
 # Lead melody, one bar per line: (midi note or None for a rest, length in eighths).
 A = [
-    [(73, 2), (70, 1), (73, 1), (78, 3), (77, 1)],
-    [(75, 2), (73, 1), (68, 1), (73, 2), (77, 2)],
-    [(70, 1), (73, 1), (75, 2), (78, 2), (75, 2)],
-    [(73, 3), (71, 1), (70, 2), (66, 2)],
-    [(73, 2), (70, 1), (73, 1), (78, 2), (80, 2)],
-    [(77, 2), (75, 1), (73, 1), (80, 4)],
-    [(78, 2), (77, 1), (75, 1), (70, 2), (73, 2)],
-    [(75, 3), (73, 1), (70, 4)],
-]
-A2 = A[:4] + [
-    [(78, 2), (73, 1), (78, 1), (82, 4)],
-    [(80, 2), (77, 2), (75, 2), (73, 2)],
-    [(75, 1), (78, 1), (82, 2), (80, 2), (78, 2)],
-    [(75, 2), (73, 2), (71, 2), (73, 2)],
+    [(72, 3), (69, 1), (70, 2), (72, 2)],
+    [(74, 4), (72, 2), (69, 2)],
+    [(70, 3), (69, 1), (67, 2), (65, 2)],
+    [(67, 6), (None, 2)],
+    [(72, 3), (69, 1), (70, 2), (72, 2)],
+    [(77, 4), (76, 2), (74, 2)],
+    [(72, 2), (70, 2), (69, 2), (67, 2)],
+    [(65, 6), (None, 2)],
 ]
 B = [
-    [(75, 4), (78, 4)],
-    [(77, 4), (80, 4)],
-    [(77, 2), (78, 2), (77, 2), (73, 2)],
-    [(75, 6), (73, 2)],
-    [(71, 2), (75, 2), (78, 2), (83, 2)],
-    [(82, 2), (80, 2), (77, 2), (73, 2)],
-    [(78, 4), (73, 2), (70, 2)],
-    [(78, 6), (None, 1), (73, 1)],
+    [(69, 2), (70, 2), (72, 4)],
+    [(74, 3), (72, 1), (70, 4)],
+    [(67, 2), (69, 2), (70, 4)],
+    [(72, 6), (None, 2)],
+    [(74, 2), (76, 2), (77, 4)],
+    [(76, 3), (74, 1), (72, 4)],
+    [(70, 2), (69, 2), (67, 2), (64, 2)],
+    [(65, 4), (None, 4)],
 ]
-VERSE = ["F#", "C#", "D#m", "B"] * 2
-BRIDGE = ["B", "C#", "A#m", "D#m", "B", "C#", "F#", "F#"]
-SONG = [(A, VERSE, False), (A2, VERSE, False), (B, BRIDGE, True)]
+VERSE = ["F", "Dm", "Bb", "C", "F", "Dm", "Gm", "C"]
+BRIDGE = ["Bb", "Gm", "C", "Am", "Bb", "C", "Gm", "F"]
+SONG = [(A, VERSE), (B, BRIDGE)]
 
 
 def hz(midi: float) -> float:
@@ -67,13 +65,14 @@ class Noise:
         return self.state / 0x3FFFFFFF - 1
 
 
-def wobble(t: float) -> float:
-    """Slow tape warble in semitones, shared by every pitched voice."""
-    return 0.06 * math.sin(2 * math.pi * 0.35 * t) + 0.03 * math.sin(2 * math.pi * 1.7 * t)
+def swung(step: int) -> float:
+    """Start of eighth `step` within a bar, in seconds, with the off-beats pushed late."""
+    return step * EIGHTH + (SWING * EIGHTH if step % 2 else 0)
 
 
 def render() -> list[float]:
-    length = int(RATE * BAR * sum(len(bars) for bars, _, _ in SONG))
+    bars = sum(len(melody) for melody, _ in SONG)
+    length = int(RATE * BAR * bars)
     lead = [0.0] * length
     rest = [0.0] * length
 
@@ -82,90 +81,110 @@ def render() -> list[float]:
         for i, value in enumerate(samples):
             buffer[(start + i) % length] += value  # wraps, so tails ring into the loop's start
 
-    def pulse(midi, seconds, start_s, duty, volume, attack=0.005, release=0.06, vibrato=0.0):
+    def soft_lead(midi, seconds, volume):
+        """Triangle with a little narrow pulse on top, a slow attack and a late, gentle vibrato."""
         count = int(seconds * RATE)
         out, phase = [], 0.0
         for i in range(count):
             t = i / RATE
-            bend = wobble(start_s + t) + (vibrato * math.sin(2 * math.pi * 5.5 * t) * min(1, t / 0.15))
+            bend = 0.15 * math.sin(2 * math.pi * 5 * t) * min(1, max(0, t - 0.18) / 0.2)
             phase += hz(midi + bend) / RATE
-            env = min(1, t / attack) * min(1, (seconds - t) / release) * (0.75 + 0.25 * math.exp(-t * 6))
-            out.append((1 if phase % 1 < duty else -1) * volume * env)
+            wave = 0.75 * (4 * abs(phase % 1 - 0.5) - 1) + 0.25 * (1 if phase % 1 < 0.125 else -1)
+            env = min(1, t / 0.03) * min(1, (seconds - t) / 0.08) * (0.7 + 0.3 * math.exp(-t * 4))
+            out.append(wave * volume * env)
         return out
 
-    def triangle(midi, seconds, start_s, volume):
+    def music_box(midi, start_s, volume):
+        """A plucked sine with a bright overtone, dying away like a music box tine."""
+        count = int(0.6 * RATE)
+        out = []
+        for i in range(count):
+            t = i / RATE
+            out.append((math.sin(2 * math.pi * hz(midi) * t) + 0.3 * math.sin(2 * math.pi * hz(midi) * 4 * t)
+                        * math.exp(-t * 18)) * volume * math.exp(-t * 7) * min(1, t / 0.002))
+        add(rest, start_s, out)
+
+    def bass(midi, seconds, start_s, volume):
         count = int(seconds * RATE)
         out, phase = [], 0.0
         for i in range(count):
             t = i / RATE
-            phase += hz(midi + wobble(start_s + t)) / RATE
-            env = min(1, t / 0.004) * min(1, (seconds - t) / 0.02)
+            phase += hz(midi) / RATE
+            env = min(1, t / 0.01) * min(1, (seconds - t) / 0.05) * (0.6 + 0.4 * math.exp(-t * 5))
             out.append((4 * abs(phase % 1 - 0.5) - 1) * volume * env)
-        return out
+        add(rest, start_s, out)
 
-    noise = Noise(0x5EED)
+    noise = Noise(0xCA7)
 
     def drum(kind, start_s):
         if kind == "kick":
-            count, out, phase = int(0.16 * RATE), [], 0.0
+            count, out, phase = int(0.18 * RATE), [], 0.0
             for i in range(count):
                 t = i / RATE
-                phase += (50 + 110 * math.exp(-t * 35)) / RATE
-                out.append(math.sin(2 * math.pi * phase) * 0.55 * math.exp(-t * 18))
+                phase += (45 + 70 * math.exp(-t * 30)) / RATE
+                out.append(math.sin(2 * math.pi * phase) * 0.45 * math.exp(-t * 16))
         else:
-            seconds, volume, decay = {"snare": (0.14, 0.32, 22), "hat": (0.03, 0.08, 120), "open": (0.12, 0.08, 25)}[kind]
-            count, out, held = int(seconds * RATE), [], 0.0
+            # Brushes: soft, filtered noise.
+            seconds, volume, decay = {"brush": (0.16, 0.12, 18), "tap": (0.05, 0.05, 70)}[kind]
+            count, out, low = int(seconds * RATE), [], 0.0
             for i in range(count):
-                t = i / RATE
-                if kind != "snare" or i % 2 == 0:
-                    held = noise()
-                out.append(held * volume * math.exp(-t * decay))
+                low += 0.35 * (noise() - low)
+                out.append(low * volume * math.exp(-i / RATE * decay) * min(1, i / RATE / 0.01))
         add(rest, start_s, out)
 
     bar_start = 0.0
-    for melody, chords, bridge in SONG:
-        for bar, (notes, chord) in enumerate(zip(melody, chords)):
+    for melody, chords in SONG:
+        for notes, chord in zip(melody, chords):
             root, tones = CHORDS[chord]
-            # lead
-            at = bar_start
+            step = 0
             for midi, eighths in notes:
-                seconds = eighths * EIGHTH
+                start = bar_start + swung(step)
+                seconds = swung(step + eighths) - swung(step)
                 if midi is not None:
-                    add(lead, at, pulse(midi, seconds * 0.95, at, 0.25, 0.22, vibrato=0.12 if eighths >= 3 else 0))
-                at += seconds
-            # arpeggio in sixteenths, up and back down
-            order = [0, 1, 2, 3, 2, 1, 0, 1]
-            for step in range(16):
-                start = bar_start + step * EIGHTH / 2
-                add(rest, start, pulse(tones[order[step % 8]] - 12 if not bridge else tones[order[step % 8]],
-                                       EIGHTH / 2 * 0.8, start, 0.125, 0.07, release=0.02))
-            # bass: pumping eighths with an octave jump on the off-beats of beats 2 and 4
+                    add(lead, start, soft_lead(midi, seconds * 0.95, 0.2))
+                step += eighths
+            # music box: up the chord on the eighths, an octave up
+            for step, index in enumerate([0, 1, 2, 3, 2, 1, 2, 3]):
+                music_box(tones[index] + 12, bar_start + swung(step), 0.05)
+            # bass: root on 1, fifth on 3 with a walk-up pickup
+            bass(root, EIGHTH * 3, bar_start, 0.3)
+            bass(root + 7, EIGHTH * 2, bar_start + swung(4), 0.26)
+            bass(root + 12, EIGHTH, bar_start + swung(7), 0.2)
+            # kick on 1 and 3, brush on 2 and 4, taps on the swung off-beats
             for step in range(8):
-                start = bar_start + step * EIGHTH
-                add(rest, start, triangle(root + (12 if step in (3, 7) else 0), EIGHTH * 0.85, start, 0.32))
-            # drums: kick on 1 and 3 (every beat in the bridge), snare on 2 and 4, hats on the eighths
-            for step in range(8):
-                start = bar_start + step * EIGHTH
-                if step in ((0, 2, 4, 6) if bridge else (0, 4, 5)):
+                start = bar_start + swung(step)
+                if step in (0, 4):
                     drum("kick", start)
                 if step in (2, 6):
-                    drum("snare", start)
-                drum("open" if step == 7 else "hat", start)
+                    drum("brush", start)
+                if step % 2:
+                    drum("tap", start)
             bar_start += BAR
 
-    # echo on the lead: a dotted-eighth delay, run twice round the loop so the start hears the end
-    delay = int(EIGHTH * 1.5 * RATE)
+    # the purr: low noise, amplitude-pulsed ~24 Hz, swelling in (inhale) and out (exhale) each bar
+    purr_noise = Noise(0x9ED)
+    low = lower = 0.0
+    for i in range(length):
+        t = i / RATE
+        low += 0.05 * (purr_noise() - low)
+        lower += 0.05 * (low - lower)
+        breath = 0.5 - 0.5 * math.cos(2 * math.pi * (t / BAR))
+        flutter = 0.55 + 0.45 * math.sin(2 * math.pi * 24 * t)
+        rest[i] += lower * 1.6 * flutter * (0.35 + 0.65 * breath)
+
+    # a soft echo on the lead, run twice round the loop so the start hears the end
+    delay = int(EIGHTH * 3 * RATE)
     echo = [0.0] * length
     for _ in range(2):
         for i in range(length):
-            echo[i] = lead[i] + 0.35 * echo[(i - delay) % length]
+            echo[i] = lead[i] + 0.3 * echo[(i - delay) % length]
     mix = [echo[i] + rest[i] for i in range(length)]
 
-    # gentle low-pass for the worn, nostalgic tone, also run round the loop
+    # warm low-pass, also run round the loop
     smoothed, value = [0.0] * length, 0.0
     for _ in range(2):
         for i in range(length):
-            value += 0.45 * (mix[i] - value)
+            value += 0.35 * (mix[i] - value)
             smoothed[i] = value
     peak = max(abs(s) for s in smoothed) or 1
     return [s / peak * 0.85 for s in smoothed]

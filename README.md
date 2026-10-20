@@ -18,8 +18,10 @@ xcodegen generate && open PurrfectlyDangerous.xcodeproj     # then Run on an iPh
 or from the command line: `Tools/run-sim.sh` (menu) / `Tools/run-sim.sh 1 7 28 39` (a bot plays
 level 1 and screenshots are saved to `.build/screens/`).
 
-Plays in landscape or portrait. Controls: jump (hold for higher, again in the air to double
-pounce), throw yarn, and the paw button for Ghost Dash (tap) and Super Pounce (hold and release).
+Plays in landscape or portrait. Controls: the jump button (bottom right; hold for higher, again in
+the air to Double Pounce), the yarn button (bottom left, once Yarn Shot is won) and, above it, the
+paw button once Ghost Dash is won: tap to dash, hold until the ring fills and release to Super
+Pounce. The HUD shows hearts, the fish counter and the kitten's level.
 
 ## Check it
 
@@ -29,7 +31,9 @@ tests the generated art and builds the app.
 ## Names
 
 Every name shown in the game lives in `App/Resources/Lore.json`, keyed by neutral ids; code and
-asset names never contain display names. `Tools/release-check.sh` is the gate before any upload.
+asset names never contain display names. Interface labels (START, RETRY, …) are looked up as
+`ui.<key>` there too (`AppModel.ui`), with an English fallback for keys the file does not have yet.
+Sound effects and the cosy menu theme are synthesised by `python3 Tools/sfx/build.py`. `Tools/release-check.sh` is the gate before any upload.
 
 More: [`docs/game-design.md`](docs/game-design.md), [`docs/level-format.md`](docs/level-format.md),
 [`docs/sprite-spec.md`](docs/sprite-spec.md), [`CLAUDE.md`](CLAUDE.md).
