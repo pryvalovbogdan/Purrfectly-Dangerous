@@ -52,6 +52,14 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | forest | `acorn` | Fast low roller |
 | forest | `branch_squirrel` | Sits 44 up, lobs `acorn` hazards that land and roll on along the ground |
 | forest | `hedgehog` | Walker; within 90 of the hero it curls up: then no stomp, and yarn bounces off |
+| forest | `slime` | Slow walker (16/s); a stomp kills |
+| forest | `mushroom_cat` | Stands still; puffs a `spore` from 20 up every 2 s in range that drops ahead of the hero and rolls on along the ground; a stomp kills |
+| forest | `forest_bat` | As `bat`: flies at 40, swoops to 26 (just over a standing kitten) as it nears |
+| forest | `plant_cat` | Trap on the world clock: bites (22 high) for 0.6 s of every 2 s, open as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); no stomp; yarn hits it any time, 2 HP |
+| forest | `bee_cat` | Hovers 40 up, drifting in at 10/s; every 1.8 s in range fires a `sting` along the ground at 4 |
+| forest | `stump_cat` | Terrain, 22 tall; every 2 s in range sends a `leaf` along the ground at 2; 2 HP |
+| forest | `snail_cat` | Very slow walker (8/s); within 80 of the hero it hides in its shell: then no stomp, and yarn bounces off |
+| forest | `spider_cat` | Hangs 60 up, harmless and out of yarn's reach; 130 from the hero it blinks 0.4 s, drops, and walks in (20/s) as a walker; a stomp kills |
 | frost | `icicle` | Hangs 70 up; 130 from the hero it blinks 0.35 s, drops, and lies as low shards (14×6) |
 | frost | `snowball` | Fast roller, 2 HP |
 | frost | `penguin` | Very fast slider; stomp is a safe bounce |
@@ -73,7 +81,7 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | any | `yarn_basket` | Raises the hero to `shrineLevel` |
 
 Ghost Dash (level 4) passes through creatures, thrown things and traps for 0.35 s, but not through
-terrain (`bush`, `stump`, `snowdrift`, `tombstone`, `gear`, `crate_wall`) or over ravines. A Super
+terrain (`bush`, `stump`, `stump_cat`, `snowdrift`, `tombstone`, `gear`, `crate_wall`) or over ravines. A Super
 Pounce (level 5) defeats any walker or roller it touches and breaks a `crate_wall`.
 | `ravines[]` | Optional gaps in the ground: `at` is the left rim, `width` how far it spans. Needs sprites `ravine_<theme>`, `ravine_<theme>_fill` and `ravine_<theme>_deep` |
 

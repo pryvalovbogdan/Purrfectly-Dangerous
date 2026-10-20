@@ -100,6 +100,29 @@
    }
   }
  },
+ "bee_cat": {
+  "width": 28,
+  "height": 22,
+  "anchorX": 0.5179,
+  "anchorY": 0.0909,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 14,
+    "loop": true
+   },
+   "throw": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "bell": {
   "width": 24,
   "height": 30,
@@ -856,6 +879,24 @@
    }
   }
  },
+ "forest_bat": {
+  "width": 34,
+  "height": 24,
+  "anchorX": 0.4853,
+  "anchorY": 0.2083,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "death": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "gear": {
   "width": 30,
   "height": 30,
@@ -1383,6 +1424,19 @@
    }
   }
  },
+ "leaf": {
+  "width": 10,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "mech_mouse": {
   "width": 32,
   "height": 20,
@@ -1437,6 +1491,29 @@
    }
   }
  },
+ "mushroom_cat": {
+  "width": 28,
+  "height": 28,
+  "anchorX": 0.4821,
+  "anchorY": 0.0357,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "penguin": {
   "width": 36,
   "height": 16,
@@ -1474,6 +1551,34 @@
    "slam": {
     "frames": 3,
     "fps": 16,
+    "loop": false
+   }
+  }
+ },
+ "plant_cat": {
+  "width": 32,
+  "height": 32,
+  "anchorX": 0.5469,
+  "anchorY": 0.0312,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "warn": {
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+   },
+   "bite": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
     "loop": false
    }
   }
@@ -1675,6 +1780,52 @@
    }
   }
  },
+ "slime": {
+  "width": 24,
+  "height": 20,
+  "anchorX": 0.4792,
+  "anchorY": 0.05,
+  "animations": {
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "snail_cat": {
+  "width": 32,
+  "height": 20,
+  "anchorX": 0.5156,
+  "anchorY": 0.05,
+  "animations": {
+   "walk": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "hide": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "shell": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "snowball": {
   "width": 16,
   "height": 16,
@@ -1745,6 +1896,47 @@
    }
   }
  },
+ "spider_cat": {
+  "width": 32,
+  "height": 44,
+  "anchorX": 0.4844,
+  "anchorY": 0.0455,
+  "animations": {
+   "hang": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "drop": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "spore": {
+  "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "squirrel": {
   "width": 26,
   "height": 26,
@@ -1763,6 +1955,19 @@
    }
   }
  },
+ "sting": {
+  "width": 12,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "stump": {
   "width": 22,
   "height": 26,
@@ -1773,6 +1978,29 @@
     "frames": 1,
     "fps": 1,
     "loop": true
+   }
+  }
+ },
+ "stump_cat": {
+  "width": 28,
+  "height": 30,
+  "anchorX": 0.4821,
+  "anchorY": 0.0333,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "throw": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
    }
   }
  },

@@ -1,5 +1,6 @@
-"""World 1, the forest: squirrels, acorns, hedgehogs, rose bushes, stumps, spilled milk and the
-crumbling bridge. Creatures are drawn facing right and mirrored on export."""
+"""World 1, the forest: the Squirrel Thief (running and on a branch) and its acorns, the Spiky Hedgehog Cat,
+rose bushes, stumps, spilled milk and the crumbling bridge. Creatures are drawn facing right and mirrored on
+export; the other forest critters are in `forest_critters.py`."""
 from __future__ import annotations
 
 import math
@@ -7,84 +8,91 @@ import math
 from PIL import Image
 
 import palette as P
+from critters import ear, face, ramp, shaded, sparkle
 from draw import Canvas, noise, shatter, vanish
 from sprite import Sprite, single
+import woodland as W
 
 
-# --- squirrels -----------------------------------------------------------------------------------
+# --- squirrel thief, acorns ---------------------------------------------------------------------
+
+FUR = ramp((P.RUST_L, P.RUST, P.RUST_D), (P.FUR_WHITE, P.CREAM, P.CREAM_D))
+NUT = ramp((P.PLANK_L, P.PLANK, P.PLANK_D), (P.BARK_L, P.BARK, P.BARK_D))
+
 
 def bushy_tail(c: Canvas, base: tuple[float, float], sway: float, size: float = 1.0) -> None:
-    """A big S-shaped squirrel tail rising behind `base` (which is at the rump)."""
+    """The Squirrel Thief's huge tail: rises behind the rump and curls forward at the top."""
     bx, by = base
-    path = [(0, 0), (-2, -3), (-3.5, -6.5), (-3.5, -10), (-2, -13), (0.5, -14.5), (2.5, -14)]
+    path = [(0, 0), (-2.5, -2.5), (-4.5, -5.5), (-5.5, -9), (-5, -12.5), (-3, -15), (0, -15.5), (1.5, -13.5)]
     pts = [(bx + x * size + sway * (i / len(path)) ** 1.5 * 2, by + y * size) for i, (x, y) in enumerate(path)]
-    for i, (x, y) in enumerate(pts):
-        rad = (2.4 + 1.3 * math.sin(i / (len(pts) - 1) * math.pi)) * size
-        c.ellipse(x, y, rad, rad, P.RUST)
-    for i, (x, y) in enumerate(pts[1:-1], 1):
-        rad = (1.0 + 0.7 * math.sin(i / (len(pts) - 1) * math.pi)) * size
-        c.ellipse(x + 0.8 * size, y + 0.3, rad, rad, P.RUST_L)
-    tx, ty = pts[-1]
-    c.px(tx + 1.5 * size, ty + 1, P.RUST_D)
-    c.px(pts[2][0] - 2.5 * size, pts[2][1], P.RUST_D)
-    c.px(pts[3][0] - 2.8 * size, pts[3][1] + 1, P.RUST_D)
+    with shaded(c, FUR, up=2, down=2, right=2) as p:
+        for i, (x, y) in enumerate(pts):
+            rad = (2.2 + 1.6 * math.sin(i / (len(pts) - 1) * math.pi * 0.9)) * size
+            p.ellipse(x, y, rad, rad, P.RUST)
+    for i, (x, y) in enumerate(pts[2:-2], 2):                           # the paler curl inside the tail
+        c.px(x + 1.2 * size, y + 0.5, P.RUST_L)
+    c.px(pts[-1][0] - 0.5, pts[-1][1] + 1, P.CREAM_D)
+    c.px(pts[3][0] - 2.5 * size, pts[3][1] - 1, P.RUST_D)
+    c.px(pts[4][0] - 2.5 * size, pts[4][1] + 1, P.RUST_D)
 
 
-def squirrel(c: Canvas, x: float, ground: float, phase: float = 0.0, *, helmet: bool = True, sway: float = 0,
-             arm: float = 40, eye: str = "open", holding: bool = False, lift: float = 0, spear: bool = True) -> dict:
-    """An upright squirrel about 18px tall (20 with its tail), feet on `ground` at `x`."""
-    bob = abs(math.sin(phase)) * 1.2 + lift
+def squirrel(c: Canvas, x: float, ground: float, phase: float = 0.0, *, sway: float = 0, arm: float = 40,
+             eye: str = "open", mouth: str = "w", holding: bool = False, lift: float = 0, run: bool = True) -> dict:
+    """The Squirrel Thief: an orange squirrel with a cat's face, cream muzzle and belly, a teal scarf
+    and a tail as big as itself; about 18px tall (22 with its tail), feet on `ground` at `x`."""
+    bob = (abs(math.sin(phase)) * 1.2 if run else 0) + lift
     gy = ground - bob
-    bushy_tail(c, (x - 4.5, gy - 3), sway, 0.78)
-    far = -math.sin(phase) * 2
-    near = math.sin(phase) * 2
-    c.rect(x - 1 + far, gy - 1 - max(0, math.cos(phase)) * 1.2, x + 2 + far, gy, P.RUST_D)
-    c.ellipse(x, gy - 6, 3.8, 4.6, P.RUST)                  # body
-    c.ellipse(x + 1.6, gy - 5.5, 1.6, 3.2, P.CREAM)         # belly
-    c.ellipse(x - 1.6, gy - 3, 2.6, 2.6, P.RUST)            # haunch
-    c.px(x - 2.5, gy - 4, P.RUST_L)
-    lift_near = max(0, -math.cos(phase)) * 1.2
-    c.rect(x - 1 + near, gy - 1 - lift_near, x + 3 + near, gy - lift_near, P.RUST_D)
-    hx, hy = x + 2, gy - 12.5
-    c.poly([(hx - 2.8, hy - 2), (hx - 2.2, hy - 6), (hx - 0.3, hy - 2.5)], P.RUST)      # ear
-    c.px(hx - 2, hy - 3.5, P.RUST_D)
-    c.ellipse(hx, hy, 3.4, 3.1, P.RUST)
-    c.ellipse(hx + 2.8, hy + 0.8, 1.9, 1.5, P.RUST)          # snout
-    c.rect(hx + 1.5, hy + 2, hx + 3.5, hy + 2.5, P.CREAM)    # chin
-    c.px(hx + 4.6, hy + 0.2, P.BLACK)
-    c.px(hx - 1.5, hy + 0.5, P.RUST_L)                      # cheek
-    if eye == "x":
-        for dx, dy in ((0, -2), (1, -1), (0, -1), (1, -2)):
-            c.px(hx + dx + 0.5, hy + dy + 0.5, P.BLACK)
-    else:
-        c.rect(hx + 0.5, hy - 1.5, hx + 1.5, hy + 0.5, P.BLACK)
-        c.px(hx + 1.5, hy - 1.5, P.WHITE)
-    if helmet:                                              # an acorn cap worn as a helmet
-        c.ellipse(hx - 0.5, hy - 2.4, 3.4, 1.8, P.BROWN)
-        c.rect(hx - 3.8, hy - 2, hx + 2.8, hy - 1.5, P.BROWN_D)
-        for dx in (-2, 0, 1.5):
-            c.px(hx + dx, hy - 3.3, P.BROWN_L)
-        c.px(hx - 0.5, hy - 4.6, P.BROWN_D)
-    sx, sy = x + 2, gy - 7.5
+    bushy_tail(c, (x - 3.5, gy - 3), sway, 0.76)
+    swing = math.sin(phase) * (45 if run else 0)
+
+    def leg(on: Canvas, angle: float, colour) -> None:
+        knee = on.limb((x - 1, gy - 4), angle, 2.5, colour, 2)
+        foot = on.limb(knee, angle - 30, 2, colour, 2)
+        on.rect(foot[0] - 0.5, foot[1] - 0.5, foot[0] + 1.5, foot[1] + 0.5, colour)
+
+    leg(c, -swing - 5, P.RUST_D)
+    with shaded(c, FUR) as p:
+        p.ellipse(x, gy - 7, 4.2, 4.8, P.RUST)                           # body
+        p.ellipse(x - 1.5, gy - 4, 3, 2.6, P.RUST)                       # haunch
+    c.ellipse(x + 1.8, gy - 6.5, 1.6, 3, P.CREAM)                       # belly
+    with shaded(c, FUR) as p:
+        leg(p, swing + 5, P.RUST)
+    hx, hy = x + 2.5, gy - 13
+    with shaded(c, FUR, P.OUTLINE) as p:
+        ear(p, hx - 3, hy - 3, 3.5, P.RUST, inner=P.PINK_D, lean=-0.8, half=1.8)
+        ear(p, hx + 2, hy - 3.5, 3.5, P.RUST, inner=P.PINK_D, lean=0.3, half=1.8)
+        p.ellipse(hx, hy, 4.6, 4, P.RUST)
+        p.ellipse(hx + 3, hy + 1.5, 2.5, 1.8, P.RUST)                   # snout
+    c.px(hx - 3.5, hy - 7, P.RUST_L)                                     # ear tufts
+    c.ellipse(hx + 2.5, hy + 2, 2.4, 1.3, P.CREAM)                      # cream muzzle
+    c.px(hx - 3, hy + 1, P.CREAM)
+    face(c, hx + 2, hy - 1.5, eyes=eye, mouth=mouth, gap=4, nose=P.BARK_DD)
+    c.rect(hx - 3, hy + 3.5, hx + 2, hy + 4, P.TEAL)                    # teal scarf, its end streaming back
+    c.line((hx - 3, hy + 4), (hx - 5 - abs(math.sin(phase)) * 1.5, hy + 5.5), P.TEAL)
+    c.px(hx + 1, hy + 4, P.DIST_D)
+    sx, sy = x + 2, gy - 8
     rad = math.radians(arm)
-    hand = (sx + math.sin(rad) * 3, sy + math.cos(rad) * 3)
+    hand = (sx + math.sin(rad) * 3.5, sy + math.cos(rad) * 3.5)
     c.line((sx, sy), hand, P.RUST_D, 2)
-    if spear:                                               # a twig spear, held point-forward
-        c.line((hand[0] - 2, hand[1] + 3), (hand[0] + 4, hand[1] - 6), P.BROWN_D)
-        c.px(hand[0] + 4.5, hand[1] - 7, P.GREY_L)
     if holding:
-        acorn_shape(c, hand[0] + 1, hand[1] - 2.5, 0.75)
+        acorn_shape(c, hand[0] + 1, hand[1] - 1.5, 0.7)
     return {"hand": hand, "head": (hx, hy)}
 
 
 def acorn_shape(c: Canvas, x: float, y: float, s: float = 1.0) -> None:
-    """An acorn standing upright, centred at (x, y), about 8*s px tall."""
-    c.ellipse(x, y + 1 * s, 3.2 * s, 3.6 * s, P.GOLD_D)
-    c.ellipse(x - 0.8 * s, y + 0.5 * s, 1.4 * s, 2.2 * s, P.SAND)
-    c.px(x, y + 4.5 * s, P.BROWN)
-    c.ellipse(x, y - 1.8 * s, 3.8 * s, 1.9 * s, P.BROWN_D)
-    c.rect(x - 2.5 * s, y - 2.2 * s, x + 2.5 * s, y - 2.2 * s, P.BROWN)
-    c.rect(x - 0.4, y - 4.6 * s, x + 0.4, y - 3.6 * s, P.BROWN_D)
+    """A glossy acorn standing upright, centred at (x, y), about 8*s px tall."""
+    with shaded(c, NUT) as p:
+        p.ellipse(x, y + 1 * s, 3.1 * s, 3.5 * s, P.PLANK)               # nut
+        p.px(x, y + 4.6 * s, P.PLANK)
+    c.px(x - 1.2 * s, y + 0.2 * s, P.PLANK_L)
+    if s >= 0.9:
+        c.px(x - 1.5 * s, y + 1.2 * s, P.WHITE)
+    with shaded(c, NUT) as p:
+        p.ellipse(x, y - 1.8 * s, 3.8 * s, 1.9 * s, P.BARK)              # cap with a crosshatch
+    for dx in (-2, 0, 2):
+        c.px(x + dx * s, y - 1.8 * s, P.BARK_D)
+    c.px(x - 1 * s, y - 2.8 * s, P.BARK_L)
+    c.rect(x - 0.4, y - 4.6 * s, x + 0.4, y - 3.6 * s, P.BARK_DD)      # stem
 
 
 def rolling(draw_one, size: int, frames: int = 4, outline=P.OUTLINE) -> list[Image.Image]:
@@ -107,49 +115,52 @@ def squirrels() -> list[Sprite]:
     for i in range(6):
         p = i / 6 * math.tau
         c = Canvas(26, 26)
-        squirrel(c, 13, 24, p, sway=math.sin(p) * 1.5, arm=50 + math.sin(p) * 10)
+        squirrel(c, 13, 24, p, sway=math.sin(p) * 1.5, arm=60 + math.sin(p) * 25, holding=False)
         walk.append(c.outline())
     sq.add("walk", walk, fps=10)
     dead = Canvas(26, 26)
-    squirrel(dead, 13, 24, 0, eye="x", arm=150, spear=False)
+    squirrel(dead, 13, 24, 0, eye="x", mouth="open", arm=150, run=False)
     dead.outline()
-    sq.add("death", [vanish(dead.img, t / 3, depth=6) for t in range(4)],
-           fps=10, loop=False)
+    sq.add("death", [vanish(dead.img, t / 3, depth=6) for t in range(4)], fps=10, loop=False)
     out.append(sq)
 
     # Sits on a branch: the frame's ground line is the top of the branch, which is drawn below it.
     size, cx, gy = (32, 32), 16, 26
 
     def branch(c: Canvas) -> None:
-        c.poly([(0, 26), (31, 27), (31, 30), (0, 31)], P.BROWN)
-        c.line((0, 27), (31, 28), P.BROWN_L)
-        c.line((4, 30), (28, 29), P.BROWN_D)
-        c.line((22, 28), (27, 31), P.BROWN)
+        with shaded(c, NUT) as p:
+            p.poly([(0, 26), (31, 27), (31, 30), (0, 31)], P.BARK)
+            p.line((22, 28), (27, 31), P.BARK, 2)
+        c.line((4, 29), (26, 29), P.BARK_D)
         for lx, ly in ((2, 24), (5, 25), (1, 28), (28, 25), (30, 23)):
-            c.ellipse(lx, ly, 2, 1.5, P.GREEN)
-            c.px(lx - 0.5, ly - 0.5, P.LEAF_L)
+            W.clump(c, lx, ly, 2.2)
 
     bs = Sprite("branch_squirrel", size, faces_left=True, cx=cx, ground=gy)
 
-    def perched(arm: float, holding: bool, sway: float, eye: str = "open", lift: float = 0) -> Image.Image:
+    def perched(arm: float, holding: bool, sway: float, eye: str = "open", lift: float = 0, mouth: str = "w",
+                spark: bool = False) -> Image.Image:
         c = Canvas(*size)
         branch(c)
-        squirrel(c, cx, gy, 0, helmet=False, sway=sway, arm=arm, holding=holding, eye=eye, spear=False, lift=lift)
+        hand = squirrel(c, cx, gy, 0, sway=sway, arm=arm, holding=holding, eye=eye, lift=lift, run=False,
+                        mouth=mouth)["hand"]
+        if spark:
+            sparkle(c, hand[0] + 3, hand[1] - 2, P.YELLOW)
         return c.outline().img
 
-    bs.add("idle", [perched(30, True, 0), perched(30, True, 1.5)], fps=3)
-    bs.add("throw", [perched(-40, True, 0), perched(-110, True, -1), perched(140, False, 1, lift=1),
-                     perched(90, False, 0.5)], fps=10, loop=False)
+    bs.add("idle", [perched(30, True, 0), perched(30, True, 1.5, eye="shut")], fps=3)
+    bs.add("throw", [perched(-40, True, 0, eye="angry", mouth="flat"), perched(-130, True, -1, eye="angry"),
+                     perched(140, False, 1, lift=1, mouth="open", spark=True), perched(90, False, 0.5)],
+           fps=10, loop=False)
     branch_only = Canvas(*size)
     branch(branch_only)
     branch_only.outline()
     falling = []
     for t in range(4):
         body = Canvas(*size)
-        squirrel(body, cx, gy, 0, helmet=False, eye="x", arm=160, spear=False)
+        squirrel(body, cx, gy, 0, eye="x", mouth="open", arm=160, run=False)
         body.outline()
         frame = branch_only.img.copy()
-        frame.alpha_composite(vanish(body.img, t / 3, depth=-8))  # hops up and fades
+        frame.alpha_composite(vanish(body.img, t / 3, depth=-4))  # hops up and fades
         falling.append(frame)
     bs.add("death", falling, fps=10, loop=False)
     out.append(bs)
@@ -172,44 +183,58 @@ def squirrels() -> list[Sprite]:
     return out
 
 
-# --- hedgehog ------------------------------------------------------------------------------------
+# --- spiky hedgehog cat ----------------------------------------------------------------------------
 
-def hedgehog_body(c: Canvas, x: float, gy: float, step: int, eye: str = "open") -> None:
-    rnd = noise(7)
-    # Spiky coat: a dome with spines fanning back.
-    for k in range(13):
-        a = math.radians(200 + k * 11)
-        bx, by = x - 1 + math.cos(a) * 6, gy - 5 + math.sin(a) * 5
-        tip = (x - 1 + math.cos(a - 0.35) * 10, gy - 5 + math.sin(a - 0.35) * 8.5)
-        c.line((bx, by), tip, P.BROWN_D if k % 2 else P.BROWN, 2)
-        c.px(tip[0], tip[1], P.SAND)
-    c.ellipse(x - 1, gy - 5, 7, 5, P.BROWN)
-    for _ in range(9):
-        c.px(x - 6 + rnd() * 9, gy - 9 + rnd() * 5, P.BROWN_D)
-    # Face and feet.
-    c.ellipse(x + 5, gy - 3.5, 3.2, 2.6, P.SAND)
-    c.poly([(x + 6, gy - 5), (x + 10.5, gy - 3), (x + 6, gy - 1.5)], P.SAND)
-    c.px(x + 10.5, gy - 3, P.BLACK)
-    c.px(x + 7, gy - 1.5, P.PINK_D)
-    if eye == "x":
-        c.px(x + 6, gy - 5, P.BLACK)
-        c.px(x + 5, gy - 4, P.BLACK)
-    else:
-        c.rect(x + 6, gy - 5, x + 6, gy - 4, P.BLACK)
-    c.px(x + 3.5, gy - 3, P.PINK)
-    for fx, up in ((x - 4, step % 2), (x + 3, (step + 1) % 2)):
-        c.rect(fx, gy - up, fx + 1.5, gy - up, P.BROWN_D)
+SPIKES = ramp((P.GOLD, P.RUST, P.RUST_D), (P.RUST_L, P.RUST_D, P.BARK_DD))
+CAT = ramp((P.GINGER_L, P.PLANK_L, P.PLANK), (P.FUR_WHITE, P.CREAM, P.CREAM_D))
 
 
-def hedgehog_ball(c: Canvas, x: float, y: float, rad: float) -> None:
-    for k in range(16):
-        a = k / 16 * math.tau
-        tip = (x + math.cos(a) * (rad + 2.5), y + math.sin(a) * (rad + 2.5))
-        c.line((x + math.cos(a) * rad * 0.6, y + math.sin(a) * rad * 0.6), tip, P.BROWN_D if k % 2 else P.BROWN, 2)
-        c.px(tip[0], tip[1], P.SAND)
-    c.ellipse(x, y, rad, rad, P.BROWN)
-    c.ellipse(x + rad * 0.35, y + rad * 0.35, rad * 0.45, rad * 0.4, P.SAND)   # tucked face
-    c.px(x + rad * 0.6, y + rad * 0.2, P.BLACK)
+def spike_coat(c: Canvas, x: float, y: float, rx: float, ry: float, a0: float, a1: float, seed: int,
+               wobble: int = 0) -> None:
+    """A spiny coat: an ellipse with triangular spines fanning out between angles a0 and a1 (degrees,
+    0 = right, counter-clockwise), shaded light at the top-left."""
+    rnd = noise(seed)
+    with shaded(c, SPIKES, up=2, down=2, right=2) as p:
+        p.ellipse(x, y, rx, ry, P.RUST)
+        n = int((a1 - a0) / 17)
+        for k in range(n + 1):
+            a = math.radians(a0 + (a1 - a0) * k / n + ((k + wobble) % 2) * 4)
+            ux, uy = math.cos(a), -math.sin(a)
+            nx, ny = -uy, ux
+            bx, by = x + ux * (rx - 1), y + uy * (ry - 1)
+            length = 3 + rnd() * 1.2
+            tip = (bx + ux * length - nx * 1.2, by + uy * length - ny * 1.2)   # swept back slightly
+            p.poly([(bx + nx * 1.6, by + ny * 1.6), tip, (bx - nx * 1.6, by - ny * 1.6)], P.RUST)
+    for k in range(int((a1 - a0) / 25)):                                     # inner spine strokes
+        a = math.radians(a0 + 10 + k * 25)
+        c.line((x + math.cos(a) * rx * 0.3, y - math.sin(a) * ry * 0.3),
+               (x + math.cos(a) * rx * 0.75, y - math.sin(a) * ry * 0.75), P.RUST_D)
+        c.px(x + math.cos(a - 0.2) * rx * 0.6, y - math.sin(a - 0.2) * ry * 0.6, P.RUST_L)
+
+
+def hedgehog_body(c: Canvas, x: float, gy: float, step: int, eye: str = "open", mouth: str = "w",
+                  tuck: float = 0.0) -> None:
+    """The Spiky Hedgehog Cat: a dome of rusty spines with a round cat face at the front; `tuck` (0...1)
+    pulls the face into the spines as it curls up."""
+    for fx, up in ((x - 4, step % 2), (x + 3, (step + 1) % 2)):           # little feet
+        c.rect(fx, gy - up - 1, fx + 2, gy - up, P.PLANK_D)
+    spike_coat(c, x - 0.5, gy - 6, 7.5, 5.5, 60, 235, 7, step)
+    hx, hy = x + 5 - tuck * 3, gy - 5.5 + tuck
+    with shaded(c, CAT, P.OUTLINE) as p:
+        ear(p, hx - 2.5, hy - 3, 3.2 * (1 - tuck * 0.6), P.PLANK_L, inner=P.PINK_D, lean=-0.5, half=1.8)
+        ear(p, hx + 2.5, hy - 3.2, 3.2 * (1 - tuck * 0.6), P.PLANK_L, inner=P.PINK_D, lean=0.5, half=1.8)
+        p.ellipse(hx, hy, 4.8 * (1 - tuck * 0.3), 4 * (1 - tuck * 0.3), P.PLANK_L)
+    c.ellipse(hx + 0.5, hy + 2, 2.4, 1.1, P.CREAM)
+    if tuck < 0.7:
+        face(c, hx + 1.5, hy - 1.5, eyes=eye, mouth=mouth, gap=4, nose=P.BARK_DD)
+
+
+def hedgehog_ball(c: Canvas, x: float, y: float, rad: float, seed: int = 9) -> None:
+    spike_coat(c, x, y, rad, rad, 0, 360, seed)
+    c.ellipse(x + rad * 0.3, y + rad * 0.3, rad * 0.45, rad * 0.4, P.PLANK_L)   # tucked face
+    c.px(x + rad * 0.45, y + rad * 0.15, P.BARK_DD)
+    c.px(x + rad * 0.15, y + rad * 0.15, P.BARK_DD)
+    c.px(x + rad * 0.3, y + rad * 0.55, P.PINK_D)
 
 
 def hedgehog() -> Sprite:
@@ -228,8 +253,8 @@ def hedgehog() -> Sprite:
         return c.outline().img
 
     half = Canvas(*size)
-    hedgehog_body(half, cx - 1, gy, 0)
-    sprite.add("curl", [half.outline().img, ball(5.5, gy - 7), ball(5, gy - 7.5)], fps=12, loop=False)
+    hedgehog_body(half, cx - 1, gy, 0, eye="shut", mouth="flat", tuck=0.5)
+    sprite.add("curl", [half.outline().img, ball(5.5, gy - 8), ball(5, gy - 8)], fps=12, loop=False)
 
     def rolled_ball(c):
         hedgehog_ball(c, 13.5, 13.5, 5)
@@ -244,46 +269,58 @@ def hedgehog() -> Sprite:
         rolled.append(frame)
     sprite.add("rolled", rolled, fps=14)
     dead = Canvas(*size)
-    hedgehog_body(dead, cx, gy, 0, eye="x")
+    hedgehog_body(dead, cx, gy, 0, eye="x", mouth="open")
     dead.outline()
-    sprite.add("death", [vanish(dead.img, t / 3, depth=4) for t in range(4)],
-               fps=10, loop=False)
+    sprite.add("death", [vanish(dead.img, t / 3, depth=4) for t in range(4)], fps=10, loop=False)
     return sprite
 
 
 # --- obstacles and ground pieces -----------------------------------------------------------------
 
 def rose_bush() -> Sprite:
-    """Thorny rose bush: low and wide (about 26x13)."""
+    """Thorny rose bush: low and wide (about 28x14), leafy clumps like the scenery, red roses, pale thorns."""
     c = Canvas(30, 16)
-    for x, y, rad in ((6, 10, 5), (13, 8, 6), (20, 9, 5.5), (25, 11, 4), (9, 12, 4), (17, 12, 4)):
-        c.ellipse(x, y, rad, rad * 0.85, P.GREEN_D)
-    for x, y, rad in ((5, 9, 2.5), (12, 6, 3), (19, 7, 2.5), (24, 10, 2)):
-        c.ellipse(x, y, rad, rad * 0.8, P.GREEN)
-        c.px(x - 1, y - 1, P.LEAF_L)
-    c.rect(2, 14, 28, 15, P.MOSS)
-    for x, y in ((3, 6), (10, 3), (17, 3), (23, 5), (27, 8), (1, 11), (15, 13), (28, 13)):
-        c.px(x, y, P.SAND)                                  # thorns sticking out
-    for x, y in ((8, 7), (16, 5), (22, 8), (12, 11), (26, 12)):
-        c.ellipse(x, y, 1.5, 1.5, P.RED)                    # roses
+    dark = (P.KIT_GREEN_DD, P.KIT_GREEN_D, P.KIT_GREEN_D, P.KIT_GREEN, P.KIT_GREEN)
+    for x, y, rad in sorted(((14, 6.5, 5.5), (8, 8, 5), (20, 7.5, 5), (4, 11, 3.8), (25, 11, 4), (11, 11, 4.5),
+                             (18, 11, 4.5)), key=lambda b: b[1]):
+        W.clump(c, x, y, rad)
+    c.rect(2, 13, 27, 15, P.KIT_GREEN_DD)
+    for x, y in ((3, 14), (8, 14), (14, 14), (20, 14), (26, 14)):
+        W.clump(c, x, y, 2.4, dark)
+    for x, y in ((3, 8), (9, 3), (15, 1), (21, 3), (26, 7), (1, 12), (28, 11)):
+        c.px(x, y, P.CREAM)                                   # thorns sticking out
+    for x, y in ((8, 6), (15, 4), (21, 7), (11, 11), (18, 10), (25, 11), (4, 10)):
+        c.ellipse(x, y, 1.6, 1.4, P.RED)                     # roses
+        c.px(x + 1, y + 1, P.RED_D)
         c.px(x - 0.5, y - 0.5, P.PINK)
     return single("bush", c.outline(), ground=15)
 
 
 def stump() -> Sprite:
-    """Tree stump: tall (about 16x22)."""
+    """Mossy tree stump with flared roots (about 20x22), in the scenery's bark colours."""
     c = Canvas(22, 26)
-    c.poly([(2, 25), (4, 22), (4, 6), (17, 6), (17, 22), (20, 25)], P.BROWN)
-    c.rect(4, 6, 6, 24, P.BROWN_D)
-    for x in (9, 13, 16):
-        c.line((x, 9), (x, 22), P.BROWN_D)
-    c.line((11, 8), (11, 15), P.BROWN_L)
-    c.ellipse(10.5, 6, 6.5, 2.5, P.SAND)                    # cut top with rings
-    c.ellipse(10.5, 6, 4, 1.4, P.BROWN_L)
-    c.ellipse(10.5, 6, 1.5, 0.6, P.SAND)
-    c.ellipse(5, 23, 3, 1.5, P.MOSS)                        # moss and a toadstool at the foot
-    c.ellipse(16, 12, 1.5, 2, P.MOSS)
-    c.rect(18, 22, 18, 24, P.CREAM)
+    c.poly([(1, 25), (4, 20), (5, 7), (16, 7), (17, 20), (21, 25)], P.BARK)
+    c.poly([(11, 7), (16, 7), (17, 20), (21, 25), (12, 25)], P.BARK_D)
+    c.rect(5, 8, 6, 22, P.BARK_L)
+    for x, top in ((8, 10), (11, 9), (14, 11)):              # bark grooves
+        c.line((x, top), (x - 1 + (x % 2), 22), P.BARK_DD)
+    c.line((4, 21), (1, 25), P.BARK_L)                       # root ridges
+    c.line((17, 21), (20, 25), P.BARK_DD)
+    c.line((9, 22), (8, 25), P.BARK_D)
+    c.ellipse(10.5, 7, 6, 2.5, P.PLANK_L)                    # cut top with rings
+    c.ellipse(10.5, 7, 4, 1.5, P.PLANK)
+    c.ellipse(10.5, 7, 1.5, 0.6, P.PLANK_L)
+    c.px(14, 6, P.PLANK_D)
+    for x, y, rad in ((5, 8, 2), (8, 9, 1.5), (16, 8, 1.8)):  # moss drooping over the rim
+        c.ellipse(x, y, rad, rad * 0.8, P.KIT_GREEN)
+        c.px(x - 0.5, y - 0.5, P.LEAF_Y)
+    c.line((5, 9), (5, 13), P.KIT_GREEN_D)
+    c.ellipse(13, 15, 1.5, 2, P.KIT_GREEN_D)
+    c.px(12.5, 14, P.KIT_GREEN)
+    for x in (2, 5, 15, 19):                                 # grass at the foot
+        c.line((x, 25), (x - 1, 22), P.KIT_GREEN)
+        c.px(x, 23, P.KIT_GREEN_L)
+    c.rect(18, 22, 18, 24, P.CREAM)                          # a toadstool
     c.ellipse(18, 21.5, 2, 1.2, P.RED)
     c.px(17.5, 21, P.WHITE)
     return single("stump", c.outline(), ground=25)
@@ -301,6 +338,22 @@ def slick(name: str, base, light, sheen, seed: int) -> Sprite:
         x, y = int(rnd() * 28), 3 + int(rnd() * 2)
         c.rect(x, y, x + 2 + int(rnd() * 3), y, sheen)
     return single(name, c, ground=3)
+
+
+def milk() -> Sprite:
+    """Spilled milk over the turf: a creamy puddle with a soft grey rim so it reads on bright grass, a
+    bluish underside and a few drops; tiles seamlessly every 32 px, bottom 3 rows over the turf."""
+    c = Canvas(32, 6)
+    for x in range(32):
+        top = 2 + round(math.sin(x / 32 * math.tau * 2) * 0.6 + math.sin(x / 32 * math.tau * 3 + 1) * 0.4)
+        c.rect(x, top, x, 5, P.WHITE)
+        c.px(x, top - 1, P.GREY_L)
+        c.px(x, 5, P.CLOUD_S)
+    for x in (6, 7, 19, 20, 21, 27):                         # glossy streaks
+        c.px(x, 3, P.ICE_L)
+    for x in (12, 13, 25):
+        c.px(x, 4, P.CREAM)
+    return single("milk", c, ground=3)
 
 
 def platform(name: str, still: Canvas, anim: str, seed: int) -> Sprite:
@@ -323,20 +376,35 @@ def platform(name: str, still: Canvas, anim: str, seed: int) -> Sprite:
 
 
 def bridge() -> Sprite:
+    """A rope bridge segment: planks lashed with rope (walk surface = the top row), a post at the left,
+    and rope swags hanging under the deck. Segments repeat, so the posts fall every 48 px."""
     w, h = 48, 12
     c = Canvas(w, h)
-    for i, x in enumerate(range(0, w, 6)):
-        dy = (i % 3 == 1) * 0.5
-        c.rect(x, 2 + dy, x + 4, 6 + dy, P.BROWN_L if i % 2 else P.BROWN)
-        c.px(x + 1, 3 + dy, P.SAND)
-        c.px(x + 4, 6 + dy, P.BROWN_D)
-    c.line((0, 1), (47, 1), P.SAND)                          # rope along the top
-    c.line((0, 7), (47, 7), P.BROWN_D)
-    for x in (3, 21, 39):                                    # broken plank ends hanging down
-        c.rect(x, 8, x + 1, 10, P.BROWN_D)
+    for i, x in enumerate(range(4, w, 6)):
+        c.rect(x, 1, x + 4, 5, P.PLANK_L if i % 2 else P.PLANK)
+        c.rect(x, 1, x + 4, 1, P.PLANK_L)
+        c.rect(x, 5, x + 4, 5, P.PLANK_D)
+        c.px(x + 4, 2 + i % 3, P.PLANK_D)                   # grain
+        c.px(x + 1, 3, P.PLANK_D if i % 2 else P.PLANK_L)
+        c.rect(x + 5, 1, x + 5, 5, P.BARK_DD)                # gap between planks
+    c.rect(0, 1, 3, 11, P.BARK)                              # post
+    c.rect(0, 1, 0, 11, P.BARK_L)
+    c.rect(3, 1, 3, 11, P.BARK_D)
+    c.rect(0, 1, 3, 1, P.PLANK_L)
+    c.rect(0, 3, 3, 3, P.SAND)                               # rope wrapped round the post
+    c.rect(0, 5, 3, 5, P.SAND)
+    c.line((4, 6), (47, 6), P.SAND)                          # rope binding under the planks
+    for k, x in enumerate(range(9, w, 12)):                  # knots and hanging swags
+        c.px(x, 6, P.CREAM)
+        c.px(x, 7, P.SAND)
+    for x0 in range(4, w - 4, 12):
+        for k in range(13):
+            x = x0 + k
+            c.px(x, 7 + round(math.sin(k / 12 * math.pi) * 3), P.GOLD_D)
+    c.px(2, 6, P.KIT_GREEN)                                  # a bit of moss on the post
+    c.px(1, 8, P.KIT_GREEN_D)
     return platform("bridge", c.outline(), "crumble", 61)
 
 
 def build() -> list[Sprite]:
-    milk = slick("milk", P.WHITE, P.ICE_L, P.CREAM, 51)
-    return [*squirrels(), hedgehog(), rose_bush(), stump(), milk, bridge()]
+    return [*squirrels(), hedgehog(), rose_bush(), stump(), milk(), bridge()]

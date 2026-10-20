@@ -67,9 +67,9 @@ def draw_icon() -> Image.Image:
     c.rect(22, 47, 23, 48, P.FUR_WHITE_D)
     c.rect(40, 47, 41, 48, P.FUR_WHITE_D)
     c.poly([(29, 39), (34, 39), (31.5, 42)], P.PINK)
-    c.line((31.5, 42), (31.5, 44), P.OUTLINE)
-    c.line((31.5, 44), (28.5, 46), P.OUTLINE)
-    c.line((31.5, 44), (34.5, 46), P.OUTLINE)
+    for x0, x1 in ((27, 31), (32, 36)):                      # a small pink "w" smile, like the hero's
+        c.line((x0, 43), (x0 + 2, 45), P.PINK_D)
+        c.line((x0 + 2, 45), (x1, 43), P.PINK_D)
     for side in (-1, 1):
         for k in (-1, 1):
             c.line((31.5 + side * 13, 43 + k), (31.5 + side * 21, 41 + k * 3), P.WHITE)

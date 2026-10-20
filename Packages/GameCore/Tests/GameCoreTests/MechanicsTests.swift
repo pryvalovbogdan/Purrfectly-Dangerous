@@ -358,6 +358,225 @@ import Testing
         #expect(!hit(run(offset: 1)))
     }
 
+    // MARK: - Forest creatures (atlas set)
+
+    static let forestCreatures: [ItemKind] = [.slime, .mushroomCat, .forestBat, .plantCat, .beeCat, .stumpCat,
+                                              .snailCat, .spiderCat]
+
+    func defeated(_ events: [GameEvent], _ kind: ItemKind) -> Bool {
+        events.contains { if case .enemyDefeated(_, kind: kind) = $0 { true } else { false } }
+    }
+
+    /// Jumps once when the gap to `kind` falls below each take-off distance in turn; returns the
+    /// events of every attempt that stomped it.
+    func stompAttempts(_ kind: ItemKind, at: Double = 400) -> [[GameEvent]] {
+        stride(from: 20.0, to: 90, by: 2).compactMap { takeOff in
+            var world = RunnerWorld(level: flatLevel(items: [.init(at: at, kind: kind)]), boss: nil)
+            var jumped = false
+            var events: [GameEvent] = []
+            while world.time < 6, !world.isOver {
+                let jump = !jumped && gap(world, kind) < takeOff
+                jumped = jumped || jump
+                events += world.step(Input(jumpPressed: jump, jumpHeld: true), dt: dt)
+            }
+            return events.contains { if case .stomped = $0 { true } else { false } } ? events : nil
+        }
+    }
+
+    @Test func forestCreaturesHaveTheirIdsAndHitboxes() {
+        let expected: [(ItemKind, String, Double, Double, Int)] = [
+            (.slime, "slime", 14, 10, 10), (.mushroomCat, "mushroom_cat", 14, 16, 15),
+            (.forestBat, "forest_bat", 14, 10, 15), (.plantCat, "plant_cat", 14, 22, 20),
+            (.beeCat, "bee_cat", 14, 12, 20), (.stumpCat, "stump_cat", 16, 22, 25),
+            (.snailCat, "snail_cat", 18, 12, 15), (.spiderCat, "spider_cat", 14, 12, 20),
+        ]
+        for (kind, id, width, height, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+            #expect(kind.spec.yarnable, "\(id) is yarnable")
+        }
+    }
+
+    @Test func slimeCreepsInSlowlyAndAStompKillsIt() throws {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .slime)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let start = try #require(world.entities.first?.x)
+        world.run(1)
+        let moved = start - (world.entities.first?.x ?? start)
+        #expect(moved > 10 && moved < 20)
+        #expect(stompAttempts(.slime).contains { defeated($0, .slime) && !hit($0) })
+    }
+
+    @Test func mushroomCatPuffsSporesThatLandAheadAndRollOn() throws {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .mushroomCat)]), boss: nil)
+        let events = advance(&world) { $0.hazards.contains { $0.kind == "spore" } }
+        #expect(events.contains { if case .threw = $0 { true } else { false } })
+        let spore = try #require(world.hazards.first)
+        #expect(spore.y > ItemKind.mushroomCat.spec.height / 2)
+        #expect(world.entities.first?.x == 500)
+        advance(&world, limit: 2) { $0.hazards.first?.y == 0 }
+        let landed = try #require(world.hazards.first { $0.id == spore.id })
+        #expect(landed.y == 0)
+        #expect(landed.x - world.distance > 40)
+        world.run(0.2)
+        #expect((world.hazards.first { $0.id == spore.id }?.x ?? .infinity) < landed.x)
+        #expect(stompAttempts(.mushroomCat).contains { defeated($0, .mushroomCat) })
+    }
+
+    @Test func forestBatSwoopsButNeverLowEnoughToHitAStandingKitten() {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .forestBat)]), boss: nil)
+        var lowest = Double.infinity
+        var events: [GameEvent] = []
+        while world.time < 6 {
+            events += world.step(Input(), dt: dt)
+            if let bat = world.entities.first(where: { $0.kind == .forestBat }) { lowest = min(lowest, bat.y) }
+        }
+        #expect(lowest >= 26)
+        #expect(lowest < ItemKind.forestBat.spec.baseY)
+        #expect(!hit(events))
+    }
+
+    @Test func plantCatOnlyBitesWhileActiveAndYarnHurtsItAnyTime() throws {
+        let cycle = try #require(ItemKind.plantCat.spec.cycle)
+        #expect(ItemKind.plantCat.spec.cycleRole == .trap)
+        #expect(!ItemKind.plantCat.spec.stompable)
+        #expect(ItemKind.plantCat.spec.hp == 2)
+        // Running straight through: harmless while shut, a bite while active.
+        func runThrough(offset: Double) -> [GameEvent] {
+            var world = RunnerWorld(level: flatLevel(items: [.init(at: 300, kind: .plantCat, cycleOffset: offset)]),
+                                    boss: nil)
+            return world.run(4)
+        }
+        let results = stride(from: 0.0, to: cycle.period, by: 0.1).map { hit(runThrough(offset: $0)) }
+        #expect(results.contains(true))
+        #expect(results.contains(false))
+
+        // Yarn lands while it is shut, not just while it bites: two balls defeat it.
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .plantCat)]), boss: nil, stats: hero(2))
+        advance(&world) { gap($0, .plantCat) < 200 }
+        var events = world.run(0.05, Input(fireHeld: true))
+        var stateWhenHit: EntityState?
+        while stateWhenHit == nil, world.time < 6 {
+            let state = world.entities.first?.state
+            let step = world.step(Input(), dt: dt)
+            events += step
+            if step.contains(where: { if case .enemyHit = $0 { true } else { false } }) { stateWhenHit = state }
+        }
+        #expect(stateWhenHit != nil && stateWhenHit != .active)
+        #expect(world.entities.first?.isTangible == false)
+        events += world.run(0.05, Input(fireHeld: true)) + world.run(0.6)
+        #expect(defeated(events, .plantCat))
+    }
+
+    @Test func beeCatHoversOverheadDriftsInAndFiresStingsLow() throws {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 600, kind: .beeCat)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let bee = try #require(world.entities.first)
+        #expect(bee.y >= 36 && bee.y <= 44)
+        #expect(bee.box.minY > world.tuning.heroHeight)
+        advance(&world) { $0.hazards.contains { $0.kind == "sting" } }
+        let sting = try #require(world.hazards.first)
+        #expect(sting.y == 4)
+        #expect(sting.gravity == 0)
+        let drifted = try #require(world.entities.first)
+        #expect(drifted.x < bee.x)
+        #expect(drifted.x > bee.x - 40)
+        // A sting is low: a kitten that never jumps is stung.
+        #expect(hit(world.run(4)))
+    }
+
+    @Test func stumpCatIsSolidShootsLeavesAlongTheGroundAndTakesTwoYarn() throws {
+        let spec = ItemKind.stumpCat.spec
+        #expect(spec.solid && spec.hp == 2 && spec.velocity == 0)
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 600, kind: .stumpCat)]), boss: nil)
+        advance(&world) { $0.hazards.contains { $0.kind == "leaf" } }
+        #expect(world.hazards.first?.y == 2)
+        #expect(world.hazards.first?.gravity == 0)
+
+        var shooter = RunnerWorld(level: flatLevel(items: [.init(at: 600, kind: .stumpCat)]), boss: nil, stats: hero(2))
+        advance(&shooter) { gap($0, .stumpCat) < 250 }
+        let events = shooter.run(0.05, Input(fireHeld: true)) + shooter.run(0.4)
+            + shooter.run(0.05, Input(fireHeld: true)) + shooter.run(1)
+        #expect(events.contains { if case .enemyHit = $0 { true } else { false } })
+        #expect(defeated(events, .stumpCat))
+
+        // Terrain: a Ghost Dash does not slip through it.
+        var dasher = RunnerWorld(level: flatLevel(items: [.init(at: 300, kind: .stumpCat)]), boss: nil, stats: hero(4))
+        advance(&dasher) { gap($0, .stumpCat) < 18 }
+        #expect(hit(dasher.step(Input(pawPressed: true), dt: dt) + dasher.run(0.4)))
+    }
+
+    @Test func snailCatHidesInItsShellWhenCloseAndThenShrugsOffYarnAndStomps() {
+        var early = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .snailCat)]), boss: nil, stats: hero(2))
+        advance(&early) { gap($0, .snailCat) < 220 }
+        #expect(defeated(early.run(0.05, Input(fireHeld: true)) + early.run(1), .snailCat))
+
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .snailCat)]), boss: nil, stats: hero(2))
+        let events = advance(&world) { gap($0, .snailCat) < 76 }
+        #expect(events.contains { if case .curled = $0 { true } else { false } })
+        #expect(world.entities.first?.state == .curled)
+        let late = world.run(0.05, Input(fireHeld: true)) + world.run(0.3)
+        #expect(late.contains { if case .yarnBounced = $0 { true } else { false } })
+        #expect(!defeated(late, .snailCat))
+        #expect(stompAttempts(.snailCat).isEmpty)
+    }
+
+    @Test func spiderCatHangsHarmlesslyThenDropsAndWalksIn() throws {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .spiderCat)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let hanging = try #require(world.entities.first)
+        #expect(hanging.y == 60)
+        #expect(hanging.state == .idle)
+        // Out of reach on its thread: it neither hurts nor takes yarn.
+        #expect(!hanging.isTangible)
+        // It does not walk while it hangs.
+        world.run(0.5)
+        #expect(world.entities.first?.x == hanging.x)
+
+        var events = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(events.contains { if case .fallWarning = $0 { true } else { false } })
+        #expect(world.entities.first?.isTangible == false)
+        events = advance(&world, limit: 2) { $0.entities.first?.state == .landed }
+        #expect(events.contains { if case .droppedDown = $0 { true } else { false } })
+        #expect(!events.contains { if case .shattered = $0 { true } else { false } })
+        let landed = try #require(world.entities.first)
+        #expect(landed.y == 0)
+        #expect(landed.isTangible)
+        #expect(landed.x - world.distance > 30)
+        #expect(landed.box.maxY - landed.box.minY == ItemKind.spiderCat.spec.height)
+        world.run(0.1)
+        #expect((world.entities.first?.x ?? .infinity) < landed.x)
+        // On the ground it is an ordinary walker: standing still is bitten.
+        var standing = world
+        #expect(hit(standing.run(2)))
+    }
+
+    @Test func spiderCatOnTheGroundIsStompedShotAndWalks() {
+        #expect(stompAttempts(.spiderCat).contains { defeated($0, .spiderCat) && !hit($0) })
+        var shooter = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .spiderCat)]), boss: nil, stats: hero(2))
+        advance(&shooter) { $0.entities.first?.state == .landed }
+        #expect(defeated(shooter.run(0.05, Input(fireHeld: true)) + shooter.run(0.6), .spiderCat))
+        // A walker once down (it turns at a rim and a Super Pounce defeats it), not while it hangs.
+        var walker = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .spiderCat)]), boss: nil)
+        advance(&walker) { !$0.entities.isEmpty }
+        #expect(walker.entities.first?.walks == false)
+        advance(&walker) { $0.entities.first?.state == .landed }
+        #expect(walker.entities.first?.walks == true)
+    }
+
+    @Test(arguments: MechanicsTests.forestCreatures, [1, 2])
+    func botClearsEachForestCreatureWithoutAHit(kind: ItemKind, entry: Int) {
+        let level = flatLevel(items: [.init(at: 400, kind: kind), .init(at: 800, kind: kind)], length: 1200,
+                              entry: entry, reward: max(entry, 2))
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
+    @Test func botClearsAForestRunOfEveryCreature() {
+        let items = Self.forestCreatures.enumerated().map { PlacedItem(at: 400 + Double($0.offset) * 260, kind: $0.element) }
+        #expect(LevelValidator.botRun(flatLevel(items: items, length: 2700), boss: nil).finished)
+    }
+
     // MARK: - Bot
 
     @Test func botPouncesThroughCrateWalls() {

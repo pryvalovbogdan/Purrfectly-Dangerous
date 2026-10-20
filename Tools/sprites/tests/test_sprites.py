@@ -24,6 +24,17 @@ SPEC = {
     "branch_squirrel": ((32, 32), {"idle": 2, "throw": 4, "death": 4}),
     "acorn_thrown": ((10, 10), {"fly": 4}),
     "hedgehog": ((28, 22), {"walk": 4, "curl": 3, "rolled": 4, "death": 4}),
+    "slime": ((24, 20), {"walk": 4, "death": 4}),
+    "mushroom_cat": ((28, 28), {"idle": 2, "throw": 4, "death": 4}),
+    "spore": ((10, 10), {"fly": 4}),
+    "forest_bat": ((34, 24), {"fly": 4, "death": 3}),
+    "plant_cat": ((32, 32), {"idle": 2, "warn": 2, "bite": 3, "death": 4}),
+    "bee_cat": ((28, 22), {"fly": 4, "throw": 3, "death": 4}),
+    "sting": ((12, 6), {"fly": 4}),
+    "stump_cat": ((28, 30), {"idle": 2, "throw": 3, "death": 4}),
+    "leaf": ((10, 8), {"fly": 4}),
+    "snail_cat": ((32, 20), {"walk": 4, "hide": 3, "shell": 2, "death": 4}),
+    "spider_cat": ((32, 44), {"hang": 2, "drop": 2, "walk": 4, "death": 4}),
     "bush": ((30, 16), {"still": 1}),
     "stump": ((22, 26), {"still": 1}),
     "milk": ((32, 6), {"still": 1}),
@@ -88,7 +99,8 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
 
 
 @pytest.mark.parametrize("name", ["hero", "boss_squirrel", "boss_icedragon", "boss_phantom", "boss_mecha",
-                                  "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse"])
+                                  "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
+                                  "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():

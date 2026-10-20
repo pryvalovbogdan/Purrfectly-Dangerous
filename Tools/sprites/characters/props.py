@@ -1,14 +1,11 @@
-"""Pickups, HUD and award art, the sparks around the kitten when it wins an ability, and boss hazards."""
+"""Pickups, HUD and award art, and the sparks around the kitten when it wins an ability (boss hazards are in
+boss_hazards.py)."""
 from __future__ import annotations
 
 import math
 
-from PIL import ImageOps
-
 import palette as P
-from characters.forest import acorn_shape, rolling
-from characters.citadel import flame_column
-from draw import Canvas, noise, see_through
+from draw import Canvas, see_through
 from sprite import Sprite, single
 
 
@@ -186,170 +183,6 @@ def sparks() -> list[Sprite]:
     return [single("spark_star", star), single("spark_ember", ember), single("spark_feather", feather)]
 
 
-def hazard(name: str, frames: list, fps: int = 10) -> Sprite:
-    image = frames[0].img if hasattr(frames[0], "img") else frames[0]
-    sprite = Sprite(f"hazard_{name}", image.size)
-    sprite.add("fly", frames, fps=fps)
-    return sprite
-
-
-def hazards() -> list[Sprite]:
-    """Boss hazards, named after the hazard kinds in Bosses.json and sized to their hitboxes. They travel
-    toward the kitten (to the left), so each leads with its left edge; the frame's bottom is the
-    hitbox's bottom."""
-    out = []
-
-    def nut(c):
-        acorn_shape(c, 5.5, 6, 1.0)
-
-    # Rolling is drawn clockwise; mirrored here so the acorns turn the way they roll (left).
-    rolled = [ImageOps.mirror(f) for f in rolling(nut, 12)]
-    out.append(hazard("acorn", rolled, fps=14))                  # the volley, low
-
-    lob = []                                                     # the lob, high, with a speed trail
-    for i, f in enumerate(rolled):
-        c = Canvas(18, 14)
-        for k in range(3):
-            c.px(13 + k * 2, 5 + k + (i % 2), P.WHITE if k < 2 else P.ICE_L)
-        c.paste(f, 0, 1)
-        lob.append(c)
-    out.append(hazard("acorn_high", lob, fps=14))
-
-    giant = []                                                   # dropped by the king from above
-    for i in range(2):
-        c = Canvas(28, 34)
-        for x in (5, 22):
-            c.line((x, 0), (x, 4 + i * 2), P.WHITE)
-        acorn_shape(c, 13.5, 19, 2.8)
-        c.px(10 + i, 18, P.YELLOW)
-        giant.append(c.outline())
-    out.append(hazard("giant_acorn", giant, fps=8))
-
-    shock = []
-    for i in range(3):
-        c = Canvas(24, 12)
-        for k in range(5):
-            height = (10, 8, 6, 4, 3)[k] - (i + k) % 2
-            c.rect(2 + k * 4, 11 - height, 4 + k * 4, 11, (P.SAND, P.BROWN_L, P.BROWN, P.BROWN_D, P.BROWN_D)[k])
-        for k in range(3):                                       # leaves flung up
-            c.px(4 + k * 6 + i, 2 + (k + i) % 3, P.GREEN if k % 2 else P.LEAF_L)
-        shock.append(c.outline())
-    out.append(hazard("shockwave", shock, fps=12))
-
-    def shard_at(c, x, y, i, length=12):
-        c.poly([(x, y), (x + 5, y - 2.5), (x + length, y - 1), (x + length, y + 1), (x + 5, y + 2.5)], P.CYAN)
-        c.poly([(x, y), (x + 5, y - 2.5), (x + length, y - 1), (x + 5, y)], P.ICE_L)
-        c.px(x + 4 + i * 3, y - 1, P.WHITE)
-
-    fan = []                                                     # a fan of shards, high (60x12)
-    for i in range(2):
-        c = Canvas(62, 12)
-        for k, (x, y) in enumerate(((1, 6), (17, 3), (33, 8), (48, 4))):
-            shard_at(c, x, y + (i + k) % 2 * 0.5, i)
-        fan.append(c.outline(P.ICE_D))
-    out.append(hazard("shard", fan, fps=8))
-
-    spike = []                                                   # grows out of the iced floor (10x16)
-    for height in (16, 15):
-        c = Canvas(12, 18)
-        c.poly([(1, 17), (5.5, 17 - height), (10, 17)], P.BLUE_L)
-        c.poly([(1, 17), (5.5, 17 - height), (4, 17)], P.CYAN)
-        c.line((6, 17 - height + 3), (7, 15), P.WHITE)
-        spike.append(c.outline(P.ICE_D))
-    out.append(hazard("ice_spike", spike, fps=6))
-
-    breath = []                                                  # freezing breath rolling along the ground
-    for i in range(3):
-        c = Canvas(42, 13)
-        rnd = noise(600 + i)
-        for k in range(8):
-            x = 4 + k * 4.6
-            radius = 5.5 - k * 0.45 + rnd()
-            c.ellipse(x, 12 - radius, radius, radius, (P.WHITE, P.ICE_L, P.BLUE_L)[(k + i) % 3])
-        for k in range(4):
-            c.px(4 + rnd() * 34, 2 + rnd() * 5, P.WHITE)
-        breath.append(c.outline(P.BLUE))
-    out.append(hazard("breath", breath, fps=10))
-
-    wave = []                                                    # a spectral wave along the ground (12x12)
-    for i in range(3):
-        c = Canvas(16, 14)
-        for k in range(3):
-            height = 12 - k * 3 - (i + k) % 2
-            c.ellipse(3 + k * 4, 13 - height / 2, 2.6, height / 2, (P.VIOLET, P.PURPLE, P.PURPLE_L)[(k + i) % 3])
-        c.px(3, 3 + i % 2, P.SPIRIT)
-        c.px(8, 6 - i % 2, P.SPIRIT)
-        wave.append(see_through(c.outline(P.PURPLE_D).img, 225))
-    out.append(hazard("wave", wave, fps=12))
-
-    wisp = []                                                    # a ghost-fire wisp, high (12x12)
-    for i in range(4):
-        c = Canvas(18, 14)
-        for k in range(4):
-            c.ellipse(8 + k * 2.2, 7 + ((i + k) % 3 - 1) * 0.6, 2.4 - k * 0.45, 2 - k * 0.35,
-                      P.VIOLET if k < 2 else P.PURPLE)
-        c.ellipse(6, 7, 4.5, 4.5, P.LILAC)
-        c.ellipse(5.5, 7, 2.8, 2.8, P.WHITE)
-        c.px(4, 6, P.SPIRIT)
-        c.px(6, 6, P.SPIRIT)
-        wisp.append(see_through(c.outline(P.PURPLE).img, 230))
-    out.append(hazard("wisp", wisp, fps=12))
-
-    rocket = []                                                  # in flight from the back pods
-    for i in range(3):
-        c = Canvas(22, 10)
-        for k in range(3):                                       # exhaust behind (to the right)
-            c.ellipse(15 + k * 2.5, 4.5, 2.2 - k * 0.5 + (i + k) % 2 * 0.5, 1.8 - k * 0.4,
-                      (P.LAVA_L, P.LAVA, P.RED)[k])
-        c.rect(4, 3, 13, 6, P.GREY_L)
-        c.rect(4, 5, 13, 6, P.GREY)
-        c.poly([(0, 4.5), (4, 2.5), (4, 6.5)], P.RED)
-        c.poly([(11, 3), (14, 0), (14, 3)], P.RED_D)
-        c.poly([(11, 6), (14, 9), (14, 6)], P.RED_D)
-        rocket.append(c.outline())
-    out.append(hazard("rocket", rocket, fps=14))
-
-    patch = []                                                   # where a rocket landed (10x18)
-    for i in range(4):
-        c = Canvas(14, 20)
-        c.rect(0, 18, 13, 19, P.MAROON)
-        c.rect(2, 18, 11, 18, P.LAVA)
-        flame_column(c, 7, 18, 15 + (i % 2) * 2, i, width=4)
-        patch.append(c)
-    out.append(hazard("burning_patch", patch, fps=12))
-
-    tail = []                                                    # the metal tail sweeping low (30x12)
-    for i in range(2):
-        c = Canvas(36, 13)
-        for k in range(7):
-            x = 10 + k * 3.8
-            rad = 3 + k * 0.2
-            c.ellipse(x, 7 + math.sin(k / 2 + i * math.pi) * 1.2, rad, rad, P.IRON if k % 2 else P.IRON_L)
-        c.poly([(0, 7), (10, 3), (10, 11)], P.GREY_L)             # blade at the tip
-        c.line((1, 7), (9, 7), P.WHITE)
-        for k in range(2):
-            c.px(16 + k * 10 + i * 3, 12, P.LAVA_L)                # sparks scraping the floor
-        tail.append(c.outline())
-    out.append(hazard("tail", tail, fps=10))
-
-    claw = []                                                    # a grabber on a long arm, high (70x14)
-    for i in range(2):
-        c = Canvas(72, 15)
-        for x in range(14, 72, 6):                               # telescoping arm
-            c.rect(x, 5, x + 5, 9, P.IRON if (x // 6) % 2 else P.IRON_L)
-            c.px(x + 1, 6, P.IRON_D)
-        c.ellipse(12, 7, 4, 4, P.IRON)
-        c.px(12, 7, P.LAVA)
-        open_ = 2 - i
-        for dy in (-1, 1):                                       # three-fingered claw
-            c.line((10, 7 + dy * 2), (4, 7 + dy * (4 + open_)), P.GREY_L, 2)
-            c.line((4, 7 + dy * (4 + open_)), (1, 7 + dy * (2 + open_)), P.GREY_L)
-        c.line((9, 7), (2, 7), P.GREY_L, 2)
-        claw.append(c.outline())
-    out.append(hazard("claw", claw, fps=8))
-    return out
-
-
 def build() -> list[Sprite]:
     return [fish(), yarn_basket(), medal(), heart("heart_full", P.RED, P.WHITE),
-            heart("heart_empty", P.SLATE, P.GREY_D), *ability_icons(), *sparks(), *hazards()]
+            heart("heart_empty", P.SLATE, P.GREY_D), *ability_icons(), *sparks()]

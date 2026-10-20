@@ -15,11 +15,22 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | --- | --- | --- |
 | hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
 | yarn | 12×12 | fly 4, impact 5 |
-| squirrel | 26×26 | walk 6, death 4 |
+| squirrel | 26×26 | walk 6, death 4 (the Squirrel Thief: orange, cat-faced, teal scarf, huge curled tail) |
 | acorn | 12×12 | roll 4, death 4 |
-| branch_squirrel | 32×32 | idle 2, throw 4, death 4 (ground line = top of its branch) |
+| branch_squirrel | 32×32 | idle 2, throw 4, death 4 (the Squirrel Thief on a branch; ground line = top of its branch) |
 | acorn_thrown | 10×10 | fly 4 |
-| hedgehog | 28×22 | walk 4, curl 3, rolled 4, death 4 |
+| hedgehog | 28×22 | walk 4, curl 3, rolled 4, death 4 (the Spiky Hedgehog Cat: a cat face in a dome of spines) |
+| slime | 24×20 | walk 4 (squash and stretch), death 4. Green cat-eared slime; feet on row 18, x 12; covers its 14×10 hitbox |
+| mushroom_cat | 28×28 | idle 2, throw 4 (squats, then puffs spores), death 4. Feet on row 26, x 14; 14×16 hitbox |
+| spore | 10×10 | fly 4 (pink spore puff, about 8×8) |
+| forest_bat | 34×24 | fly 4, death 3. Brown cat-faced bat, purple wings; feet on row 18, x 17; 14×10 hitbox (wings stick out) |
+| plant_cat | 32×32 | idle 2 (closed bud), warn 2 (opening), bite 3 (wide, snap, recover), death 4. Roots on row 30, x 14; 14×22 hitbox |
+| bee_cat | 28×22 | fly 4, throw 3 (cocks, then thrusts its sting), death 4. Feet on row 19, x 13; 14×12 hitbox |
+| sting | 12×6 | fly 4 (glowing yellow dart, about 8×4, point first) |
+| stump_cat | 28×30 | idle 2, throw 3, death 4 (sinks into the soil). Roots on row 28, x 14; 16×22 hitbox |
+| leaf | 10×8 | fly 4 (green leaf, about 8×6) |
+| snail_cat | 32×20 | walk 4, hide 3 (head goes into the shell), shell 2 (hidden, eyes peeking), death 4. Foot on row 18, x 15; 18×12 hitbox |
+| spider_cat | 32×44 | hang 2 (silk thread drawn up to the frame top), drop 2, walk 4, death 4. Feet on row 41, x 16; 14×12 hitbox |
 | bush | 30×16 | still 1 |
 | stump | 22×26 | still 1 |
 | milk | 32×6 | still 1 (tiles horizontally; its bottom 3 rows sit on the turf) |
@@ -63,7 +74,7 @@ yarn); and a `hazard_<kind>` sprite with a `fly` animation for every hazard kind
 
 Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, stretched across the screen) and
 `bg_<theme>_sky_top`; `bg_<theme>_puffs|clouds|far|near|bushes` (320 wide, tiling horizontally, standing on the
-ground line); `ground_<theme>` (32×48), `ground_<theme>_earth` and `ground_<theme>_fill`; `ravine_<theme>` (the
+ground line); `ground_<theme>` (32×48), `ground_<theme>_earth` (32×36, stacked below it; it must tile vertically and continue from the ground tile's bottom row; the forest draws it as deep grey cobbles rather than reusing the tile's lower part) and `ground_<theme>_fill`; `ravine_<theme>` (the
 left wall of a ravine, mirrored for the right one), `ravine_<theme>_fill` (stretched between them; citadel's is
 a lava pool) and `ravine_<theme>_deep`. The start screen has its own backdrop: `bg_menu_sky`, `bg_menu_clouds`,
 `bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes`, over the forest ground. The app icon (the kitten's face
@@ -78,8 +89,15 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. Death frames come from `vanish()` (flash, then sink or rise while fading), `shatter()` (breaks
+afterwards. The forest critters are built from shaded parts in `critters.py` (`shaded` lights each part's top-left
+rim and darkens the far rim, `face` draws the big cat eyes with a shine, `ear`, `sparkle`). Death frames come from `vanish()` (flash, then sink or rise while fading), `shatter()` (breaks
 into blocks that fly and fall; also used for crumbling platforms) or `topple()`; `see_through()` lowers
 opacity for ghosts and fades.
+The four world bosses follow `docs/concept/Pixel Boss Atlas_ Feline Realms.png` (reference only) and share
+`Tools/sprites/bosskit.py`: each body part is drawn in one base colour inside `with part(canvas, ramp, edge)`,
+which rim-lights its top-left, shades its bottom-right and gives it its own inner outline. It also has `blob`
+(furry ellipse), `tube`/`bezier` (tails, necks), `crystal`, `acorn`, `flame`, `flame_jet`, `smoke` and `halo`.
+The boss hazards are drawn in `characters/boss_hazards.py` with the same helpers and palette (`SQ_`, `GL_`,
+`QN_`, `GM_` colours).
 Draw facing right; pass `faces_left=True` for enemies. Set `cx`/`ground` on the `Sprite` so the
 game anchors the feet, not the frame corner.

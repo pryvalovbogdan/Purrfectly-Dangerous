@@ -100,10 +100,31 @@ public struct Entity: Sendable, Equatable, Identifiable {
         return AABB(centerX: x, bottom: y, width: spec.width, height: spec.height)
     }
 
-    /// Whether it can touch anything now: traps only while firing, phasing ghosts only while visible.
+    /// Whether it can touch anything now: traps only while firing, phasing ghosts only while visible,
+    /// a creature on a thread only once it lets go.
     public var isTangible: Bool {
-        guard kind.spec.cycle != nil else { return true }
+        let spec = kind.spec
+        if spec.fall?.walksOnLanding == true { return state == .active || state == .landed }
+        guard spec.cycle != nil else { return true }
         return state == .active
+    }
+
+    /// Whether yarn can strike it now. A trap's body is always there, firing or not; a phasing ghost
+    /// or a creature out of reach on its thread is not.
+    public var catchesYarn: Bool {
+        isTangible || (kind.spec.cycle != nil && kind.spec.cycleRole == .trap)
+    }
+
+    /// Moving along the ground now (turns at a rim, a Super Pounce defeats it). A creature that drops
+    /// from a thread only walks once it has landed.
+    public var walks: Bool {
+        if kind.spec.fall?.walksOnLanding == true { return state == .landed && kind.spec.velocity != 0 }
+        return kind.walks
+    }
+
+    /// Still up on its thread or about to let go: it does not move along x yet.
+    var isHanging: Bool {
+        kind.spec.fall?.walksOnLanding == true && (state == .idle || state == .warning)
     }
 }
 
@@ -199,6 +220,8 @@ public enum GameEvent: Sendable, Equatable {
     case fallWarning(id: Int)
     /// It hit the ground and broke into shards.
     case shattered(id: Int)
+    /// A creature dropped from its thread, reached the ground and starts walking.
+    case droppedDown(id: Int)
     /// The hero landed on a crumbling platform; it gives way shortly.
     case platformCrumbling(index: Int)
     case bossAppeared(id: String)
@@ -533,9 +556,9 @@ public struct RunnerWorld: Sendable {
         for index in entities.indices {
             var entity = entities[index]
             let spec = entity.kind.spec
-            let velocity = entity.reversed ? -spec.velocity : spec.velocity
+            let velocity = entity.isHanging ? 0 : (entity.reversed ? -spec.velocity : spec.velocity)
             entity.x += velocity * dt
-            if entity.kind.walks {
+            if entity.walks {
                 // Stop at the rim and head back the other way.
                 let front = entity.x + (velocity < 0 ? -spec.width : spec.width) / 2
                 if let ravine = ravines.first(where: { $0.isOpen(at: front) }) {
@@ -577,7 +600,8 @@ public struct RunnerWorld: Sendable {
         }
     }
 
-    /// Hanging → blinking → dropping → shards on the ground. Over a ravine it drops out of sight.
+    /// Hanging → blinking → dropping → shards on the ground (or, for a creature, walking on).
+    /// Over a ravine it drops out of sight.
     private func updateFaller(_ entity: inout Entity, fall: FallSpec, gap: Double, dt: Double,
                               events: inout [GameEvent]) {
         switch entity.state {
@@ -600,7 +624,7 @@ public struct RunnerWorld: Sendable {
                     entity.y = 0
                     entity.vy = 0
                     entity.state = .landed
-                    events.append(.shattered(id: entity.id))
+                    events.append(fall.walksOnLanding ? .droppedDown(id: entity.id) : .shattered(id: entity.id))
                 }
             }
         default:
@@ -647,7 +671,7 @@ public struct RunnerWorld: Sendable {
         let box = shot.box
         if let index = entities.firstIndex(where: { entity in
             let spec = entity.kind.spec
-            return entity.hp > 0 && entity.isTangible && (spec.yarnable || spec.deflectsYarn)
+            return entity.hp > 0 && entity.catchesYarn && (spec.yarnable || spec.deflectsYarn)
                 && entity.box.intersects(box)
         }) {
             let entity = entities[index]
@@ -716,7 +740,7 @@ public struct RunnerWorld: Sendable {
                     events.append(.wallBroken(id: entity.id))
                     continue
                 }
-                if pouncing, entity.kind.walks {
+                if pouncing, entity.walks {
                     damage(entityAt: index, by: entity.hp, events: &events)
                     continue
                 }

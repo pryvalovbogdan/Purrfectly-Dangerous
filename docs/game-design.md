@@ -56,6 +56,14 @@ Walkers and rollers turn back at a rim. No ravines in a boss fight.
 | `acorn` | rolling acorn | small fast roller | hop |
 | `branch_squirrel` | squirrel on a branch | stands up high, throws acorns that arc to the ground ahead | jump the acorn, or yarn it from a jump |
 | `hedgehog` | hedgehog | walks; curls into a spiky ball when close (~90 units): curled, it can't be stomped and yarn bounces off | jump clear of it, or yarn/stomp before it curls |
+| `slime` | forest slime | creeps slowly toward the kitten | stomp (kills), yarn, or hop |
+| `mushroom_cat` | mushroom cat | stands still; puffs a spore from its cap that drops ahead of the kitten and rolls on along the ground | hop the spore; stomp (kills) or yarn |
+| `forest_bat` | forest bat | flies in at head height and swoops, but never lower than just over a standing kitten (26) | stay down or jump late; yarn |
+| `plant_cat` | biting plant | trap on a fixed cycle (world clock): shut and harmless, opens (warning), then bites; can't be stomped. Yarn hits it in any state, 2 HP | pass while shut, jump it, or 2 yarn |
+| `bee_cat` | bee cat | hovers above head height (~40), drifting slowly in, firing stings low along the ground | jump the stings; yarn it from a jump |
+| `stump_cat` | stump cat | terrain like `stump` (no Ghost Dash through it), a turret sending leaves along the ground, 2 HP | jump the leaves and the stump; 2 yarn |
+| `snail_cat` | snail cat | crawls very slowly; hides in its shell when close (~80 units): hidden, it can't be stomped and yarn bounces off | jump it, or yarn/stomp before it hides |
+| `spider_cat` | spider cat | hangs on a thread (~60 up), out of reach: harmless and yarn passes. When the kitten is ~130 away it blinks, drops ahead and walks in | stomp (kills) or yarn once down, or jump |
 | `milk` | spilled milk (zone) | slick ground: run speed ×1.3 and no short hop while on it | timing |
 | `bridge` | broken bridge plank (platform) | one-way platform over a ravine; **crumbles** 0.5 s after it is landed on | keep moving |
 

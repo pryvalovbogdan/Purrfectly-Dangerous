@@ -325,9 +325,15 @@ final class GameScene: SKScene {
     /// Sprite of what each thrower throws.
     private static let thrownBy: [ItemKind: String] = [
         .branchSquirrel: "acorn_thrown", .skeletonMouse: "bone", .cannon: "cannonball", .bell: "hazard_wave",
+        .mushroomCat: "spore", .beeCat: "sting", .stumpCat: "leaf",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
-    private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave"]
+    private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
+                                           "spore": "spore", "sting": "sting", "leaf": "leaf"]
+    /// Hiding animation and the pose held afterwards, for things that curl up or hide in a shell.
+    private static let curlAnimation: [ItemKind: (start: String, hold: String)] = [
+        .hedgehog: ("curl", "rolled"), .snailCat: ("hide", "shell"),
+    ]
 
     private func handle(_ events: [GameEvent]) {
         for event in events {
@@ -401,7 +407,9 @@ final class GameScene: SKScene {
                 play(.block)
             case .curled(let id):
                 play(.curl)
-                entityNodes[id]?.play("curl") { [weak node = entityNodes[id]] in node?.play("rolled") }
+                let kind = world.entities.first { $0.id == id }?.kind
+                let names = kind.flatMap { Self.curlAnimation[$0] } ?? ("curl", "rolled")
+                entityNodes[id]?.play(names.start) { [weak node = entityNodes[id]] in node?.play(names.hold) }
             case .threw(let id):
                 guard let entity = world.entities.first(where: { $0.id == id }) else { break }
                 tagThrownHazard(from: entity)
@@ -417,12 +425,17 @@ final class GameScene: SKScene {
                 node?.play("ring", restart: true) { [weak node] in node?.play("idle") }
             case .trapFired(let id):
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) {
-                    play(entity.kind == .piston ? .slam : .flame)
+                    switch entity.kind {
+                    case .piston, .plantCat: play(.slam)
+                    default: play(.flame)
+                    }
                 }
             case .fallWarning:
                 break
             case .shattered(let id):
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.shatter) }
+            case .droppedDown(let id):
+                if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.thump) }
             case .platformCrumbling(let index):
                 crumbleStart[index] = world.time
                 play(.crumble)
@@ -637,6 +650,8 @@ final class GameScene: SKScene {
         .acorn: "roll", .snowball: "roll", .penguin: "slide", .mechMouse: "run",
         .ghostCat: "float", .bat: "fly", .skull: "fly", .bell: "idle", .gear: "spin",
         .vent: "idle", .piston: "up", .icicle: "hang", .debris: "hang",
+        .slime: "walk", .mushroomCat: "idle", .forestBat: "fly", .plantCat: "idle", .beeCat: "fly",
+        .stumpCat: "idle", .snailCat: "walk", .spiderCat: "hang",
         .fish: "spin", .yarnBasket: "glow",
     ]
 
@@ -691,9 +706,28 @@ final class GameScene: SKScene {
             default:
                 node.play("float")
             }
-        case .hedgehog:
+        case .hedgehog, .snailCat:
+            // Normally started by the `curled` event; this catches a node made after it fired.
+            let names = Self.curlAnimation[entity.kind] ?? ("curl", "rolled")
             if entity.state == .curled, node.current == "walk" {
-                node.play("curl") { [weak node] in node?.play("rolled") }
+                node.play(names.start) { [weak node] in node?.play(names.hold) }
+            }
+        case .plantCat:
+            switch entity.state {
+            case .warning: node.play("warn")
+            case .active: node.play("bite")
+            default: node.play("idle")
+            }
+        case .spiderCat:
+            switch entity.state {
+            case .warning:
+                node.play("hang")
+                // About to let go: flash so the drop is announced.
+                node.color = .white
+                node.colorBlendFactor = blink ? 0.7 : 0
+            case .active: node.play("drop")
+            case .landed: node.play("walk")
+            default: node.play("hang")
             }
         default:
             break

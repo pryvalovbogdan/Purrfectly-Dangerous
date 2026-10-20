@@ -13,6 +13,7 @@ import math
 import palette as P
 from draw import Canvas, noise
 from sprite import Sprite, single
+import woodland as W
 
 LAYER_W = 320
 EARTH_TOP = 12
@@ -44,6 +45,27 @@ def sky(theme: str, stops: list) -> list[Sprite]:
                         c.px(x, y, colour)
                     elif (x + y) % 2 == 0 and y >= i * step and (x + y) % 4 == 0:
                         c.px(x, y, stops[i - 1])
+    return [single(f"bg_{theme}_sky", c), flat(f"bg_{theme}_sky_top", stops[0])]
+
+
+def smooth_sky(theme: str, stops: list, blend: int = 16) -> list[Sprite]:
+    """Like `sky`, but each stop fades into the next over `blend` rows. The texture is stretched across
+    the screen, so the blend is made of whole rows (thin lines of the next colour that thicken), never
+    a checkerboard, which the stretch would smear into streaks."""
+    c = Canvas(16, 200)
+    step = 200 / len(stops)
+    order = (0, 2, 1, 3)
+    for y in range(200):
+        i = min(int(y / step), len(stops) - 1)
+        colour = stops[i]
+        edge = (i + 1) * step
+        if i + 1 < len(stops) and y > edge - blend / 2:
+            t = (y - (edge - blend / 2)) / blend + 0.0
+            colour = stops[i + 1] if order[y % 4] < t * 4 else colour
+        elif i > 0 and y < i * step + blend / 2:
+            t = 0.5 + (y - i * step) / blend
+            colour = colour if order[y % 4] < t * 4 else stops[i - 1]
+        c.rect(0, y, 15, y, colour)
     return [single(f"bg_{theme}_sky", c), flat(f"bg_{theme}_sky_top", stops[0])]
 
 
@@ -240,35 +262,51 @@ def bushes(theme: str, height: int, seed: int, leaf, leaf_light, deco=None) -> S
 
 # --- ground ----------------------------------------------------------------------------------------
 
-def ground(theme: str, draw) -> list[Sprite]:
+def ground(theme: str, draw, draw_earth=None) -> list[Sprite]:
     """The 32x48 ground tile, and its lower part as a tile of its own for stacking underneath where the
     earth runs deeper than one tile. The game never cuts pieces out of a texture itself: on a device the
-    atlas packs textures together and a cut-out shows its neighbours."""
+    atlas packs textures together and a cut-out shows its neighbours. `draw_earth`, if given, draws that
+    32x36 tile itself (it must tile vertically and continue from the ground tile's bottom row)."""
     c = Canvas(32, 48)
     draw(c)
     earth = Canvas(32, 48 - EARTH_TOP)
-    earth.paste(c.img.crop((0, EARTH_TOP, 32, 48)))
+    if draw_earth:
+        draw_earth(earth)
+    else:
+        earth.paste(c.img.crop((0, EARTH_TOP, 32, 48)))
     return [single(f"ground_{theme}", c), single(f"ground_{theme}_earth", earth)]
 
 
+# Deep forest earth: rows of grey cobbles, 6 high, whose pattern repeats every 6 rows (36 = the earth tile),
+# so the ground tile's last rows lead straight into the stacked earth tiles below it.
+STONE_ROWS = [(0, [11, 10, 11]), (5, [9, 12, 11]), (2, [12, 10, 10]), (7, [10, 11, 11]), (3, [11, 11, 10]),
+              (8, [12, 9, 11])]
+STONES = (P.STONE, P.STONE_D, P.STONE_DD)
+
+
+def forest_stones(c: Canvas, y0: int, first: int, rows: int) -> None:
+    c.rect(0, y0, 31, y0 + rows * 6 - 1, P.EARTH_DD)
+    for k in range(rows):
+        offset, widths = STONE_ROWS[(first + k) % 6]
+        W.cobble_row(c, y0 + k * 6, 7, widths, offset, STONES, 70 + (first + k) % 6,
+                     specks=(P.STONE_D, P.KIT_GREEN_D, P.GOLD_D))
+
+
 def forest_ground(c: Canvas) -> None:
-    c.rect(0, 0, 31, 47, P.BROWN)
-    rnd = noise(3)
-    for _ in range(24):                                      # pebbles and roots in the earth
-        x, y = int(rnd() * 31), 12 + int(rnd() * 34)
-        c.rect(x, y, x + 1, y, P.BROWN_D)
-    for x, y in ((5, 20), (21, 31), (12, 42)):
-        c.ellipse(x, y, 2, 1.5, P.BROWN_L)
-        c.px(x - 1, y - 1, P.SAND)
-    c.rect(0, 0, 31, 5, P.GREEN)
-    c.rect(0, 0, 31, 0, P.LEAF_L)
-    c.rect(0, 1, 31, 1, P.GREEN_L)
-    for x in range(0, 32, 3):                                # turf hanging over the earth
-        c.rect(x, 6, x + 1, 6 + (x * 7 % 4), P.GREEN)
-        c.px(x, 7 + (x * 7 % 4), P.GREEN_D)
-    for x in (3, 14, 25):
-        c.px(x, 2, P.GREEN_D)
-        c.px(x + 1, 3, P.GREEN_D)
+    """The kit's grass tile: thick turf with hanging tufts over big brown cobbles, then grey cobbles."""
+    c.rect(0, 0, 31, 47, P.EARTH_DD)
+    for y0, offset, widths, seed in ((9, 0, [11, 10, 11], 3), (19, 6, [10, 12, 10], 4)):
+        W.cobble_row(c, y0, 11, widths, offset, (P.EARTH_L, P.EARTH, P.EARTH_D), seed,
+                     specks=(P.EARTH_D, P.GOLD_D, P.KIT_GREEN_D))
+    forest_stones(c, 30, 1, 3)
+    for x in (4, 19, 27):                                    # earth crumbs where brown meets grey
+        c.px(x, 30, P.EARTH_D)
+        c.px(x + 1, 31, P.EARTH)
+    W.grass_top(c, 32, 1)
+
+
+def forest_earth(c: Canvas) -> None:
+    forest_stones(c, 0, 4, 6)  # continues the ground tile's rows 1, 2, 3
 
 
 def frost_ground(c: Canvas) -> None:
@@ -362,34 +400,165 @@ def ravine_fill(theme: str, upper, lower, lava: bool = False) -> Sprite:
 
 # --- themes -----------------------------------------------------------------------------------------
 
+def forest_clouds(name: str, height: int, clouds: list) -> Sprite:
+    """Puffy cumulus: (x, base, width, height) each, white tops with blue undersides."""
+    c = Canvas(LAYER_W, height)
+    for k, (x, base, w, h) in enumerate(clouds):
+        layer = Canvas(LAYER_W, height)
+        W.wrapped(lambda px, base=base, w=w, h=h, k=k: W.cumulus(layer, px, base, w, h, 90 + k), x)
+        c.paste(layer)
+    return single(name, c)
+
+
+def forest_far() -> Canvas:
+    """Blue mountains, and a white castle on a green cliff with a waterfall pouring off it."""
+    h = 110
+    c = Canvas(LAYER_W, h)
+    W.mountains(c, h, 4, 6, (70, 104), (P.MOUNT_L, P.MOUNT_L, P.MOUNT), tips=P.SKY_HAZE)
+    W.mountains(c, h, 5, 5, (40, 72), (P.MOUNT_L, P.MOUNT, P.MOUNT_D), tips=P.MOUNT_L)
+    # the castle's cliff: a flat grassy top and a striped rock face
+    top, left, right = 40, 192, 304
+    c.poly([(left, h), (left + 4, top + 6), (left + 10, top), (right - 6, top), (right, top + 8), (right + 4, h)],
+           P.CLIFF)
+    for k in range(left + 6, right, 7):
+        c.line((k, top + 4), (k - 2 + (k % 3), h), P.CLIFF_D)
+        c.line((k + 2, top + 5), (k + 1, top + 22 + (k * 7) % 14), P.CLIFF_L)
+    c.rect(left + 8, top, right - 4, top + 3, P.FAR_GRASS)
+    c.rect(left + 8, top, right - 4, top, P.KIT_GREEN_L)
+    for k in range(left + 9, right - 5, 4):                  # grass hanging over the cliff edge
+        c.rect(k, top + 4, k + 1, top + 4 + (k * 5) % 4, P.FAR_GRASS)
+    W.castle(c, 246, top + 1)
+    for tx in (204, 214, 286):                               # little trees by the walls
+        W.canopy(c, tx, top - 4, 12, 10, tx, W.DISTANT, (3, 5))
+    W.waterfall(c, 288, top + 2, h - 2, 6)
+    W.waterfall(c, 204, top + 14, h - 2, 4)
+    return W.haze(c, P.SKY_HAZE, 0.12)
+
+
+def forest_near() -> Canvas:
+    """A band of distant blue-green trees, then big gnarled trees with vines, a lantern, a log cabin with
+    a fence and a lamp post: the busiest layer, but behind the play, so slightly hazed."""
+    h = 150
+    c = Canvas(LAYER_W, h)
+    band = Canvas(LAYER_W, h)                               # distant forest
+    rnd = noise(40)
+    band.rect(0, h - 20, LAYER_W - 1, h - 1, P.DIST_D)
+    for i in range(16):
+        x = i * LAYER_W / 16 + rnd() * 10
+        top = h - 36 - rnd() * 16
+        w = 18 + rnd() * 10
+        W.wrapped(lambda px, top=top, w=w, i=i: W.round_tree(band, px, h, top, w, 40 + i, W.DISTANT,
+                                                              (P.DIST_DD, P.DIST_DD), (4, 7)), x)
+    c.paste(band)
+
+    def mid_tree(layer, px, k):
+        W.round_tree(layer, px, h, h - 74 - k * 6, 34, 50 + k, size=(5, 8))
+
+    for k, x in enumerate((186, 296)):
+        W.piece(c, lambda layer, px, k=k: mid_tree(layer, px, k), x)
+    W.piece(c, lambda layer, px: W.gnarled_tree(layer, px, h - 1, 4, 16, 96, 60, 61, vines=5), 52)
+    W.piece(c, lambda layer, px: W.gnarled_tree(layer, px, h - 1, 14, 14, 78, 52, 77, vines=4, lantern=True),
+            228)
+
+    def homestead(layer, px):
+        W.cabin(layer, px, h - 1)
+        W.fence(layer, px + 24, px + 54, h - 1)
+        W.lamp_post(layer, px - 26, h - 1)
+
+    W.piece(c, homestead, 140)
+    return W.haze(c, P.SKY_L, 0.08)
+
+
+def forest_bushes() -> Canvas:
+    """Low leafy bushes, flowers and red toadstools along the path; kept under about 16 px."""
+    h = 24
+    c = Canvas(LAYER_W, h)
+    rnd = noise(22)
+    for i in range(11):
+        x = i * LAYER_W / 11 + rnd() * 12
+        w = 14 + rnd() * 14
+        tall = 9 + rnd() * 5
+
+        def bush(layer, px, w=w, tall=tall, i=i):
+            W.canopy(layer, px, h - tall / 2 + 1, w, tall + 2, 200 + i, size=(3, 5))
+        W.piece(c, bush, x)
+    for k in range(14):                                      # flowers on short stems
+        x = rnd() * LAYER_W
+        stem = 5 + rnd() * 6
+        col = (P.PINK, P.WHITE, P.YELLOW, P.PINK, P.WHITE)[k % 5]
+
+        def flower(layer, px, stem=stem, col=col):
+            layer.line((px, h - 1), (px, h - stem), P.KIT_GREEN_D)
+            layer.px(px - 1, h - 3, P.KIT_GREEN)
+            layer.px(px + 1, h - 4, P.KIT_GREEN_L)
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                layer.px(px + dx, h - stem - 1 + dy, col)
+            layer.px(px, h - stem - 1, P.GOLD if col != P.YELLOW else P.ORANGE)
+        W.piece(c, flower, x)
+    for k in range(5):                                       # red toadstools with white spots
+        x = 30 + k * 64 + rnd() * 20
+        big = 1 + (k % 2)
+
+        def toadstool(layer, px, big=big):
+            layer.rect(px - big, h - 4 - big, px + big - 1, h - 1, P.CREAM)
+            layer.ellipse(px - 0.5, h - 5 - big * 1.5, 2 + big * 1.4, 1.2 + big, P.RED)
+            layer.rect(px - 1 - big, h - 4 - big, px + big, h - 4 - big, P.RED_D)
+            layer.px(px - big, h - 6 - big * 1.5, P.WHITE)
+            layer.px(px + big, h - 5 - big, P.WHITE)
+        W.piece(c, toadstool, x)
+    return W.haze(c, P.SKY_L, 0.04)
+
+
+def forest_ravine() -> list[Sprite]:
+    """A mossy cliff wall with a hanging vine and roots, over blue water with a foam line."""
+    wall = Canvas(8, 48)
+    rnd = noise(13)
+    for y in range(6, 26):                                   # rock face: brown, then grey stone
+        reach = 3 + int(rnd() * 2.5) if y < 16 else 2 + int(rnd() * 2.5)
+        wall.rect(0, y, reach, y, P.EARTH if y < 16 else P.STONE)
+        wall.px(reach, y, P.EARTH_D if y < 16 else P.STONE_D)
+        if y % 5 == 0:
+            wall.rect(0, y, reach - 1, y, P.EARTH_DD if y < 16 else P.STONE_DD)
+    for y in range(26, 48):                                  # wet rock under the water line
+        reach = 1 + int(rnd() * 2)
+        wall.rect(0, y, reach, y, P.WATER_DD)
+        wall.px(reach, y, P.WATER_D)
+    wall.rect(0, 26, 3, 26, P.WHITE)                         # foam where the water meets the rock
+    wall.px(4, 26, P.WATER_L)
+    wall.rect(0, 0, 6, 5, P.KIT_GREEN)                       # turf lip with tufts hanging over the edge
+    wall.rect(0, 0, 6, 1, P.KIT_GREEN_L)
+    wall.px(2, 0, P.LEAF_Y)
+    wall.px(5, 0, P.LEAF_Y)
+    wall.rect(0, 5, 6, 5, P.KIT_GREEN_D)
+    wall.poly([(0, 5), (3, 5), (1.5, 10)], P.KIT_GREEN)
+    wall.poly([(3, 5), (7, 5), (6, 11)], P.KIT_GREEN)
+    wall.px(6, 12, P.KIT_GREEN_DD)
+    wall.px(7, 4, P.KIT_GREEN_D)
+    W.vine(wall, 6, 11, 11, 3, flowers=True)
+    wall.line((2, 10), (3, 18), P.BARK_D)                    # a root poking out
+    wall.px(4, 19, P.BARK_D)
+
+    fill = Canvas(8, 48)
+    for y0, y1, col in ((0, 2, P.EARTH_DD), (3, 12, P.STONE_DD), (13, 19, P.DIST_DD), (20, 25, P.WATER_DD),
+                        (26, 26, P.WHITE), (27, 27, P.WATER_L), (28, 33, P.WATER), (30, 30, P.WATER_L),
+                        (34, 39, P.WATER_D), (37, 37, P.WATER), (40, 47, P.WATER_DD)):
+        fill.rect(0, y0, 7, y1, col)
+    return [single("ravine_forest", wall), single("ravine_forest_fill", fill), flat("ravine_forest_deep", P.WATER_DD)]
+
+
 def forest() -> list[Sprite]:
-    def far(c):
-        castle(c, 230, 104, 0.9, P.BLUE, P.BLUE_L, P.BLUE_L, P.BLUE_D)
-
-    def flowers(c, rnd):
-        for k in range(26):
-            x, y = rnd() * LAYER_W, 10 + rnd() * 14
-            c.px(x, y, (P.YELLOW, P.PINK, P.WHITE, P.RED)[k % 4])
-        for k in range(5):                                   # toadstools
-            x = 20 + k * 64 + rnd() * 20
-            c.rect(x, 18, x, 21, P.CREAM)
-            c.ellipse(x, 17.5, 2, 1.2, P.RED)
-
-    far_layer = Canvas(LAYER_W, 110)
-    hills(far_layer, 110, 4, 5, (55, 95), P.BLUE_D, None, P.BLUE)
-    far(far_layer)
     return [
-        *sky("forest", [P.BLUE_D, P.BLUE, P.BLUE, P.BLUE_L]),
-        puffs("forest", 21, P.WHITE, P.ICE_L),
-        clouds("forest", 150, 20, P.WHITE, P.ICE_L),
-        single("bg_forest_far", far_layer),
-        round_trees("forest", "near", 150, 2, 5, P.BROWN_D, P.GREEN, P.GREEN_L, P.FOREST),
-        bushes("forest", 24, 22, P.GREEN_D, P.GREEN, flowers),
-        *ground("forest", forest_ground),
-        flat("ground_forest_fill", P.BROWN),
-        ravine("forest", P.GREEN, P.LEAF_L, P.BROWN_D, P.OUTLINE, 13),
-        ravine_fill("forest", P.OUTLINE, P.BLACK),
-        flat("ravine_forest_deep", P.BLACK),
+        *smooth_sky("forest", [P.SKY_TOP, P.SKY, P.SKY, P.SKY_L, P.SKY_HAZE]),
+        forest_clouds("bg_forest_puffs", 120, [(30, 50, 34, 16), (110, 90, 26, 12), (176, 40, 40, 18),
+                                               (250, 80, 30, 14), (300, 30, 22, 10)]),
+        forest_clouds("bg_forest_clouds", 150, [(20, 70, 62, 30), (92, 40, 40, 20), (150, 84, 74, 34),
+                                                (222, 34, 46, 22), (282, 74, 56, 28), (120, 104, 36, 14)]),
+        single("bg_forest_far", forest_far()),
+        single("bg_forest_near", forest_near()),
+        single("bg_forest_bushes", forest_bushes()),
+        *ground("forest", forest_ground, forest_earth),
+        flat("ground_forest_fill", P.EARTH_DD),
+        *forest_ravine(),
     ]
 
 

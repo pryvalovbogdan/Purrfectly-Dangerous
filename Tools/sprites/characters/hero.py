@@ -184,7 +184,7 @@ class HeroPose:
     lean: float = 0          # torso tilt forward; 90 = lying flat along the ground, nose first
     length: float = 0        # torso stretched (+) or squashed (-)
     reach: float = 0         # arms longer by this much per segment (throwing, reaching)
-    arm_behind: bool = False  # near arm under the head (flat-out poses, where it would cross the face)
+    arm_behind: bool = True   # near arm under the head, so it never crosses the face
     lift: float = 0          # pixels above the ground
     head_dx: float = 0
     head_dy: float = 0
@@ -199,7 +199,7 @@ class HeroPose:
     ears_back: bool = False
 
 
-THIGH, SHIN, UPPER_ARM, FOREARM = 2.3, 2.2, 2.2, 2.2
+THIGH, SHIN, UPPER_ARM, FOREARM = 2.8, 2.6, 2.2, 2.2
 TORSO = 6.5
 PAD = 24  # scratch margin around the frame while posing
 
@@ -228,9 +228,9 @@ def _ribbon(c: Canvas, root, angle, length, flap, ripple, width0, width1, light,
         c.poly([mid[i], mid[i + 1], bottom[i + 1], bottom[i]], dark)
     tip = (point[0], point[1])
     c.poly([top[-1], tip, bottom[-1]], P.CLEAR)            # notch in the end
-    if edge is not None:
-        for i in range(1, 5):
-            c.px(top[i][0], top[i][1], edge)
+    if edge is not None:                                   # a clean light edge along the top
+        for i in range(1, steps - 1):
+            c.line(top[i], top[i + 1], edge)
     return tip
 
 
@@ -248,6 +248,102 @@ def chibi(c: Canvas, pose: HeroPose, cx: float, ground: float) -> dict:
     return {k: (v[0] - PAD, v[1] - PAD + dy) for k, v in joints.items()}
 
 
+# The head is drawn pixel by pixel, so the ears, eyes and muzzle are crisp and identical in every frame; only
+# the expression changes (see `_face`). Facing right, three-quarter view; the outline is added afterwards.
+#   F fur  L light  D shadow  S stripe  W white  w white shadow  P pink  p dark pink  K eye  H shine
+HEAD = (
+    "..D............F..",
+    "..DF..........FF..",
+    "..DPF........FPF..",
+    ".DDPPF......FPPFF.",
+    ".DFPPPF....FPPPFF.",
+    "..DLLSLSFWWFSFFF..",
+    ".DLLLSLSFWWFSFFFF.",
+    "DFLLFFFFFWWFFFFFFF",
+    "DFFFFFFFFWWFFFFFFF",
+    "DFFFHKKFFWWFHKKFFF",
+    "DFFFKKKFWWWWKKKFFF",
+    "DSSFKKKWWPPWKKKWFF",
+    "DFFFFFWWpWWpWWWWFF",
+    ".DFFFFWWWppWWWWWF.",
+    ".DDFFFwWWWWWWWWFF.",
+    "..DDDDwwWWWWWWFD..",
+    "...DDDDwwwWWWFD...",
+    ".....DDDwwwDD.....",
+)
+EARS_BACK = (
+    "..................",
+    "..................",
+    "DD..............FF",
+    ".DDPF........FPFF.",
+    "..DPPF......FPPF..",
+)
+HEAD_CENTRE = (8.5, 11)          # the stamp pixel that sits on the head joint
+FAR_EYE, NEAR_EYE = (4, 9), (12, 9)
+STAMP_COLOURS = {"F": P.GINGER, "L": P.GINGER_L, "D": P.GINGER_D, "S": P.GINGER_DD, "W": P.FUR_WHITE,
+                 "w": P.FUR_WHITE_D, "P": P.PINK, "p": P.PINK_D, "K": P.BLACK, "H": P.WHITE}
+assert all(len(row) == 18 for row in HEAD + EARS_BACK)
+
+
+def _face(pose: HeroPose) -> list[list[str]]:
+    """The head stamp with this pose's ears, eyes and mouth."""
+    rows = [list(row) for row in HEAD]
+    if pose.ears_back:
+        rows[:5] = [list(row) for row in EARS_BACK]
+    if pose.eye != "open":
+        for x0, y0 in (FAR_EYE, NEAR_EYE):                  # clear both eyes back to fur
+            for y in range(y0, y0 + 3):
+                for x in range(x0, x0 + 3):
+                    if rows[y][x] in "KH":
+                        rows[y][x] = "F"
+        marks = {
+            "shut": [(4, 10), (5, 10), (6, 10), (12, 10), (13, 10), (14, 10)],
+            "wide": [(x, y) for x0 in (4, 12) for x in range(x0, x0 + 3) for y in range(8, 12)],
+            "squint": [(4, 9), (5, 10), (4, 11), (14, 9), (13, 10), (14, 11)],
+            "x": [(4, 9), (6, 9), (5, 10), (4, 11), (6, 11), (12, 9), (14, 9), (13, 10), (12, 11), (14, 11)],
+        }[pose.eye]
+        for x, y in marks:
+            rows[y][x] = "K"
+        if pose.eye == "wide":
+            rows[8][4] = rows[8][12] = rows[11][6] = rows[11][14] = "H"
+    if pose.mouth:                                           # a small open "o" under the nose
+        for x, y in ((9, 12), (10, 12), (9, 13), (10, 13)):
+            rows[y][x] = "p"
+        rows[12][8] = rows[12][11] = "W"
+        rows[13][9] = "K"
+    return rows
+
+
+def _stamp(c: Canvas, rows, x0: int, y0: int) -> None:
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                c.px(x0 + x, y0 + y, STAMP_COLOURS[ch])
+
+
+def despeckle(c: Canvas) -> Canvas:
+    """Replaces lone pixels (no neighbour of the same colour, three or four of another) with that colour, so
+    posed shapes are made of clean flat areas."""
+    src = c.img.load()
+    w, h = c.img.size
+    fixes = []
+    for y in range(h):
+        for x in range(w):
+            colour = src[x, y]
+            if colour[3] == 0:
+                continue
+            around = [src[nx, ny] if 0 <= nx < w and 0 <= ny < h else P.CLEAR
+                      for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))]
+            if colour in around:
+                continue
+            best = max(set(around), key=around.count)
+            if around.count(best) >= 3:
+                fixes.append((x, y, best))
+    for x, y, colour in fixes:
+        src[x, y] = colour
+    return c
+
+
 def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
     lean = math.radians(pose.lean)
     up = (math.sin(lean), -math.cos(lean))                 # along the spine, hip -> neck
@@ -260,19 +356,17 @@ def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
     neck = along(length + 0.5)
     shoulder = along(length - 1.5, 0.8)
     head = (neck[0] + 1.5 + pose.head_dx, neck[1] - 5.6 + pose.head_dy)
-    fur, fur_l, fur_d, stripe = P.GINGER, P.GINGER_L, P.GINGER_D, P.GINGER_DD
+    fur, fur_d, stripe = P.GINGER, P.GINGER_D, P.GINGER_DD
     white, white_d = P.FUR_WHITE, P.FUR_WHITE_D
 
-    # Cape, behind everything: from the back of the neck.
-    cape_root = along(length - 1.5, -2.0)
+    # Cape, behind everything: from the back of the neck, a light edge along its top.
     layer = Canvas(*c.size)
-    _ribbon(layer, cape_root, pose.cape - pose.lean * 0.3, pose.cape_len, pose.flap, pose.ripple, 3, 5.5,
-            P.CAPE, P.CAPE_D, P.CAPE_L)
+    _ribbon(layer, along(length - 1.5, -2.0), pose.cape - pose.lean * 0.3, pose.cape_len, pose.flap, pose.ripple,
+            3, 4.6, P.CAPE, P.CAPE_D, P.CAPE_L)
+    back.paste(despeckle(layer).outline())
 
-    back.paste(layer.outline())
-
-    # Tail: a thick chain from the back of the rump, curling up at the tip; outlined on its own so it
-    # stands clear of the body.
+    # Tail: a thick chain from the back of the rump, curling up at the tip, two dark bands; outlined on its
+    # own so it stands clear of the body.
     layer = Canvas(*c.size)
     point = along(1.0, -3.2)
     angle = pose.tail
@@ -280,123 +374,70 @@ def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
         rad = math.radians(angle)
         point = (point[0] - math.cos(rad) * 1.25, point[1] - math.sin(rad) * 1.25)
         colour = stripe if i in (4, 7) else (fur_d if i < 2 else fur)
-        size = 1.2 if i < 8 else 0.9
-        layer.ellipse(point[0], point[1], size, size, colour)
+        layer.ellipse(point[0], point[1], 1.2 if i < 8 else 0.9, 1.2 if i < 8 else 0.9, colour)
         angle += pose.curl
     tail_tip = point
-    back.paste(layer.outline())
+    back.paste(despeckle(layer).outline())
 
-    def leg(start, spec, colour, paw):
-        knee = c.limb(start, spec[0], THIGH, colour, 3)
-        foot = c.limb(knee, spec[1], SHIN, colour, 3)
-        sole = math.radians(spec[1] + 90)                   # the paw points forward from the shin
-        toe = (foot[0] + math.sin(sole) * 1.5, foot[1] + math.cos(sole) * 1.5)
-        c.line(foot, toe, paw, 2)
-        c.px(foot[0] - 0.5, foot[1] + 0.5, paw)
+    def leg(start, spec, colour, paw, on):
+        knee = on.limb(start, spec[0], THIGH, colour, 3)
+        foot = on.limb(knee, spec[1], SHIN, colour, 3)
+        on.rect(foot[0] - 1, foot[1] - 0.5, foot[0] + 1, foot[1] + 0.5, paw)     # white paw tip
         return foot
 
-    def arm(start, spec, colour, paw, on=c):
+    def arm(start, spec, colour, paw, on):
         elbow = on.limb(start, spec[0], UPPER_ARM + pose.reach, colour, 2)
         hand = on.limb(elbow, spec[1], FOREARM + pose.reach, colour, 2)
         on.rect(hand[0] - 0.5, hand[1] - 0.5, hand[0] + 0.5, hand[1] + 0.5, paw)
         return hand
 
+    body = Canvas(*c.size)
     # Far limbs in shadow.
-    leg(along(0.5, -1.2), pose.far_leg, fur_d, white_d)
-    far_hand = arm((shoulder[0] - front[0] * 2, shoulder[1] - front[1] * 2), pose.far_arm, fur_d, white_d)
+    leg(along(0.5, -1.2), pose.far_leg, fur_d, white_d, body)
+    far_hand = arm((shoulder[0] - front[0] * 2, shoulder[1] - front[1] * 2), pose.far_arm, fur_d, white_d, body)
 
-    # Torso: a soft capsule, shaded on the back, white chest and belly in front.
+    # Torso: a small round body, shadowed along the back, with a white chest and belly in front.
     steps = 8
     for i in range(steps + 1):
         t = i / steps
         p = along(1.5 + t * (length - 2.5))
-        c.ellipse(p[0], p[1], 3.7 - t * 0.7, 3.7 - t * 0.7, fur_d)
+        body.ellipse(p[0], p[1], 3.7 - t * 0.7, 3.7 - t * 0.7, fur_d)
     for i in range(steps + 1):
         t = i / steps
         p = along(1.5 + t * (length - 2.5), 0.7)
-        c.ellipse(p[0] + up[0] * 0.4, p[1] + up[1] * 0.4, 3.0 - t * 0.7, 3.0 - t * 0.7, fur)
+        body.ellipse(p[0] + up[0] * 0.4, p[1] + up[1] * 0.4, 3.0 - t * 0.7, 3.0 - t * 0.7, fur)
     for i in range(steps + 1):
         t = i / steps
         p = along(1.0 + t * (length - 2.0), 2.1 - t * 0.3)
-        c.ellipse(p[0], p[1], 1.9 - t * 0.4, 1.9 - t * 0.4, white)
-    p = along(3.0, -2.9)                                    # a tabby stripe over the back
-    c.line(p, along(3.6, -1.9), stripe)
+        body.ellipse(p[0], p[1], 1.9 - t * 0.4, 1.9 - t * 0.4, white)
+    for d in (2.0, 4.0):                                    # two tabby bands over the back
+        body.line(along(d, -3.0), along(d + 0.5, -1.6), stripe)
+    leg(along(0.8, 0.6), pose.near_leg, fur, white, body)
+    c.paste(despeckle(body))
 
-    leg(along(0.8, 0.6), pose.near_leg, fur, white)
-
+    near_hand = None
     if pose.arm_behind:
         layer = Canvas(*c.size)
-        near_hand = arm(shoulder, pose.near_arm, fur, white, on=layer)
+        near_hand = arm(shoulder, pose.near_arm, fur, white, layer)
         c.paste(layer.outline())
 
-    # Head, in front of the chest.
-    hx, hy = head
-    for side, (base0, base1, tip) in enumerate((((-8.0, -1.8), (-2.4, -6.0), (-6.8, -12.2)),
-                                                ((0.8, -6.4), (7.0, -3.0), (5.2, -12.2)))):
-        if pose.ears_back:
-            tip = (tip[0] - 4.0, tip[1] + 4.0)
-        pts = [(hx + base0[0], hy + base0[1]), (hx + tip[0], hy + tip[1]), (hx + base1[0], hy + base1[1])]
-        c.poly(pts, fur_d if side == 0 else fur)
-        inner = [(pts[0][0] * 0.55 + pts[2][0] * 0.45, pts[0][1] * 0.55 + pts[2][1] * 0.45)]
-        inner = [((pts[0][0] + pts[2][0]) / 2, (pts[0][1] + pts[2][1]) / 2 - 0.5),
-                 (pts[1][0] * 0.75 + (pts[0][0] + pts[2][0]) / 8, pts[1][1] * 0.75 + (pts[0][1] + pts[2][1]) / 8 + 0.5)]
-        c.line(inner[0], inner[1], P.PINK, 2 if side else 1)
-    c.ellipse(hx, hy + 0.3, 8.3, 6.8, fur_d)                # shadowed rim, lower left
-    c.ellipse(hx + 0.6, hy - 0.4, 7.8, 6.4, fur)
-    c.ellipse(hx - 2.4, hy - 4.0, 3.2, 1.5, fur_l)          # light on the crown
-    c.ellipse(hx - 7.6, hy + 2.4, 1.5, 1.8, fur_d)          # cheek tuft
-    c.px(hx - 9.2, hy + 3.0, fur_d)
-    c.rect(hx - 2.8, hy - 6.2, hx - 2.8, hy - 5.0, stripe)  # forehead stripes
-    c.rect(hx - 0.8, hy - 6.6, hx - 0.8, hy - 5.2, stripe)
-    c.px(hx - 7.0, hy + 0.2, stripe)                        # cheek stripes
-    c.px(hx - 6.4, hy + 1.4, stripe)
+    # Head: the pixel stamp, on whole pixels so it never shimmers between frames.
+    x0, y0 = r(head[0] - HEAD_CENTRE[0]), r(head[1] - HEAD_CENTRE[1])
+    _stamp(c, _face(pose), x0, y0)
 
-    # White blaze down the face into a white muzzle and chin.
-    c.rect(hx + 1.6, hy - 6.2, hx + 2.4, hy - 1.0, white)
-    c.ellipse(hx + 2.8, hy + 2.6, 4.6, 2.9, white)
-    c.ellipse(hx + 1.8, hy + 4.4, 3.4, 1.8, white)
-    c.px(hx - 1.6, hy + 4.0, white_d)
-    c.px(hx - 0.6, hy + 5.2, white_d)
-    c.rect(hx + 2.0, hy + 0.6, hx + 3.0, hy + 0.6, P.PINK)  # nose
-    c.px(hx + 2.5, hy + 1.6, P.PINK_D)                      # mouth
-    if pose.mouth:
-        c.rect(hx + 1.6, hy + 2.4, hx + 3.4, hy + 3.2, P.PINK_D)
-        c.px(hx + 2.5, hy + 2.4, P.OUTLINE)
-
-    for ex in (hx - 1.4, hx + 5.4):                         # big eyes: far, near
-        if pose.eye == "open":
-            c.rect(ex, hy - 2.0, ex + 1, hy + 0.4, P.BLACK)
-            c.px(ex + 1, hy - 2.0, P.WHITE)
-        elif pose.eye == "wide":
-            c.rect(ex - 0.4, hy - 2.6, ex + 1, hy + 0.4, P.BLACK)
-            c.px(ex + 1, hy - 2.6, P.WHITE)
-            c.px(ex - 0.4, hy + 0.4, P.WHITE)
-        elif pose.eye == "shut":
-            c.rect(ex - 0.4, hy - 0.4, ex + 1, hy - 0.4, P.BLACK)
-        elif pose.eye == "squint":                          # > < : screwed shut
-            c.px(ex, hy - 1.6, P.BLACK)
-            c.px(ex + 1, hy - 0.6, P.BLACK)
-            c.px(ex, hy + 0.4, P.BLACK)
-        elif pose.eye == "x":
-            c.px(ex - 0.4, hy - 1.8, P.BLACK)
-            c.px(ex + 1.4, hy - 1.8, P.BLACK)
-            c.px(ex + 0.5, hy - 0.8, P.BLACK)
-            c.px(ex - 0.4, hy + 0.2, P.BLACK)
-            c.px(ex + 1.4, hy + 0.2, P.BLACK)
-
-    # Scarf knotted under the chin, its short end hanging over the chest.
-    knot = (hx + 0.5 + front[0] * 0.5, hy + 6.6)
-    c.line((hx - 4.0, hy + 5.8), (knot[0] + 1.2, hy + 6.2), P.CAPE_D, 2)
-    c.line((hx - 3.0, hy + 5.6), (knot[0], hy + 5.6), P.CAPE)
-    c.rect(knot[0], knot[1], knot[0] + 1, knot[1] + 1, P.CAPE)
-    c.px(knot[0] + 1, knot[1] + 2, P.CAPE_D)
+    # Scarf knotted under the chin (replacing the bottom row of the chin), its end hanging over the chest.
+    c.rect(x0 + 3, y0 + 17, x0 + 12, y0 + 17, P.CAPE)
+    c.rect(x0 + 5, y0 + 17, x0 + 9, y0 + 17, P.CAPE_L)
+    c.rect(x0 + 4, y0 + 18, x0 + 11, y0 + 18, P.CAPE_D)
+    c.rect(x0 + 10, y0 + 18, x0 + 11, y0 + 19, P.CAPE)
+    c.px(x0 + 11, y0 + 20, P.CAPE_D)
 
     if not pose.arm_behind:                                 # near arm outlined, so it reads over the head
         layer = Canvas(*c.size)
-        near_hand = arm(shoulder, pose.near_arm, fur, white, on=layer)
+        near_hand = arm(shoulder, pose.near_arm, fur, white, layer)
         c.paste(layer.outline())
-    return {"head": head, "neck": neck, "hip": hip, "tail_tip": tail_tip, "near_hand": near_hand,
-            "far_hand": far_hand}
+    return {"head": (x0 + HEAD_CENTRE[0], y0 + HEAD_CENTRE[1]), "neck": neck, "hip": hip, "tail_tip": tail_tip,
+            "near_hand": near_hand, "far_hand": far_hand}
 
 
 def hero_frame(pose: HeroPose, extras=(), under=(), dx: float = 0) -> Image.Image:
@@ -421,7 +462,7 @@ def running(phase: float, amount: float = 1.0, **overrides) -> HeroPose:
     s, co = math.sin(phase), math.cos(phase)
 
     def leg(p):
-        thigh = math.sin(p) * 48 * amount
+        thigh = math.sin(p) * 55 * amount
         knee = 55 * max(0.0, -math.cos(p)) * amount + 6
         return (thigh, thigh - knee)
 
@@ -431,7 +472,7 @@ def running(phase: float, amount: float = 1.0, **overrides) -> HeroPose:
 
     pose = HeroPose(near_leg=leg(phase), far_leg=leg(phase + math.pi), near_arm=arm(phase),
                     far_arm=arm(phase + math.pi), lean=10, lift=1.2 * abs(co) * amount,
-                    head_dy=0.6 * abs(s), cape=88 + 6 * math.sin(phase * 2), cape_len=16, flap=phase * 2,
+                    head_dy=0.6 * abs(s), cape=100 + 6 * math.sin(phase * 2), cape_len=13, flap=phase * 2,
                     ripple=16, tail=-62 + 8 * math.sin(phase + 1), curl=15)
     return replace(pose, **overrides)
 
@@ -506,7 +547,7 @@ def build() -> list[Sprite]:
 
     # Stands at ease: breathing, the cape stirring, the tail swishing; blinks on the last frame.
     hero.add("idle", [
-        hero_frame(HeroPose(cape=72 + k * 3, cape_len=15, flap=k * 1.6, ripple=16, tail=-70 + k * 3, curl=16, head_dy=dy, eye=e))
+        hero_frame(HeroPose(cape=88 + k * 3, cape_len=12, flap=k * 1.6, ripple=16, tail=-70 + k * 3, curl=16, head_dy=dy, eye=e))
         for k, (dy, e) in enumerate(((0, "open"), (0, "open"), (0.6, "open"), (0.6, "shut")))
     ], fps=4)
 
@@ -519,15 +560,15 @@ def build() -> list[Sprite]:
     ], fps=8)
     # Coming down: arms up, legs reaching for the ground, cape lifting above.
     hero.add("fall", [
-        hero_frame(HeroPose(near_leg=(15, 5), far_leg=(-10, -10), near_arm=(-160, -185), far_arm=(150, 170), reach=0.6,
+        hero_frame(HeroPose(near_leg=(15, 5), far_leg=(-10, -10), near_arm=(115, 150), far_arm=(-115, -150), reach=0.8,
                             lean=-4, cape=135, flap=0.5, ripple=14, tail=15, curl=14, eye="wide", mouth=True)),
-        hero_frame(HeroPose(near_leg=(12, 0), far_leg=(-8, -14), near_arm=(-168, -190), far_arm=(155, 178), reach=0.6,
+        hero_frame(HeroPose(near_leg=(12, 0), far_leg=(-8, -14), near_arm=(125, 160), far_arm=(-125, -160), reach=0.8,
                             lean=-4, cape=145, flap=2.0, ripple=14, tail=20, curl=15, eye="wide", mouth=True)),
     ], fps=8)
 
     # Double Pounce: tucks into a ball and flips forward once.
     tuck = HeroPose(near_leg=(95, -10), far_leg=(80, -20), near_arm=(110, 170), far_arm=(95, 160), lean=25,
-                    cape=70, cape_len=8, ripple=6, tail=-30, curl=22, eye="shut", ears_back=True, head_dy=1.5)
+                    cape=70, cape_len=8, ripple=6, tail=-30, curl=22, eye="open", head_dy=1.5)
     ball = Canvas(*SIZE)
     chibi(ball, tuck, CX, GROUND - 6)
     box = ball.img.getbbox()
@@ -537,9 +578,9 @@ def build() -> list[Sprite]:
         c = Canvas(*SIZE)
         c.paste(ball.img.rotate(-90 * k, resample=Image.NEAREST, center=centre))
         c.outline()
-        for j in range(3):                                   # motion arc behind the spin
-            a = math.radians(-90 * k + 120 + j * 25)
-            c.px(centre[0] + math.cos(a) * 12, centre[1] - math.sin(a) * 12, P.WHITE if j else P.GREY_L)
+        for j in range(5):                                   # a white motion arc trailing the spin
+            a = math.radians(-90 * k + 110 + j * 14)
+            c.px(centre[0] + math.cos(a) * 13, centre[1] - math.sin(a) * 13, P.WHITE if j > 1 else P.GREY_L)
         spin.append(c.img)
     hero.add("double", spin, fps=16)
 
@@ -566,10 +607,10 @@ def build() -> list[Sprite]:
     # Ghost Dash: a see-through blue-white copy trailing after-images and speed lines.
     dash = []
     for i in range(4):
-        pose = running(math.pi / 2 + i * math.pi / 2, 1.1, lean=18, eye="squint", ears_back=True, cape_len=10)
+        pose = running(math.pi / 2 + i * math.pi / 2, 1.1, lean=18, cape_len=10)
         body = hero_frame(pose, dx=2)
         frame = Image.new("RGBA", SIZE, P.CLEAR)
-        for offset, alpha in ((-7, 60), (-4, 110)):
+        for offset, alpha in ((-6, 70),):
             ghost = Image.new("RGBA", SIZE, P.CLEAR)
             ghost.alpha_composite(ghostly(body, alpha, cape=False), (offset - (i % 2), 0))
             frame.alpha_composite(ghost)
@@ -578,7 +619,7 @@ def build() -> list[Sprite]:
             n = 3 + (i + k * 3) % 4
             lines.line((2 + (k + i) % 3, y), (2 + (k + i) % 3 + n, y), P.WHITE if k % 2 else P.CYAN)
         frame.alpha_composite(see_through(lines.img, 200))
-        frame.alpha_composite(ghostly(body, 215))
+        frame.alpha_composite(ghostly(body, 235))
         dash.append(frame)
     hero.add("dash", dash, fps=16)
 
@@ -593,7 +634,7 @@ def build() -> list[Sprite]:
     hero.add("pounce", pounce, fps=12)
 
     # Hurt: flinches back, eyes screwed shut, a star popping off its head.
-    hurt_pose = HeroPose(near_leg=(25, 5), far_leg=(-5, -20), near_arm=(-150, -175), far_arm=(-120, -150), reach=0.5, lean=-16,
+    hurt_pose = HeroPose(near_leg=(25, 5), far_leg=(-5, -20), near_arm=(120, 160), far_arm=(-110, -150), reach=0.8, lean=-16,
                          lift=1, cape=60, flap=1.0, ripple=20, tail=40, curl=12, eye="squint", mouth=True,
                          ears_back=True)
 
@@ -604,7 +645,7 @@ def build() -> list[Sprite]:
         return draw
 
     hurt = hero_frame(hurt_pose, extras=[hit_star(0)])
-    hero.add("hurt", [tint(hurt, P.WHITE, 0.6), hero_frame(hurt_pose, extras=[hit_star(1)])], fps=10)
+    hero.add("hurt", [tint(hurt, P.WHITE, 0.3), hero_frame(hurt_pose, extras=[hit_star(1)])], fps=10)
     hero.add("death", death_frames(hurt_pose), fps=8, loop=False)
 
     return [hero, yarn()]
