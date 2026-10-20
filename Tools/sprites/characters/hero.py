@@ -1,153 +1,388 @@
-"""The hero (32x32) and his fireballs."""
+"""The kitten hero (40x28, an orange tabby on all fours) and its ball of yarn.
+
+`cat()` draws a side-on cat from a `CatPose`; other modules reuse it (the ghost cats, the award icons).
+"""
+from __future__ import annotations
+
 import math
+from dataclasses import dataclass, replace
+
+from PIL import Image
 
 import palette as P
-from draw import Body, Canvas, Pose, humanoid, stride, swing, tint, topple
+from draw import Canvas, end_of, see_through, tint
 from sprite import Sprite
 
-SIZE = (48, 48)
-CX, GROUND = 16, 46
-HAIR, HAIR_LIGHT = P.GREY_D, P.GREY
-# Chibi proportions: a head as tall as the body, short limbs.
-BODY = Body(head=(16, 15), torso=(9, 9), thigh=4.5, shin=4.5, upper=4.5, fore=4.5, limb=3, hair=None,
-            eye=P.SKIN, top=P.BROWN, top_d=P.BROWN_D, legs=P.SLATE, legs_d=P.BLACK, boots=P.BROWN_D,
-            belt=P.SAND)
-BLADE = 14
+SIZE = (44, 28)
+CX, GROUND = 23, 26
 
 
-def figure(pose: Pose, sword: float = 35, fire: float = 0, dust: int = 0) -> Canvas:
-    """`sword` is the blade angle from straight up (positive leans forward); `fire` is the size of
-    the flame gathering at its tip."""
+@dataclass(frozen=True)
+class Coat:
+    fur: tuple = P.GINGER
+    fur_l: tuple = P.GINGER_L
+    fur_d: tuple = P.GINGER_D
+    stripe: tuple = P.GINGER_DD
+    belly: tuple = P.CREAM
+    belly_d: tuple = P.CREAM_D
+    nose: tuple = P.PINK
+    eye: tuple = P.BLACK
+    shine: tuple = P.WHITE
+    inner_ear: tuple = P.PINK
+
+
+TABBY = Coat()
+
+
+@dataclass(frozen=True)
+class CatPose:
+    """Angles in degrees: 0 = straight down, positive = forward (toward the nose).
+    Each leg is (upper angle, lower angle), both absolute."""
+    front_near: tuple = (8, 0)
+    front_far: tuple = (-6, -6)
+    back_near: tuple = (-6, 0)
+    back_far: tuple = (8, 0)
+    stretch: float = 0      # body longer (+) or bunched up (-)
+    tilt: float = 0         # chest this many pixels higher than the rump (+ = nose up)
+    lift: float = 0         # pixels above the ground
+    tail: float = 50        # tail root angle above straight back (90 = straight up)
+    curl: float = 9         # how much the tail bends forward per segment
+    head_dx: float = 0
+    head_dy: float = 0
+    eye: str = "open"       # open | shut | x | wide
+    mouth: bool = False
+    ears_back: bool = False
+    bib: bool = True
+
+
+UPPER, LOWER = 3.5, 3.2
+
+
+def _leg_end(start, leg) -> tuple[float, float]:
+    knee = end_of(start, leg[0], UPPER)
+    return end_of(knee, leg[1], LOWER)
+
+
+def cat(c: Canvas, pose: CatPose, cx: float = CX, ground: float = GROUND, coat: Coat = TABBY) -> dict:
+    """Draws a right-facing cat whose lowest paw rests on `ground` (minus `pose.lift`)."""
+    half = 4.5 + pose.stretch / 2
+
+    def anchors(by: float):
+        chest = (cx + half, by - pose.tilt / 2)
+        rump = (cx - half, by + pose.tilt / 2)
+        shoulder = (chest[0] + 0.5, chest[1] + 2)
+        hip = (rump[0] - 0.5, rump[1] + 2)
+        return chest, rump, shoulder, hip
+
+    _, _, shoulder0, hip0 = anchors(0.0)
+    lowest = max(_leg_end(shoulder0, pose.front_near)[1], _leg_end(shoulder0, pose.front_far)[1],
+                 _leg_end(hip0, pose.back_near)[1], _leg_end(hip0, pose.back_far)[1])
+    by = ground - 0.5 - pose.lift - lowest
+    chest, rump, shoulder, hip = anchors(by)
+
+    def leg(start, spec, color, paw):
+        knee = c.limb(start, spec[0], UPPER, color, 2)
+        foot = c.limb(knee, spec[1], LOWER, color, 2)
+        c.rect(foot[0] - 0.5, foot[1] - 0.5, foot[0] + 1.5, foot[1] + 0.5, paw)
+        return foot
+
+    # Far legs, darker, behind everything.
+    leg((shoulder[0] - 1, shoulder[1]), pose.front_far, coat.fur_d, coat.belly_d)
+    leg((hip[0] + 1, hip[1]), pose.back_far, coat.fur_d, coat.fur_d)
+
+    # Tail: a chain of short segments that curls toward the tip, with a ringed tabby pattern.
+    base = (rump[0] - 3, rump[1] - 1.5)
+    angle = pose.tail
+    point = base
+    for i in range(10):
+        rad = math.radians(angle)
+        nxt = (point[0] - math.cos(rad) * 1.15, point[1] - math.sin(rad) * 1.15)
+        color = coat.stripe if i in (4, 8, 9) else coat.fur
+        c.rect(nxt[0] - 0.5, nxt[1] - 0.5, nxt[0] + 0.5, nxt[1] + 0.5, color)
+        point = nxt
+        angle += pose.curl
+    tail_tip = point
+
+    # Body: a capsule from rump to chest; the haunch is a touch bigger than the chest.
+    steps = 10
+    for i in range(steps + 1):
+        t = i / steps
+        x = rump[0] + (chest[0] - rump[0]) * t
+        y = rump[1] + (chest[1] - rump[1]) * t
+        c.ellipse(x, y, 3.2, 3.9 - t * 0.6, coat.fur)
+    # Belly shadow, back highlight and tabby stripes across the back.
+    for i in range(steps + 1):
+        t = i / steps
+        x = rump[0] + (chest[0] - rump[0]) * t
+        y = rump[1] + (chest[1] - rump[1]) * t
+        c.px(x, y + 3.2 - t * 0.6, coat.fur_d)
+        if 0.15 < t < 0.85:
+            c.px(x, y - 3.2 + t * 0.6, coat.fur_l)
+    for t in (0.22, 0.45, 0.68):
+        x = rump[0] + (chest[0] - rump[0]) * t
+        y = rump[1] + (chest[1] - rump[1]) * t - 3.6 + t * 0.6
+        c.rect(x, y + 1, x, y + 2.5, coat.stripe)
+    if pose.bib:
+        c.ellipse(chest[0] + 1.5, chest[1] + 1.5, 1.6, 2.0, coat.belly)
+
+    leg(hip, pose.back_near, coat.fur, coat.belly)
+    # Haunch over the top of the near hind leg.
+    c.ellipse(rump[0] - 0.5, rump[1] + 0.5, 2.2, 2.4, coat.fur)
+    c.px(rump[0] - 1, rump[1] + 0.5, coat.stripe)
+    c.px(rump[0], rump[1] - 0.5, coat.stripe)
+    leg(shoulder, pose.front_near, coat.fur, coat.belly)
+
+    # Head, in front of the chest.
+    hx, hy = chest[0] + 4.5 + pose.head_dx, chest[1] - 3.5 + pose.head_dy
+    for ex, tip in ((hx - 3.0, -2.5), (hx + 1.0, -1.0)):
+        if pose.ears_back:
+            c.poly([(ex - 2, hy - 2), (ex - 3.5 + tip / 3, hy - 4.5), (ex + 1.5, hy - 3.5)], coat.fur)
+        else:
+            c.poly([(ex - 1.8, hy - 2), (ex - 0.5 + tip / 4, hy - 7), (ex + 1.8, hy - 2)], coat.fur)
+            c.px(ex - 0.3 + tip / 6, hy - 4, coat.inner_ear)
+    c.ellipse(hx, hy, 4.3, 3.6, coat.fur)
+    c.ellipse(hx + 0.5, hy + 1.2, 4.6, 2.6, coat.fur)
+    c.rect(hx - 1, hy - 3.5, hx - 1, hy - 2.5, coat.stripe)       # forehead stripes
+    c.rect(hx + 1, hy - 3.5, hx + 1, hy - 3, coat.stripe)
+    c.px(hx - 3.5, hy + 0.5, coat.stripe)                          # cheek stripe
+    c.ellipse(hx + 3, hy + 1.8, 2.0, 1.4, coat.belly)              # muzzle
+    c.px(hx + 4.5, hy + 0.5, coat.nose)
+    if pose.mouth:
+        c.rect(hx + 3, hy + 2.5, hx + 4, hy + 3, P.PINK_D)
+    ex, ey = hx + 1.5, hy - 0.5
+    if pose.eye == "open":
+        c.rect(ex, ey - 1, ex + 1, ey + 1, coat.eye)
+        c.px(ex + 1, ey - 1, coat.shine)
+    elif pose.eye == "wide":
+        c.rect(ex - 0.5, ey - 1.5, ex + 1, ey + 1, coat.eye)
+        c.px(ex + 1, ey - 1.5, coat.shine)
+        c.px(ex - 0.5, ey + 1, coat.shine)
+    elif pose.eye == "shut":
+        c.rect(ex - 0.5, ey + 0.5, ex + 1, ey + 0.5, coat.eye)
+    elif pose.eye == "x":
+        c.line((ex - 1, ey - 1), (ex + 1, ey + 1), coat.eye)
+        c.line((ex - 1, ey + 1), (ex + 1, ey - 1), coat.eye)
+    return {"head": (hx, hy), "chest": chest, "rump": rump, "tail_tip": tail_tip,
+            "paw": _leg_end(shoulder, pose.front_near)}
+
+
+def kitten(pose: CatPose, coat: Coat = TABBY, extras=()) -> Canvas:
     c = Canvas(*SIZE)
+    joints = cat(c, pose, coat=coat)
+    for extra in extras:
+        extra(c, joints)
+    return c.outline()
 
-    def face_and_hair(canvas, joints):
-        x, y = joints["head"]
-        left, top = x - 8, y - 7.5
-        canvas.rect(left, top, left + 15, top + 5, HAIR)             # crown
-        canvas.rect(left, top, left + 3, top + 12, HAIR)             # back of the head
-        for sx, tip_x, tip_y in ((2, -1, -6), (6, 5, -8), (10, 11, -7), (14, 17, -5)):   # spikes on top
-            canvas.poly([(left + sx - 3, top + 1), (left + tip_x, top + tip_y), (left + sx + 3, top + 1)], HAIR)
-        for sy, tip in ((3, -5), (9, -5)):                           # spikes at the back
-            canvas.poly([(left + 1, top + sy - 3), (left + tip, top + sy), (left + 1, top + sy + 3)], HAIR)
-        canvas.poly([(left + 6, top + 5), (left + 9, top + 9), (left + 12, top + 5)], HAIR)   # fringe
-        canvas.poly([(left + 12, top + 5), (left + 16, top + 8), (left + 16, top + 5)], HAIR)
-        for hx, hy in ((4, 0), (5, -2), (9, -1), (10, -3), (14, 0), (1, 5), (2, 9)):
-            canvas.px(left + hx, top + hy, HAIR_LIGHT)
-        for eye in (9, 13):                                          # tall cartoon eyes
-            canvas.rect(left + eye, top + 9, left + eye + 1, top + 12, P.BLACK)
-            canvas.px(left + eye, top + 9, P.WHITE)
-        canvas.rect(left + 4, top + 9, left + 5, top + 11, P.SKIN_D)  # ear
-        for i in range(3):                                           # the scar across his cheek
-            canvas.px(left + 5 + i, top + 12 + i, P.RED)
-        canvas.rect(left + 11, top + 14, left + 12, top + 14, P.BROWN_D)   # mouth
-        hip_x, hip_y = joints["hip"]                                 # buckle on the belt
-        canvas.rect(hip_x + 1, hip_y - 2, hip_x + 2, hip_y - 1, P.GOLD)
 
-    def blade(canvas, joints):
-        hx, hy = joints["near_hand"]
-        rad = math.radians(sword)
-        dx, dy = math.sin(rad), -math.cos(rad)
-        tip = (hx + dx * BLADE, hy + dy * BLADE)
-        canvas.line((hx - dx * 3, hy - dy * 3), (hx, hy), P.BROWN_D, 2)                 # grip
-        canvas.line((hx + dx, hy + dy), tip, P.GREY_L, 3)
-        canvas.line((hx + dx * 2, hy + dy * 2), tip, P.WHITE, 1)
-        canvas.line((hx - dy * 3, hy + dx * 3), (hx + dy * 3, hy - dx * 3), P.GOLD_D, 2)  # crossguard
-        if fire > 0:
-            canvas.ellipse(tip[0] + dx, tip[1] + dy, fire, fire, P.ORANGE)
-            canvas.ellipse(tip[0] + dx, tip[1] + dy, fire * 0.55, fire * 0.55, P.YELLOW)
-        for i in range(dust):
-            canvas.rect(CX + 9 + i * 4, GROUND - 2 - (i % 2) * 3, CX + 11 + i * 4, GROUND - (i % 2) * 3, P.GREY_L)
+def gallop(phase: float, amount: float = 1.0) -> CatPose:
+    """A rotary gallop: front and hind pairs swing against each other; extended in the air, gathered
+    on the ground."""
+    s = math.sin(phase)
 
-    pose.extras = [face_and_hair, blade, *pose.extras]
-    humanoid(c, BODY, pose, CX, GROUND)
-    return c
+    def front(p):
+        sp = math.sin(p)
+        upper = (48 if sp > 0 else 14) * sp * amount + 4
+        fold = 75 * max(0.0, -math.sin(p + 0.8))
+        return (upper, upper - fold)
+
+    def back(p):
+        sp = math.sin(p)
+        upper = -(46 if sp > 0 else 12) * sp * amount
+        hock = 55 * max(0.0, math.sin(p + math.pi - 0.6))
+        return (upper, upper - hock)
+
+    return CatPose(front_near=front(phase), front_far=front(phase - 0.7), back_near=back(phase),
+                   back_far=back(phase - 0.7), stretch=2.2 * s * amount, lift=1.2 * max(0.0, s) * amount,
+                   tilt=-0.8 * math.cos(phase), tail=38 + 14 * math.sin(phase + 1), head_dy=0.6 * math.cos(phase))
+
+
+def ghostly(image: Image.Image, alpha: int) -> Image.Image:
+    """Pale blue-white tint with partial alpha, for Ghost Dash."""
+    out = tint(image, P.CYAN, 0.62)
+    return see_through(out, alpha)
 
 
 def build() -> list[Sprite]:
     hero = Sprite("hero", SIZE, cx=CX, ground=GROUND)
 
-    run = []
-    for i in range(8):
-        phase = i / 8 * math.tau
-        legs = stride(phase, swing=48, bend=60)
-        # The sword arm stays forward and only bobs; the free arm swings against the legs.
-        run.append(figure(Pose(near_leg=legs[0], far_leg=legs[1], near_arm=(35 + math.sin(phase) * 12, 40),
-                               far_arm=(math.sin(phase) * 45, 50), lean=1),
-                          sword=40 + math.sin(phase) * 10).outline())
-    hero.add("run", run, fps=14)
+    run_poses = [gallop(i / 8 * math.tau) for i in range(8)]
+    hero.add("run", [kitten(p) for p in run_poses], fps=14)
 
-    hero.add("stop", [
-        figure(Pose(near_leg=(40, 5), far_leg=(-5, 35), near_arm=(50, 30), far_arm=(-40, 30), lean=-step),
-               sword=60, dust=step).outline()
-        for step in (1, 2, 2, 1)
-    ], fps=10, loop=False)
+    def dust(n):
+        def draw(c, joints):
+            for i in range(n):
+                x, y = CX + 10 + i * 3, GROUND - (i % 2) * 2
+                c.rect(x, y - 1, x + 1, y, P.GREY_L)
+        return draw
 
+    # Skids to a halt: forepaws braced ahead, rump down.
+    stop = []
+    for i, step in enumerate((1, 2, 2, 1)):
+        stop.append(kitten(CatPose(front_near=(45, 40), front_far=(38, 32), back_near=(20, -30), back_far=(28, -25),
+                                   tilt=1.5, stretch=-0.5, tail=60, ears_back=i < 2), extras=[dust(step)]))
+    hero.add("stop", stop, fps=10, loop=False)
+
+    # Sits up, tail swishing, blinks.
+    sit = dict(front_near=(6, 4), front_far=(0, -2), back_near=(80, -40), back_far=(75, -45), stretch=-2.5, tilt=5,
+               curl=-17)
     hero.add("idle", [
-        figure(Pose(near_leg=(8, 4), far_leg=(-8, 4), near_arm=(25, 40), far_arm=(-6, 12), head_dy=dy),
-               sword=25 + dy * 3).outline()
-        for dy in (0, 0, 1, 1)
+        kitten(CatPose(**sit, tail=t, eye=e, head_dy=dy))
+        for t, e, dy in ((-4, "open", 0), (2, "open", 0), (6, "open", 0.5), (2, "shut", 0.5))
     ], fps=4)
 
+    # Take-off: hind legs still pushing, front paws tucked; then sailing.
     hero.add("jump", [
-        figure(Pose(near_leg=(55, 80), far_leg=(-5, 55), near_arm=(120, 20), far_arm=(-140, -10), lean=1), sword=10).outline(),
-        figure(Pose(near_leg=(45, 65), far_leg=(5, 45), near_arm=(110, 20), far_arm=(-130, -10), lean=1), sword=15).outline(),
+        kitten(CatPose(front_near=(70, 150), front_far=(60, 140), back_near=(-50, -60), back_far=(-40, -55),
+                       stretch=1.5, tilt=3, tail=20, curl=4)),
+        kitten(CatPose(front_near=(60, 130), front_far=(50, 120), back_near=(-35, -55), back_far=(-25, -50),
+                       stretch=1, tilt=2, tail=28, curl=5)),
     ], fps=8)
-
+    # Coming down: paws reaching for the ground, tail up for balance.
     hero.add("fall", [
-        figure(Pose(near_leg=(20, 12), far_leg=(-22, 8), near_arm=(80, 30), far_arm=(-110, -20)), sword=50).outline(),
-        figure(Pose(near_leg=(14, 8), far_leg=(-16, 12), near_arm=(85, 25), far_arm=(-120, -15)), sword=55).outline(),
+        kitten(CatPose(front_near=(30, 15), front_far=(22, 8), back_near=(20, 0), back_far=(10, -5), tilt=-1.5,
+                       tail=65, curl=10, eye="wide")),
+        kitten(CatPose(front_near=(26, 12), front_far=(18, 6), back_near=(16, -2), back_far=(8, -8), tilt=-1.5,
+                       tail=70, curl=12, eye="wide")),
     ], fps=8)
 
-    # The fireball is thrown off the blade: draw back, thrust level, flame flares at the tip.
-    cast_arm = [(-30, 60), (20, 50), (75, 15), (88, 2), (88, 2), (60, 25)]
-    cast_sword = [-30, 20, 80, 90, 90, 70]
-    cast_fire = [0, 0, 2, 4, 3, 0]
-    hero.add("cast", [
-        figure(Pose(near_leg=(20, 8), far_leg=(-20, 8), near_arm=cast_arm[i], far_arm=(-30, 40),
-                    lean=1 if i in (2, 3, 4) else 0), sword=cast_sword[i], fire=cast_fire[i]).outline()
-        for i in range(6)
-    ], fps=16, loop=False)
+    # Double Pounce: curls into a ball and flips once in the air.
+    ball = Canvas(*SIZE)
+    bx, by = CX + 1, GROUND - 9
+    ball.ellipse(bx, by, 7, 6.5, P.GINGER)
+    ball.ellipse(bx - 1, by + 1, 5, 4.5, P.GINGER_D)
+    ball.ellipse(bx + 2, by + 2, 2.5, 2, P.CREAM)
+    for dx, dy in ((-5, -3), (-2, -6), (2, -6)):
+        ball.rect(bx + dx, by + dy, bx + dx + 1, by + dy + 1, P.GINGER_DD)
+    for i in range(12):                                  # tail wrapped around the outside
+        a = math.radians(200 + i * 14)
+        ball.rect(bx + math.cos(a) * 7 - 0.5, by + math.sin(a) * 6.5 - 0.5, bx + math.cos(a) * 7 + 0.5,
+                  by + math.sin(a) * 6.5 + 0.5, P.GINGER_DD if i in (4, 8, 10, 11) else P.GINGER)
+    ball.poly([(bx + 3, by - 5), (bx + 5, by - 9), (bx + 6, by - 4)], P.GINGER)       # ear sticking out
+    ball.px(bx + 5, by - 6, P.PINK)
+    ball.rect(bx + 4, by - 2, bx + 5, by - 2, P.BLACK)   # shut eye
+    ball.px(bx + 6.5, by, P.PINK)
+    spin = []
+    for k in range(4):
+        rotated = ball.img.rotate(-90 * k, resample=Image.NEAREST, center=(bx, by))
+        c = Canvas(*SIZE)
+        c.paste(rotated)
+        spin.append(c.outline())
+    hero.add("double", spin, fps=16)
 
-    hurt_pose = figure(Pose(near_leg=(30, 10), far_leg=(-10, 30), near_arm=(120, 0), far_arm=(-130, 0), lean=-2),
-                       sword=-20).outline()
-    hero.add("hurt", [tint(hurt_pose.img, P.WHITE, 0.8), hurt_pose.img], fps=10)
-    hero.add("death", [topple(hurt_pose.img, t / 5, (CX, GROUND)) for t in range(6)], fps=8, loop=False)
+    # Yarn Shot: rears up and bats the yarn forward with a front paw.
+    throw = [
+        CatPose(front_near=(60, 110), front_far=(10, 0), back_near=(10, -20), back_far=(20, -15), tilt=3, stretch=-1,
+                tail=45),
+        CatPose(front_near=(150, 160), front_far=(30, 20), back_near=(15, -25), back_far=(25, -20), tilt=5,
+                stretch=-1, tail=55, mouth=True),
+        CatPose(front_near=(95, 95), front_far=(20, 10), back_near=(5, -15), back_far=(15, -10), tilt=2, stretch=0.5,
+                tail=50, mouth=True),
+        CatPose(front_near=(40, 30), front_far=(5, 0), back_near=(0, -10), back_far=(10, -5), tilt=0.5, tail=45),
+    ]
+    hero.add("throw", [kitten(p) for p in throw], fps=16, loop=False)
 
-    return [hero, fireball("fireball", 16, 3.0), fireball("fireball_charged", 24, 5.5)]
+    # Ghost Dash: a see-through kitten trailing two fading after-images.
+    dash = []
+    for i in range(4):
+        pose = replace(gallop(math.pi / 2 + i * 0.4, 1.1), eye="shut", ears_back=True)
+        body = kitten(pose).img
+        frame = Image.new("RGBA", SIZE, P.CLEAR)
+        for offset, alpha in ((-6, 55), (-3, 95)):
+            shifted = Image.new("RGBA", SIZE, P.CLEAR)
+            shifted.alpha_composite(ghostly(body, alpha), (offset - (i % 2), 0))
+            frame.alpha_composite(shifted)
+        frame.alpha_composite(ghostly(body, 170))
+        dash.append(frame)
+    hero.add("dash", dash, fps=16)
+
+    # Super Pounce: fully stretched, forepaws reaching, hind legs streaming behind.
+    pounce = []
+    for i, (s, t) in enumerate(((3.0, 2.5), (4.5, 1.0), (4.5, 0.0), (3.5, -1.5))):
+        pose = CatPose(front_near=(110 - i * 8, 100 - i * 8), front_far=(100 - i * 8, 92 - i * 8),
+                       back_near=(-105, -95), back_far=(-95, -88), stretch=s, tilt=t, lift=2, tail=10, curl=2,
+                       ears_back=True, eye="wide", mouth=i in (1, 2))
+        pounce.append(kitten(pose, extras=[streaks(i)]))
+    hero.add("pounce", pounce, fps=12)
+
+    hurt_pose = CatPose(front_near=(-10, -25), front_far=(-15, -30), back_near=(-20, -35), back_far=(-10, -30),
+                        tilt=1, stretch=-1, lift=2, tail=85, curl=0, eye="x", mouth=True, ears_back=True)
+    hurt = kitten(hurt_pose).img
+    hero.add("hurt", [tint(hurt, P.WHITE, 0.8), hurt], fps=10)
+    hero.add("death", death_frames(hurt_pose), fps=8, loop=False)
+
+    return [hero, yarn()]
 
 
-def fireball(name: str, size: int, radius: float) -> Sprite:
-    sprite = Sprite(name, (size, size))
-    mid = size / 2 - 0.5
+def streaks(i: int):
+    def draw(c, joints):
+        x, y = joints["rump"]
+        for k, dy in enumerate((-3, 0, 3)):
+            length = 3 + (i + k) % 3
+            c.line((x - 8 - length, y + dy), (x - 7, y + dy), P.WHITE if k != 1 else P.CREAM)
+    return draw
 
+
+def death_frames(hurt_pose: CatPose) -> list[Image.Image]:
+    """Knocked over onto its back, paws up and dizzy, then fades away."""
+    flat = Canvas(*SIZE)
+    cat(flat, CatPose(front_near=(95, 95), front_far=(80, 85), back_near=(-95, -95), back_far=(-80, -85), stretch=1,
+                      tail=-2, curl=1, eye="x", mouth=True, ears_back=True))
+    lying = flat.outline().img
+
+    def stars(image, t):
+        c = Canvas(*SIZE)
+        c.paste(image)
+        hx = CX + 10
+        for k in range(3):
+            a = t + k * math.tau / 3
+            x, y = hx + math.cos(a) * 5, GROUND - 14 + math.sin(a) * 1.5
+            c.px(x, y, P.YELLOW)
+            c.px(x, y - 1, P.GOLD)
+        return c.img
+
+    hurt = kitten(hurt_pose).img
+    tumble = Image.new("RGBA", SIZE, P.CLEAR)
+    tumble.alpha_composite(hurt.rotate(-60, resample=Image.NEAREST, center=(CX, GROUND - 8)), (0, 0))
+    return [hurt, tumble, stars(lying, 0), stars(lying, 1.2), see_through(stars(lying, 2.4), 150), see_through(lying, 60)]
+
+
+def yarn() -> Sprite:
+    """The thrown ball of yarn (12x12): rolls with a loose end trailing; bursts into loops on impact."""
+    sprite = Sprite("yarn", (12, 12))
+    mid = 5.5
     fly = []
     for i in range(4):
-        c = Canvas(size, size)
-        for k in range(3):  # trailing tongues flicker behind the core
-            length = radius * (1.6 - k * 0.35) + (1 if (i + k) % 2 else 0)
-            y = mid + (k - 1) * radius * 0.6 + (0.5 if (i + k) % 3 == 0 else 0)
-            c.line((mid - length, y), (mid, y), P.RED if k != 1 else P.ORANGE, 1 + int(radius > 4))
-        c.ellipse(mid + 1, mid, radius, radius, P.ORANGE)
-        c.ellipse(mid + 1.5, mid, radius * 0.6, radius * 0.6, P.YELLOW)
-        if radius > 4:
-            c.ellipse(mid + 2, mid, radius * 0.3, radius * 0.3, P.WHITE)
-        fly.append(c.outline(P.RED_D))
+        c = Canvas(12, 12)
+        for k in range(5):                               # trailing strand behind the ball
+            c.px(mid - 4 - k * 0.9, mid + 2 + math.sin(k * 1.4 + i * 1.6) * 1.2, P.YARN_D if k < 3 else P.YARN)
+        c.ellipse(mid, mid, 4, 4, P.YARN)
+        a = -i * math.pi / 4
+        for k in range(3):                               # wound strands, turning as it rolls
+            ang = a + k * math.pi / 3
+            dx, dy = math.cos(ang), math.sin(ang)
+            nx, ny = -dy, dx
+            off = (k - 1) * 1.6
+            c.line((mid + nx * off - dx * 3.2, mid + ny * off - dy * 3.2),
+                   (mid + nx * off + dx * 3.2, mid + ny * off + dy * 3.2), P.YARN_D)
+        c.px(mid - 1.5, mid - 2, P.YARN_L)
+        c.px(mid - 2, mid - 1, P.YARN_L)
+        fly.append(c.outline(P.OUTLINE))
     sprite.add("fly", fly, fps=14)
 
     impact = []
     for i in range(5):
-        c = Canvas(size, size)
-        reach = radius * (0.8 + i * 0.35)
-        for k in range(8):
-            angle = k / 8 * math.tau + 0.3
-            inner, outer = reach * (0.3 + i * 0.15), reach
-            if outer > mid:
-                outer = mid
-            c.line((mid + math.cos(angle) * inner, mid + math.sin(angle) * inner),
-                   (mid + math.cos(angle) * outer, mid + math.sin(angle) * outer),
-                   P.YELLOW if i < 2 else P.ORANGE if i < 4 else P.RED)
-        if i < 3:
-            c.ellipse(mid, mid, radius * (1 - i * 0.3), radius * (1 - i * 0.3), P.YELLOW if i < 2 else P.ORANGE)
+        c = Canvas(12, 12)
+        reach = 1.5 + i * 1.1
+        for k in range(6):
+            ang = k / 6 * math.tau + i * 0.4
+            x, y = mid + math.cos(ang) * reach, mid + math.sin(ang) * reach
+            if i < 3:
+                c.ellipse(x, y, 1, 1, P.YARN if (k + i) % 2 else P.YARN_L)
+            else:
+                c.px(x, y, P.YARN_L if k % 2 else P.YARN)
+        if i < 2:
+            c.ellipse(mid, mid, 3 - i * 1.2, 3 - i * 1.2, P.YARN)
+            c.px(mid - 1, mid - 1, P.YARN_L)
         impact.append(c)
     sprite.add("impact", impact, fps=18, loop=False)
     return sprite

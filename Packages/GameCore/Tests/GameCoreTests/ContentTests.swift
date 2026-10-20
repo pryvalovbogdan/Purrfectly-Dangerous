@@ -33,8 +33,8 @@ import Testing
         }
     }
 
-    @Test func wallOfTreesIsRejected() throws {
-        let wall = stride(from: 400.0, to: 700, by: 14).map { PlacedItem(at: $0, kind: .tree) }
+    @Test func wallOfStumpsIsRejected() throws {
+        let wall = stride(from: 400.0, to: 700, by: 14).map { PlacedItem(at: $0, kind: .stump) }
         var level = try Content.level("level_01")
         level.items = wall
         level.ravines = nil
@@ -43,17 +43,17 @@ import Testing
         #expect(report.problems.contains { $0.contains("no-hit bot failed") })
     }
 
-    @Test func giantBeforeFireballIsRejected() throws {
-        var level = try Content.level("level_01")
-        level.items = [PlacedItem(at: 600, kind: .giant), PlacedItem(at: 900, kind: .shrine)]
+    @Test func crateWallBeforeSuperPounceIsRejected() throws {
+        var level = try Content.level("level_03")
+        level.items = [PlacedItem(at: 600, kind: .crateWall)]
         let report = LevelValidator.validate(level, bosses: try Content.bosses())
-        #expect(report.problems.contains { $0.contains("needs hero level 2") })
+        #expect(report.problems.contains { $0.contains("crate_wall at 600 needs hero level 5") })
     }
 
     @Test func staticProblemsAreReported() throws {
         var level = try Content.level("level_01")
         level.boss = "boss_missing"
-        level.items = [PlacedItem(at: 20, kind: .root), PlacedItem(at: level.length - 10, kind: .root)]
+        level.items = [PlacedItem(at: 20, kind: .bush), PlacedItem(at: level.length - 10, kind: .bush)]
         let problems = LevelValidator.validate(level, bosses: try Content.bosses()).problems
         #expect(problems.contains { $0.contains("start runway") })
         #expect(problems.contains { $0.contains("too close to the boss") })
@@ -62,13 +62,14 @@ import Testing
 
     @Test func badRavinesAreRejected() throws {
         var level = try Content.level("level_01")
-        level.items = [PlacedItem(at: 820, kind: .tree), PlacedItem(at: 820, kind: .coin)]
+        level.items = [PlacedItem(at: 820, kind: .stump), PlacedItem(at: 820, kind: .fish)]
+        level.platforms = nil
         level.ravines = [Ravine(at: 100, width: 30), Ravine(at: 800, width: 40), Ravine(at: 850, width: 30),
                          Ravine(at: 1200, width: 90), Ravine(at: level.length - 70, width: 30)]
         let problems = LevelValidator.validate(level, bosses: try Content.bosses()).problems
         #expect(problems.contains { $0.contains("ravine at 100 is inside the 150-unit start runway") })
-        #expect(problems.contains { $0.contains("tree at 820 stands in the ravine at 800") })
-        #expect(!problems.contains { $0.contains("coin at 820") })
+        #expect(problems.contains { $0.contains("stump at 820 stands in the ravine at 800") })
+        #expect(!problems.contains { $0.contains("fish at 820") })
         #expect(problems.contains { $0.contains("ravine at 850 is too close to the one before it") })
         #expect(problems.contains { $0.contains("ravine at 1200 is 90 wide") })
         #expect(problems.contains { $0.contains("too close to the boss") && $0.contains("ravine") })

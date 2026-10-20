@@ -268,3 +268,58 @@ def stride(phase: float, swing: float = 38, bend: float = 45) -> tuple[tuple[flo
 def swing(phase: float, amount: float = 40, bend: float = 45) -> tuple[tuple[float, float], tuple[float, float]]:
     """Arm angles opposing the legs: (near, far)."""
     return (-math.sin(phase) * amount, bend), (math.sin(phase) * amount, bend)
+
+
+def see_through(image: Image.Image, alpha: int) -> Image.Image:
+    """The same pixels at a lower opacity: a smooth fade (ghosts, dashes, deaths), not a dissolve."""
+    out = image.copy()
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            pr, pg, pb, pa = px[x, y]
+            if pa:
+                px[x, y] = (pr, pg, pb, min(pa, alpha))
+    return out
+
+
+def shatter(image: Image.Image, t: float, seed: int, block: int = 4, spread: float = 1.0,
+            gravity: float = 1.0, origin: tuple[float, float] | None = None) -> Image.Image:
+    """Breaks `image` into `block`-sized chunks that fly out from `origin` and fall; t in 0...1.
+
+    With spread 0 the chunks just drop (a crumbling ledge). Chunks thin out toward the end.
+    """
+    w, h = image.size
+    ox, oy = origin if origin is not None else (w / 2, h / 2)
+    rnd = noise(seed)
+    out = Image.new("RGBA", image.size, P.CLEAR)
+    for by in range(0, h, block):
+        for bx in range(0, w, block):
+            piece = image.crop((bx, by, bx + block, by + block))
+            vx = (bx + block / 2 - ox) * 0.6 * spread + (rnd() - 0.5) * 6 * spread
+            vy = (by + block / 2 - oy) * 0.4 * spread - rnd() * 6 * spread
+            drop = (4 + rnd() * 10) * gravity
+            keep = rnd()
+            if piece.getbbox() is None or keep < t * 0.8:
+                continue
+            x = bx + vx * t
+            y = by + vy * t + drop * t * t * 2
+            _paste_clipped(out, piece, r(x), r(y))
+    return out
+
+
+def _paste_clipped(dest: Image.Image, piece: Image.Image, x: int, y: int) -> None:
+    w, h = dest.size
+    left, top = max(0, -x), max(0, -y)
+    right, bottom = min(piece.width, w - x), min(piece.height, h - y)
+    if right <= left or bottom <= top:
+        return
+    dest.alpha_composite(piece.crop((left, top, right, bottom)), (x + left, y + top))
+
+
+def vanish(image: Image.Image, t: float, depth: float = 0.0, flash: bool = True) -> Image.Image:
+    """Death frame: a white flash at t = 0, then sinks by `depth` (negative rises) and fades out."""
+    if t <= 0:
+        return tint(image, P.WHITE, 0.75) if flash else image.copy()
+    out = Image.new("RGBA", image.size, P.CLEAR)
+    _paste_clipped(out, image, 0, r(t * depth))
+    return see_through(out, r(255 * (1 - t * 0.8)))

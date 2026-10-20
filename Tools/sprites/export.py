@@ -98,33 +98,16 @@ def export(sprites: list[Sprite], only: set[str] | None = None) -> dict:
 
 
 def app_icon(sprites: dict[str, Sprite]) -> None:
-    """1024px App Store icon: the start screen in miniature, with the hero mid-stride in front of
-    its sky, clouds, pale trees and bushes. Opaque, as Apple requires."""
-    units, ground = 128, 108
-    scale = 1024 // units
+    """1024px App Store icon: the kitten's face and a ball of yarn (`icon.py`), drawn at 64px and
+    scaled up by whole pixels. Opaque, as Apple requires."""
+    import icon
 
-    def still(name: str) -> Image.Image:
-        return next(iter(sprites[name].anims.values())).frames[0]
-
-    scene = Image.new("RGBA", (units, units))
-    scene.paste(still("bg_menu_sky").resize((units, units), Image.NEAREST), (0, 0))
-    # Each backdrop strip is cut where it frames the hero best, and stands on the ground line.
-    for name, offset in (("bg_menu_clouds", 150), ("bg_menu_horizon", 96), ("bg_menu_bushes", 14)):
-        strip = still(name)
-        scene.alpha_composite(strip.crop((offset, 0, offset + units, strip.height)), (0, ground - strip.height))
-    tile = still("ground_forest")
-    for x in range(0, units, tile.width):
-        scene.alpha_composite(tile, (x, ground))
-    hero = sprites["hero"]
-    figure = hero.anims["run"].frames[1]
-    figure = figure.resize((figure.width * 2, figure.height * 2), Image.NEAREST)
-    centre = hero.cx if hero.cx is not None else hero.size[0] / 2
-    feet = hero.ground if hero.ground is not None else hero.size[1]
-    scene.alpha_composite(figure, (int(units / 2 - centre * 2), ground - feet * 2))
-    icon = scene.resize((1024, 1024), Image.NEAREST)
+    art = icon.draw_icon()
+    scene = art.resize((1024, 1024), Image.NEAREST)
     folder = ATLAS.parent / "AppIcon.appiconset"
     folder.mkdir(parents=True, exist_ok=True)
-    write_png(icon.convert("RGB"), folder / "icon.png")
+    write_png(scene.convert("RGB"), folder / "icon.png")
+    write_png(art.resize((art.width * 4, art.height * 4), Image.NEAREST), OUT / "contact" / "app_icon.png")
     contents = {"images": [{"filename": "icon.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"}],
                 "info": {"author": "xcode", "version": 1}}
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")

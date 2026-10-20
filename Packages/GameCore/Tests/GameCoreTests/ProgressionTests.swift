@@ -9,14 +9,17 @@ import Testing
         #expect(Progression.level(forXP: 299) == 2)
         #expect(Progression.level(forXP: 300) == 3)
         #expect(Progression.level(forXP: 600) == 4)
-        #expect(Progression.level(forXP: 99_999) == 4)
+        #expect(Progression.level(forXP: 999) == 4)
+        #expect(Progression.level(forXP: 1000) == 5)
+        #expect(Progression.level(forXP: 99_999) == 5)
     }
 
     @Test func abilitiesUnlockInOrder() {
         #expect(Progression.abilities(forLevel: 1).isEmpty)
-        #expect(Progression.abilities(forLevel: 2) == [.fireball])
-        #expect(Progression.abilities(forLevel: 3) == [.fireball, .doubleJump])
-        #expect(Progression.abilities(forLevel: 4) == Set(Ability.allCases))
+        #expect(Progression.abilities(forLevel: 2) == [.yarnShot])
+        #expect(Progression.abilities(forLevel: 3) == [.yarnShot, .doublePounce])
+        #expect(Progression.abilities(forLevel: 4) == [.yarnShot, .doublePounce, .ghostDash])
+        #expect(Progression.abilities(forLevel: 5) == Set(Ability.allCases))
     }
 
     @Test func gainReportsEveryLevelCrossed() {
@@ -24,6 +27,7 @@ import Testing
         #expect(stats.gain(xp: 50).isEmpty)
         #expect(stats.gain(xp: 50) == [2])
         #expect(stats.gain(xp: 600) == [3, 4])
+        #expect(stats.gain(xp: 400) == [5])
         #expect(stats.gain(xp: 1000).isEmpty)
     }
 
@@ -31,13 +35,14 @@ import Testing
         var stats = HeroStats(xp: 450)
         #expect(stats.raise(toLevel: 2).isEmpty)
         #expect(stats.xp == 450)
-        #expect(stats.raise(toLevel: 4) == [4])
-        #expect(stats.xp == 600)
+        #expect(stats.raise(toLevel: 5) == [4, 5])
+        #expect(stats.xp == 1000)
     }
 
     @Test func xpToNextIsNilAtMax() {
         #expect(Progression.xpToNext(fromXP: 40) == 60)
-        #expect(Progression.xpToNext(fromXP: 600) == nil)
+        #expect(Progression.xpToNext(fromXP: 600) == 400)
+        #expect(Progression.xpToNext(fromXP: 1000) == nil)
     }
 
     @Test func saveRoundTripsAndKeepsBest() throws {

@@ -1,0 +1,13 @@
+{
+  "images": [
+    {
+      "filename": "crate_wall_break_2.png",
+      "idiom": "universal",
+      "scale": "1x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

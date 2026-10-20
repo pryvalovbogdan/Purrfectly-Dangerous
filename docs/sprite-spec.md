@@ -9,39 +9,75 @@ Outputs per animation:
 - `Tools/sprites/out/sheets/<sprite>_<anim>.png`, `out/preview/<sprite>_<anim>.gif` and
   `out/contact/<sprite>.png` for review (not committed)
 
+Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`cx`, `ground`). Enemies face left in the atlas.
+
 | Sprite | Size | Animations (frames) |
 | --- | --- | --- |
-| hero | 48×48 | run 8, stop 4, idle 4, jump 2, fall 2, cast 6, hurt 2, death 6 |
-| fireball | 16×16 | fly 4, impact 5 |
-| fireball_charged | 24×24 | fly 4, impact 5 |
-| goblin | 32×32 | walk 6, death 4 |
-| giant | 84×80 | walk 6, swing 6, hurt 2, death 6 |
-| archer | 24×32 | idle 2, shoot 4, death 4 |
-| hound | 32×20 | run 6, death 4 |
-| raven | 24×20 | fly 4, death 3 |
-| wolf | 32×20 | run 6, death 4 |
-| skeleton | 24×32 | walk 6, death 4 |
-| ghost | 24×28 | float 4, death 3 |
-| thorns | 28×14 | still 1 |
-| boss_giant | 136×126 | idle 4, slam 8, stunned 4, hurt 2, death 8 |
-| boss_dragon | 184×96 | idle 6, breath 8, spit 8, tail 6, hurt 2, death 8 |
-| boss_queen | 64×96 | idle 4, summon 6, cast 6, hurt 2, death 8 |
-| boss_stormking | 120×140 | idle 6, lightning 8, phase 6, hurt 2, death 10 |
+| hero | 44×28 | run 8, stop 4, idle 4 (sits), jump 2, fall 2, double 4 (curled flip), throw 4, dash 4 (see-through, after-images), pounce 4 (stretched leap), hurt 2, death 6 |
+| yarn | 12×12 | fly 4, impact 5 |
+| squirrel | 26×26 | walk 6, death 4 |
+| acorn | 12×12 | roll 4, death 4 |
+| branch_squirrel | 32×32 | idle 2, throw 4, death 4 (ground line = top of its branch) |
+| acorn_thrown | 10×10 | fly 4 |
+| hedgehog | 28×22 | walk 4, curl 3, rolled 4, death 4 |
+| bush | 30×16 | still 1 |
+| stump | 22×26 | still 1 |
+| milk | 32×6 | still 1 (tiles horizontally; its bottom 3 rows sit on the turf) |
+| bridge | 48×12 | still 1, crumble 4 (walk surface = top row) |
+| boss_squirrel | 112×132 | idle 4, throw 6, roll 6, climb 6 (leaps with the giant acorn), hurt 2, death 8 |
+| snowball | 16×16 | roll 4, death 4 |
+| penguin | 36×16 | slide 4, death 4 |
+| icicle | 12×22 | hang 2, fall 2, shatter 4 (frame top = ceiling end) |
+| snowdrift | 24×11 | still 1 |
+| ice | 32×6 | still 1 (as `milk`) |
+| ice_ledge | 48×14 | still 1, crumble 4 |
+| boss_icedragon | 190×134 | idle 6, shards 6, breath 8, dive 6, hurt 2, death 8 |
+| ghost_cat | 38×26 | float 4, fade 4 (blinking out) |
+| bat | 22×16 | fly 4, death 3 |
+| skeleton_mouse | 24×28 | idle 2, throw 4, death 4 |
+| bone | 10×10 | fly 4 |
+| skull | 20×14 | fly 4, death 3 |
+| bell | 24×30 | idle 2, ring 4 |
+| tombstone | 20×26 | still 1 |
+| vanish | 48×10 | solid 1, fading 4 |
+| boss_phantom | 84×126 | idle 4, summon 6, teleport 6, split 4 (the glowing copy), hurt 2, death 8 |
+| vent | 22×68 | idle 1, warn 2, fire 4 (flame about 12×60) |
+| piston | 24×76 | up 1, warn 2, slam 3 (head reaches the ground) |
+| cannon | 30×20 | idle 1, fire 3, death 4 (muzzle about 10 above the ground) |
+| cannonball | 16×10 | fly 4 |
+| debris | 18×22 | hang 2, fall 2, shatter 4 |
+| mech_mouse | 32×20 | run 4, death 4 |
+| gear | 30×30 | spin 4 |
+| crate_wall | 24×124 | still 1, break 5 |
+| boss_mecha | 168×124 | idle 4, rockets 6, tail 6, core 4 (chest open), hurt 2, death 8 |
+| fish | 16×12 | spin 6 |
+| yarn_basket | 28×28 | glow 4 |
+| medal | 32×32 | bronze 1, silver 1, gold 1 |
 
-Also generated: props (`tree`, `root`, `icicle`, `coin`, `shrine`, hearts, and `medal` with one
-frame each for `bronze`, `silver` and `gold`), an `ability_<id>` icon per ability for the award card,
-`spark_star|ember|feather` for the burst around the hero, ten `hazard_*` sprites plus `hazard_icespike_shot` (the shard the dragon spits before a spike grows),
-and per theme `bg_<theme>_sky|clouds|puffs|far|near|bushes`, `ground_<theme>` (all but the sky are
-320 wide and tile horizontally) and `ravine_<theme>` with `ravine_<theme>_fill` (the left wall of a ravine, mirrored
-for the right one, and the dark stretched between them). The start screen has its own backdrop:
-`bg_menu_sky`, `bg_menu_clouds`, `bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes`, over the
-forest ground. The table above is enforced by `Tools/sprites/tests/test_sprites.py` — change both.
+Also generated: `heart_full`, `heart_empty`; an `ability_<id>` icon (24×24) for `yarnShot`, `doublePounce`,
+`ghostDash` and `superPounce`; `spark_star|ember|feather` for the burst around the kitten (ember is a curl of
+yarn); and a `hazard_<kind>` sprite with a `fly` animation for every hazard kind in `Bosses.json` — `acorn`,
+`acorn_high`, `breath`, `shard`, `ice_spike`, `wave`, `wisp`, `burning_patch`, `tail`, `claw` — plus
+`giant_acorn`, `shockwave` and `rocket` for the attacks the design describes. Hazards lead with their left edge
+(they travel toward the kitten) and their frame bottom is the hitbox bottom.
+
+Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, stretched across the screen) and
+`bg_<theme>_sky_top`; `bg_<theme>_puffs|clouds|far|near|bushes` (320 wide, tiling horizontally, standing on the
+ground line); `ground_<theme>` (32×48), `ground_<theme>_earth` and `ground_<theme>_fill`; `ravine_<theme>` (the
+left wall of a ravine, mirrored for the right one), `ravine_<theme>_fill` (stretched between them; citadel's is
+a lava pool) and `ravine_<theme>_deep`. The start screen has its own backdrop: `bg_menu_sky`, `bg_menu_clouds`,
+`bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes`, over the forest ground. The app icon (the kitten's face
+and a ball of yarn) is drawn in `Tools/sprites/icon.py`. The table above is enforced by
+`Tools/sprites/tests/test_sprites.py` — change both.
 
 ## How characters are drawn
 
-Humanoids are posed, not painted: `draw.humanoid(canvas, Body, Pose, cx, ground)` draws a figure
-from proportions (`Body`) and joint angles (`Pose`; 0° = straight down, positive = forward). A walk
-cycle is `stride(phase)` / `swing(phase)` evaluated at N phases. `Canvas.outline()` adds the dark
-1px outline afterwards. Death frames come from `topple()` (falls over) or `sink()` (dissolves).
+Characters are posed, not painted. The kitten (and the ghost cats) come from `characters/hero.py`'s
+`cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
+stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
+still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
+afterwards. Death frames come from `vanish()` (flash, then sink or rise while fading), `shatter()` (breaks
+into blocks that fly and fall; also used for crumbling platforms) or `topple()`; `see_through()` lowers
+opacity for ghosts and fades.
 Draw facing right; pass `faces_left=True` for enemies. Set `cx`/`ground` on the `Sprite` so the
 game anchors the feet, not the frame corner.

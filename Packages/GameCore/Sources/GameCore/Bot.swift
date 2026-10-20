@@ -1,17 +1,60 @@
 import Foundation
 
-/// A jump the bot commits to: hold time for the first jump and, optionally, when to double jump.
-struct BotPlan: Sendable, Equatable {
-    var hold: Double
-    var secondAt: Double?
+/// What the bot does with the paw button in a plan.
+enum PawMove: Sendable, Equatable {
+    /// A tap: Ghost Dash.
+    case dash
+    /// Let go of a fully charged paw: Super Pounce.
+    case pounce
+}
 
-    func input(elapsed: Double, dt: Double, fireHeld: Bool) -> Input {
-        var input = Input(fireHeld: fireHeld)
-        input.jumpPressed = elapsed < dt / 2
-        input.jumpHeld = elapsed < hold
-        if let secondAt, elapsed >= secondAt {
-            input.jumpPressed = elapsed < secondAt + dt
-            input.jumpHeld = elapsed < secondAt + hold
+/// A move the bot commits to: an optional jump (hold time and when to double jump) and an optional
+/// paw move at `pawAt` seconds.
+struct BotPlan: Sendable, Equatable {
+    var hold: Double?
+    var secondAt: Double?
+    var paw: PawMove?
+    var pawAt = 0.0
+
+    init(hold: Double? = nil, secondAt: Double? = nil, paw: PawMove? = nil, pawAt: Double = 0) {
+        self.hold = hold
+        self.secondAt = secondAt
+        self.paw = paw
+        self.pawAt = pawAt
+    }
+
+    /// From this point a plan that is back on the ground is finished.
+    func settled(tuning: Tuning, dt: Double) -> Double {
+        switch paw {
+        case .dash: max(dt * 2, pawAt + tuning.dashDuration)
+        case .pounce: pawAt + dt * 2
+        case nil: dt * 2
+        }
+    }
+
+    func input(elapsed: Double, dt: Double, base: Input) -> Input {
+        var input = base
+        if let hold {
+            input.jumpPressed = elapsed < dt / 2
+            input.jumpHeld = elapsed < hold
+            if let secondAt, elapsed >= secondAt {
+                input.jumpPressed = elapsed < secondAt + dt
+                input.jumpHeld = elapsed < secondAt + hold
+            }
+        }
+        let now = elapsed >= pawAt - dt / 2 && elapsed < pawAt + dt / 2
+        switch paw {
+        case .dash:
+            // A one-frame tap.
+            if now {
+                input.pawPressed = true
+                input.pawHeld = false
+            }
+        case .pounce:
+            // The paw is already held and charged (see `Bot.baseInput`): let go for one frame.
+            if now { input.pawHeld = false }
+        case nil:
+            break
         }
         return input
     }
@@ -27,11 +70,14 @@ public struct Bot: Sendable {
 
     /// Fire-button pattern as a pure function of world time, so look-ahead copies reproduce it.
     static func fireHeld(_ world: RunnerWorld) -> Bool {
-        guard world.stats.has(.fireball) else { return false }
-        let charged = world.stats.has(.chargedFireball) && world.phase == .boss && world.boss?.requiresCharged == true
-        let hold = charged ? world.tuning.chargeTime + 0.1 : 0.1
-        let period = hold + (charged ? 0.15 : 0.3)
-        return world.time.truncatingRemainder(dividingBy: period) < hold
+        guard world.stats.has(.yarnShot) else { return false }
+        return world.time.truncatingRemainder(dividingBy: 0.4) < 0.1
+    }
+
+    /// What the bot presses when it is not in the middle of a move. With Super Pounce it keeps the
+    /// paw held, so a charged pounce is always one release away.
+    static func baseInput(_ world: RunnerWorld) -> Input {
+        Input(fireHeld: fireHeld(world), pawHeld: world.stats.has(.superPounce))
     }
 
     static func survives(_ start: RunnerWorld, plan: BotPlan?, horizon: Double, dt: Double) -> Bool {
@@ -39,9 +85,10 @@ public struct Bot: Sendable {
         var elapsed = 0.0
         var horizon = horizon
         var landed = false
+        let settled = plan?.settled(tuning: start.tuning, dt: dt) ?? 0
         while elapsed < horizon {
-            let fire = fireHeld(world)
-            let input = plan?.input(elapsed: elapsed, dt: dt, fireHeld: fire) ?? Input(fireHeld: fire)
+            let base = baseInput(world)
+            let input = plan?.input(elapsed: elapsed, dt: dt, base: base) ?? base
             for event in world.step(input, dt: dt) {
                 switch event {
                 case .heroHit, .heroDied: return false
@@ -50,9 +97,9 @@ public struct Bot: Sendable {
             }
             if world.phase == .victory || world.isOver { return true }
             elapsed += dt
-            // A jump only has to get the hero back on the ground safely; what comes after that is
+            // A move only has to get the hero back on the ground safely; what comes after that is
             // a fresh decision, so stop looking shortly after touchdown.
-            if plan != nil, !landed, world.onGround, elapsed > dt * 2 {
+            if plan != nil, !landed, world.onGround, elapsed > settled {
                 landed = true
                 horizon = min(horizon, elapsed + 0.12)
             }
@@ -60,29 +107,43 @@ public struct Bot: Sendable {
         return true
     }
 
+    func candidates(for world: RunnerWorld) -> [BotPlan] {
+        var candidates = [BotPlan(hold: 0.4), BotPlan(hold: 0.03)]
+        if world.stats.has(.doublePounce) {
+            candidates += [BotPlan(hold: 0.4, secondAt: 0.3), BotPlan(hold: 0.4, secondAt: 0.45)]
+        }
+        // With Super Pounce the paw is held for the pounce, so a dash is only a tap before it charges.
+        if world.canDash, !world.isPounceReady {
+            candidates += [BotPlan(paw: .dash), BotPlan(hold: 0.4, paw: .dash, pawAt: 0.15),
+                           BotPlan(hold: 0.03, paw: .dash)]
+        }
+        if world.isPounceReady {
+            candidates.append(BotPlan(paw: .pounce))
+        }
+        return candidates
+    }
+
     public mutating func input(for world: RunnerWorld, dt: Double) -> Input {
-        let fire = Self.fireHeld(world)
+        let base = Self.baseInput(world)
         if let plan {
-            if world.onGround, elapsed > dt {
+            if world.onGround, elapsed > plan.settled(tuning: world.tuning, dt: dt) {
                 self.plan = nil
             } else {
                 defer { elapsed += dt }
-                return plan.input(elapsed: elapsed, dt: dt, fireHeld: fire)
+                return plan.input(elapsed: elapsed, dt: dt, base: base)
             }
         }
         guard world.onGround, !Self.survives(world, plan: nil, horizon: 0.45, dt: dt) else {
-            return Input(fireHeld: fire)
+            return base
         }
-        var candidates = [BotPlan(hold: 0.4), BotPlan(hold: 0.03)]
-        if world.stats.has(.doubleJump) {
-            candidates += [BotPlan(hold: 0.4, secondAt: 0.3), BotPlan(hold: 0.4, secondAt: 0.45)]
-        }
-        guard let chosen = candidates.first(where: { Self.survives(world, plan: $0, horizon: 1.3, dt: dt) }) else {
-            return Input(fireHeld: fire)
+        guard let chosen = candidates(for: world).first(where: {
+            Self.survives(world, plan: $0, horizon: 1.3, dt: dt)
+        }) else {
+            return base
         }
         plan = chosen
         elapsed = dt
-        return chosen.input(elapsed: 0, dt: dt, fireHeld: fire)
+        return chosen.input(elapsed: 0, dt: dt, base: base)
     }
 }
 
@@ -105,9 +166,9 @@ public enum LevelValidator {
         if !(1...Progression.maxLevel).contains(level.entryHeroLevel) {
             report.problems.append("entryHeroLevel \(level.entryHeroLevel) is out of range")
         }
-        let shrineAt = sorted.first { $0.kind == .shrine }?.at
+        let shrineAt = sorted.first { $0.kind == .yarnBasket }?.at
         if shrineAt != nil, level.shrineLevel == nil {
-            report.problems.append("a shrine is placed but shrineLevel is not set")
+            report.problems.append("a yarn_basket is placed but shrineLevel is not set")
         }
         for item in sorted {
             if item.at < 150 { report.problems.append("\(item.kind.rawValue) at \(Int(item.at)) is inside the 150-unit start runway") }
@@ -120,6 +181,7 @@ public enum LevelValidator {
         }
 
         report.problems += ravineProblems(in: level, items: sorted, tuning: tuning)
+        report.problems += surfaceProblems(in: level, tuning: tuning)
 
         let boss = bosses[level.boss]
         if let boss {
@@ -146,10 +208,15 @@ public enum LevelValidator {
     static func ravineProblems(in level: LevelDefinition, items: [PlacedItem], tuning: Tuning) -> [String] {
         var problems: [String] = []
         let ravines = (level.ravines ?? []).sorted { $0.at < $1.at }
-        let reach = 2 * tuning.jumpVelocity / tuning.gravity * level.speed
-        let widest = (reach * ravineJumpShare).rounded(.down)
+        // Once Double Pounce is guaranteed for the whole level, a ravine may need it.
+        let reach = level.entryHeroLevel >= 3 ? tuning.doubleJumpReach(speed: level.speed)
+                                              : tuning.jumpReach(speed: level.speed)
         for (index, ravine) in ravines.enumerated() {
             let name = "ravine at \(Int(ravine.at))"
+            // Ledges over the gap break it up; the bot proves the hops between them.
+            let bridged = (level.platforms ?? []).filter { $0.at < ravine.end && $0.end > ravine.at }
+                .reduce(0.0) { $0 + min($1.end, ravine.end) - max($1.at, ravine.at) }
+            let widest = (reach * ravineJumpShare + bridged).rounded(.down)
             if ravine.at < 150 { problems.append("\(name) is inside the 150-unit start runway") }
             if ravine.end > level.length - 60 { problems.append("\(name) is too close to the boss (length \(Int(level.length)))") }
             if ravine.width < 16 || ravine.width > widest {
@@ -168,13 +235,43 @@ public enum LevelValidator {
         return problems
     }
 
+    /// Slick zones and platforms: inside the level, out of the start runway, and ledges low enough
+    /// to land on from a full jump.
+    static func surfaceProblems(in level: LevelDefinition, tuning: Tuning) -> [String] {
+        var problems: [String] = []
+        let apex = tuning.jumpVelocity * tuning.jumpVelocity / (2 * tuning.gravity)
+        for zone in level.slick ?? [] {
+            let name = "slick zone at \(Int(zone.at))"
+            if zone.width <= 0 { problems.append("\(name) has no width") }
+            if zone.at < 150 { problems.append("\(name) is inside the 150-unit start runway") }
+            if zone.end > level.length - 60 { problems.append("\(name) is too close to the boss (length \(Int(level.length)))") }
+        }
+        for platform in level.platforms ?? [] {
+            let name = "platform at \(Int(platform.at))"
+            if platform.width < tuning.heroWidth { problems.append("\(name) is narrower than the hero") }
+            if platform.y < 4 || platform.y > apex - 6 {
+                problems.append("\(name) is \(Int(platform.y)) high; it must be between 4 and \(Int(apex - 6))")
+            }
+            if platform.at < 150 { problems.append("\(name) is inside the 150-unit start runway") }
+            if platform.end > level.length - 60 { problems.append("\(name) is too close to the boss (length \(Int(level.length)))") }
+            if platform.mode == .blinks, platform.cycle.activeFor <= 0 || platform.cycle.activeFor >= platform.cycle.period {
+                problems.append("\(name) blinks but solidFor must be between 0 and period")
+            }
+        }
+        return problems
+    }
+
     public static func problems(in boss: BossDefinition) -> [String] {
         var problems: [String] = []
         let names = Set(boss.attacks.map(\.name))
         if boss.hp <= 0 { problems.append("boss \(boss.id): hp must be positive") }
         if boss.phases.isEmpty { problems.append("boss \(boss.id): no phases") }
         if boss.phases.first?.startsBelow != 1 { problems.append("boss \(boss.id): first phase must have startsBelow 1") }
+        if let armoredAbove = boss.armoredAbove, !(0..<1).contains(armoredAbove) {
+            problems.append("boss \(boss.id): armoredAbove must be between 0 and 1")
+        }
         for (index, phase) in boss.phases.enumerated() {
+            if let decoys = phase.decoys, decoys < 0 { problems.append("boss \(boss.id): phase \(index) has negative decoys") }
             if phase.attacks.isEmpty { problems.append("boss \(boss.id): phase \(index) has no attacks") }
             for name in phase.attacks where !names.contains(name) {
                 problems.append("boss \(boss.id): phase \(index) uses unknown attack '\(name)'")

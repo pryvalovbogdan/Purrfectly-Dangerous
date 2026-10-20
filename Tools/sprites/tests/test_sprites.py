@@ -15,22 +15,52 @@ import export  # noqa: E402
 
 # sprite -> (size, {animation: frames}). Mirrors docs/sprite-spec.md; change both together.
 SPEC = {
-    "hero": ((48, 48), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "cast": 6, "hurt": 2, "death": 6}),
-    "fireball": ((16, 16), {"fly": 4, "impact": 5}),
-    "fireball_charged": ((24, 24), {"fly": 4, "impact": 5}),
-    "goblin": ((32, 32), {"walk": 6, "death": 4}),
-    "giant": ((84, 80), {"walk": 6, "swing": 6, "hurt": 2, "death": 6}),
-    "archer": ((24, 32), {"idle": 2, "shoot": 4, "death": 4}),
-    "hound": ((32, 20), {"run": 6, "death": 4}),
-    "raven": ((24, 20), {"fly": 4, "death": 3}),
-    "wolf": ((32, 20), {"run": 6, "death": 4}),
-    "skeleton": ((24, 32), {"walk": 6, "death": 4}),
-    "ghost": ((24, 28), {"float": 4, "death": 3}),
-    "thorns": ((28, 14), {"still": 1}),
-    "boss_giant": ((136, 126), {"idle": 4, "slam": 8, "stunned": 4, "hurt": 2, "death": 8}),
-    "boss_dragon": ((184, 96), {"idle": 6, "breath": 8, "spit": 8, "tail": 6, "hurt": 2, "death": 8}),
-    "boss_queen": ((64, 96), {"idle": 4, "summon": 6, "cast": 6, "hurt": 2, "death": 8}),
-    "boss_stormking": ((120, 140), {"idle": 6, "lightning": 8, "phase": 6, "hurt": 2, "death": 10}),
+    "hero": ((44, 28), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "double": 4, "throw": 4, "dash": 4,
+                        "pounce": 4, "hurt": 2, "death": 6}),
+    "yarn": ((12, 12), {"fly": 4, "impact": 5}),
+    # World 1, forest
+    "squirrel": ((26, 26), {"walk": 6, "death": 4}),
+    "acorn": ((12, 12), {"roll": 4, "death": 4}),
+    "branch_squirrel": ((32, 32), {"idle": 2, "throw": 4, "death": 4}),
+    "acorn_thrown": ((10, 10), {"fly": 4}),
+    "hedgehog": ((28, 22), {"walk": 4, "curl": 3, "rolled": 4, "death": 4}),
+    "bush": ((30, 16), {"still": 1}),
+    "stump": ((22, 26), {"still": 1}),
+    "milk": ((32, 6), {"still": 1}),
+    "bridge": ((48, 12), {"still": 1, "crumble": 4}),
+    "boss_squirrel": ((112, 132), {"idle": 4, "throw": 6, "roll": 6, "climb": 6, "hurt": 2, "death": 8}),
+    # World 2, frost
+    "snowball": ((16, 16), {"roll": 4, "death": 4}),
+    "penguin": ((36, 16), {"slide": 4, "death": 4}),
+    "icicle": ((12, 22), {"hang": 2, "fall": 2, "shatter": 4}),
+    "snowdrift": ((24, 11), {"still": 1}),
+    "ice": ((32, 6), {"still": 1}),
+    "ice_ledge": ((48, 14), {"still": 1, "crumble": 4}),
+    "boss_icedragon": ((190, 134), {"idle": 6, "shards": 6, "breath": 8, "dive": 6, "hurt": 2, "death": 8}),
+    # World 3, haunted
+    "ghost_cat": ((38, 26), {"float": 4, "fade": 4}),
+    "bat": ((22, 16), {"fly": 4, "death": 3}),
+    "skeleton_mouse": ((24, 28), {"idle": 2, "throw": 4, "death": 4}),
+    "bone": ((10, 10), {"fly": 4}),
+    "skull": ((20, 14), {"fly": 4, "death": 3}),
+    "bell": ((24, 30), {"idle": 2, "ring": 4}),
+    "tombstone": ((20, 26), {"still": 1}),
+    "vanish": ((48, 10), {"solid": 1, "fading": 4}),
+    "boss_phantom": ((84, 126), {"idle": 4, "summon": 6, "teleport": 6, "split": 4, "hurt": 2, "death": 8}),
+    # World 4, citadel
+    "vent": ((22, 68), {"idle": 1, "warn": 2, "fire": 4}),
+    "piston": ((24, 76), {"up": 1, "warn": 2, "slam": 3}),
+    "cannon": ((30, 20), {"idle": 1, "fire": 3, "death": 4}),
+    "cannonball": ((16, 10), {"fly": 4}),
+    "debris": ((18, 22), {"hang": 2, "fall": 2, "shatter": 4}),
+    "mech_mouse": ((32, 20), {"run": 4, "death": 4}),
+    "gear": ((30, 30), {"spin": 4}),
+    "crate_wall": ((24, 124), {"still": 1, "break": 5}),
+    "boss_mecha": ((168, 124), {"idle": 4, "rockets": 6, "tail": 6, "core": 4, "hurt": 2, "death": 8}),
+    # Pickups and award art
+    "fish": ((16, 12), {"spin": 6}),
+    "yarn_basket": ((28, 28), {"glow": 4}),
+    "medal": ((32, 32), {"bronze": 1, "silver": 1, "gold": 1}),
 }
 
 
@@ -57,7 +87,8 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                     assert frame.getbbox() is not None, f"{sprite.name}/{name}[{index}] is empty"
 
 
-@pytest.mark.parametrize("name", ["boss_dragon", "boss_giant", "giant"])
+@pytest.mark.parametrize("name", ["hero", "boss_squirrel", "boss_icedragon", "boss_phantom", "boss_mecha",
+                                  "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():
@@ -78,7 +109,8 @@ def test_output_is_deterministic(sprites):
 
 
 def test_animation_actually_moves(sprites):
-    for name in ("hero", "goblin", "giant", "hound", "boss_dragon"):
+    for name in ("hero", "squirrel", "hedgehog", "penguin", "ghost_cat", "mech_mouse", "boss_squirrel",
+                 "boss_icedragon", "boss_phantom", "boss_mecha"):
         anim = next(iter(sprites[name].anims.values()))
         assert len({frame.tobytes() for frame in anim.frames}) > 1, f"{name}: all frames identical"
 
@@ -114,6 +146,7 @@ def test_every_thing_the_game_can_show_has_a_sprite(sprites):
         for attack in boss["attacks"]:
             needed |= {f"hazard_{h['kind']}" for h in attack["hazards"]}
             needed |= {s["kind"] for s in attack.get("summons", [])}
-    needed |= {"hazard_arrow", "hero", "fireball", "fireball_charged", "medal", "spark_star", "spark_ember", "spark_feather"}
-    needed |= {f"ability_{name}" for name in ("fireball", "doubleJump", "chargedFireball")}
+    needed |= {"hero", "yarn", "fish", "yarn_basket", "medal", "heart_full", "heart_empty", "spark_star", "spark_ember",
+               "spark_feather", "acorn_thrown", "bone", "cannonball"}
+    needed |= {f"ability_{name}" for name in ("yarnShot", "doublePounce", "ghostDash", "superPounce")}
     assert needed - set(sprites) == set()

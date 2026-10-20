@@ -1,12 +1,12 @@
 {
  "id": "level_04",
  "nameKey": "level.4.name",
- "background": "tower",
+ "background": "citadel",
  "speed": 140,
  "length": 7500,
- "entryHeroLevel": 4,
- "boss": "boss_stormking",
- "bossRewardLevel": 4,
+ "entryHeroLevel": 5,
+ "boss": "boss_mecha",
+ "bossRewardLevel": 5,
  "ravines": [
   {
    "at": 700,
@@ -44,304 +44,304 @@
  "items": [
   {
    "at": 220,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 236,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 252,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 268,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 420,
-   "kind": "skeleton"
+   "kind": "mech_mouse"
   },
   {
    "at": 600,
-   "kind": "tree"
+   "kind": "gear"
   },
   {
    "at": 590,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 604,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 618,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 632,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 646,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 850,
-   "kind": "hound"
+   "kind": "mech_mouse"
   },
   {
    "at": 1020,
-   "kind": "icicle"
+   "kind": "debris"
   },
   {
    "at": 1200,
-   "kind": "archer"
+   "kind": "cannon"
   },
   {
    "at": 1440,
-   "kind": "thorns"
+   "kind": "vent"
   },
   {
    "at": 1620,
-   "kind": "giant"
+   "kind": "gear"
   },
   {
    "at": 1860,
-   "kind": "raven"
+   "kind": "piston"
   },
   {
    "at": 2040,
-   "kind": "tree"
+   "kind": "gear"
   },
   {
    "at": 2030,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 2044,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 2058,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 2072,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 2086,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 2260,
-   "kind": "ghost"
+   "kind": "crate_wall"
   },
   {
    "at": 2420,
-   "kind": "skeleton"
+   "kind": "mech_mouse"
   },
   {
    "at": 2640,
-   "kind": "icicle"
+   "kind": "debris"
   },
   {
    "at": 2820,
-   "kind": "hound"
+   "kind": "mech_mouse"
   },
   {
    "at": 3040,
-   "kind": "giant"
+   "kind": "gear"
   },
   {
    "at": 3280,
-   "kind": "archer"
+   "kind": "cannon"
   },
   {
    "at": 3520,
-   "kind": "ghost"
+   "kind": "crate_wall"
   },
   {
    "at": 3700,
-   "kind": "raven"
+   "kind": "piston"
   },
   {
    "at": 3880,
-   "kind": "tree"
+   "kind": "gear"
   },
   {
    "at": 3870,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 3884,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 3898,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 3912,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 3926,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 4100,
-   "kind": "giant"
+   "kind": "gear"
   },
   {
    "at": 4262,
-   "kind": "wolf"
+   "kind": "mech_mouse"
   },
   {
    "at": 4540,
-   "kind": "icicle"
+   "kind": "debris"
   },
   {
    "at": 4720,
-   "kind": "thorns"
+   "kind": "vent"
   },
   {
    "at": 4860,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4876,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4892,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4908,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4900,
-   "kind": "skeleton"
+   "kind": "mech_mouse"
   },
   {
    "at": 5080,
-   "kind": "archer"
+   "kind": "cannon"
   },
   {
    "at": 5340,
-   "kind": "icicle"
+   "kind": "debris"
   },
   {
    "at": 5500,
-   "kind": "hound"
+   "kind": "mech_mouse"
   },
   {
    "at": 5670,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 5680,
-   "kind": "tree"
+   "kind": "gear"
   },
   {
    "at": 5684,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 5698,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 5712,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 5726,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 5860,
-   "kind": "ghost"
+   "kind": "crate_wall"
   },
   {
    "at": 6040,
-   "kind": "giant"
+   "kind": "gear"
   },
   {
    "at": 6296,
-   "kind": "wolf"
+   "kind": "mech_mouse"
   },
   {
    "at": 6440,
-   "kind": "raven"
+   "kind": "piston"
   },
   {
    "at": 6590,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 6600,
-   "kind": "thorns"
+   "kind": "vent"
   },
   {
    "at": 6604,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 6618,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 6632,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 6646,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 6780,
-   "kind": "archer"
+   "kind": "cannon"
   },
   {
    "at": 6990,
-   "kind": "hound"
+   "kind": "mech_mouse"
   },
   {
    "at": 7200,
-   "kind": "icicle"
+   "kind": "debris"
   },
   {
    "at": 7340,
-   "kind": "giant"
+   "kind": "gear"
   }
  ]
 }

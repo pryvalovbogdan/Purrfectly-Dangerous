@@ -14,7 +14,7 @@ final class GameHUD {
     var canFire = false
     var canCharge = false
     var canDoubleJump = false
-    /// How full the charged shot is, 0...1.
+    /// How far the paw is charged toward a Super Pounce, 0...1.
     var chargeFraction = 0.0
     var bossName: String?
     var bossFraction = 1.0

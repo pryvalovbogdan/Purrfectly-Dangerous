@@ -50,3 +50,45 @@ NAVY = _hex("22335c")
 PURPLE_L = _hex("c79bf0")
 PURPLE = _hex("8452c4")
 PURPLE_D = _hex("4b2c78")
+
+# The kitten: an orange tabby with cream paws and chest.
+GINGER_L = _hex("ffbe6a")
+GINGER = _hex("f28a2e")
+GINGER_D = _hex("c75a1e")
+GINGER_DD = _hex("8a3616")
+CREAM = _hex("fff1d6")
+CREAM_D = _hex("e9c9a2")
+PINK = _hex("f7a3b6")
+PINK_D = _hex("c8607e")
+YARN = _hex("f0609a")
+YARN_L = _hex("ff9cc6")
+YARN_D = _hex("a8306a")
+
+# Forest
+RUST_L = _hex("e0884a")
+RUST = _hex("b4542a")
+RUST_D = _hex("74311a")
+LEAF_L = _hex("b4e46a")
+TEAL = _hex("3fa9b8")
+MOSS = _hex("2f7d46")
+
+# Frost
+ICE_L = _hex("eafaff")
+CYAN = _hex("8fe3f2")
+ICE_D = _hex("2c5492")
+
+# Haunted
+LILAC = _hex("ece4ff")
+LILAC_D = _hex("b5a8e6")
+VIOLET = _hex("a96cf0")
+INDIGO = _hex("2e2160")
+NIGHT = _hex("1a1236")
+SPIRIT = _hex("8ef0d0")
+
+# Citadel
+LAVA_L = _hex("ffd04a")
+LAVA = _hex("ff6a1a")
+MAROON = _hex("4a1624")
+IRON_L = _hex("8d8796")
+IRON = _hex("5a5462")
+IRON_D = _hex("34303c")

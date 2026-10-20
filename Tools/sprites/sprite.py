@@ -31,3 +31,11 @@ class Sprite:
             if image.size != self.size:
                 raise ValueError(f"{self.name}/{name}: frame is {image.size}, expected {self.size}")
         self.anims[name] = Anim(images, fps, loop)
+
+
+def single(name: str, canvas, anim: str = "still", fps: int = 1, **kwargs) -> Sprite:
+    """A sprite with one one-frame animation (props, tiles, icons)."""
+    image = canvas.img if hasattr(canvas, "img") else canvas
+    sprite = Sprite(name, image.size, **kwargs)
+    sprite.add(anim, [image], fps=fps)
+    return sprite

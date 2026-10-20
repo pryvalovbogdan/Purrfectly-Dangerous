@@ -1,120 +1,334 @@
-"""Backgrounds and ground tiles. Each level theme has a sky, two horizontally tileable parallax layers
-and a ground tile."""
+"""Backdrops and ground tiles for the four worlds and the start screen.
+
+Per theme: `bg_<theme>_sky` (a 200-tall gradient stretched across the screen, standing on the ground
+line) and `bg_<theme>_sky_top` (its top colour, for any sky above it); `puffs`, `clouds`, `far`,
+`near` and `bushes` strips, 320 wide and tiling horizontally, back to front; `ground_<theme>` (a
+32x48 tile), `ground_<theme>_earth` (its lower part on its own) and `ground_<theme>_fill`; and
+`ravine_<theme>` (the left wall of a pit, mirrored for the right), `ravine_<theme>_fill` (stretched
+between the walls) and `ravine_<theme>_deep` (below that)."""
+from __future__ import annotations
+
+import math
+
 import palette as P
 from draw import Canvas, noise
-from sprite import Sprite
+from sprite import Sprite, single
 
 LAYER_W = 320
+EARTH_TOP = 12
 
 
-def single(name: str, canvas: Canvas) -> Sprite:
-    sprite = Sprite(name, canvas.size)
-    sprite.add("still", [canvas], fps=1)
-    return sprite
-
-
-def sky(theme: str, bands: list) -> Sprite:
-    c = Canvas(16, 200)
-    step = 200 / len(bands)
-    for i, color in enumerate(bands):
-        c.rect(0, i * step, 15, (i + 1) * step, color)
-    return single(f"bg_{theme}_sky", c)
-
-
-def wrapped(c: Canvas, draw, x: float) -> None:
+def wrapped(draw, x: float) -> None:
     """Calls `draw(x)` at x and one layer-width either side, so shapes crossing an edge tile seamlessly."""
     for offset in (-LAYER_W, 0, LAYER_W):
         draw(x + offset)
 
 
-def peaks(theme: str, layer: str, height: int, seed: int, count: int, tall: tuple[int, int], width: tuple[int, int],
-          color, cap=None) -> Sprite:
+def flat(name: str, colour) -> Sprite:
+    """One plain colour, for the game to stretch over an area."""
+    c = Canvas(8, 8)
+    c.rect(0, 0, 7, 7, colour)
+    return single(name, c)
+
+
+def sky(theme: str, stops: list) -> list[Sprite]:
+    """Top-to-bottom gradient over 200 rows, dithered where one colour meets the next."""
+    c = Canvas(16, 200)
+    step = 200 / len(stops)
+    for i, colour in enumerate(stops):
+        c.rect(0, i * step, 15, (i + 1) * step, colour)
+        if i:
+            for y in range(int(i * step) - 3, int(i * step) + 3):
+                for x in range(16):
+                    if (x + y) % 2 == 0 and y < i * step:
+                        c.px(x, y, colour)
+                    elif (x + y) % 2 == 0 and y >= i * step and (x + y) % 4 == 0:
+                        c.px(x, y, stops[i - 1])
+    return [single(f"bg_{theme}_sky", c), flat(f"bg_{theme}_sky_top", stops[0])]
+
+
+def puffs(theme: str, seed: int, colour, shade, moon=None) -> Sprite:
+    """Small clouds on their own, for open sky above the horizon (and the moon, at night)."""
+    height = 120
     c = Canvas(LAYER_W, height)
+    rnd = noise(seed)
+    if moon:
+        c.ellipse(230, 40, 16, 16, moon[0])
+        c.ellipse(225, 36, 4, 3, moon[1])
+        c.ellipse(237, 47, 3, 2.5, moon[1])
+        c.ellipse(236, 31, 2, 2, moon[1])
+    for i in range(5):
+        x = i * LAYER_W / 5 + rnd() * 30
+        y = 24 + rnd() * (height - 44)
+        w = 13 + rnd() * 11
+
+        def one(px, y=y, w=w):
+            c.ellipse(px, y + 1, w, w * 0.32, shade)
+            c.ellipse(px, y, w, w * 0.32, colour)
+            c.ellipse(px - w * 0.35, y - w * 0.22, w * 0.42, w * 0.36, colour)
+            c.ellipse(px + w * 0.2, y - w * 0.32, w * 0.5, w * 0.46, colour)
+        wrapped(one, x)
+    return single(f"bg_{theme}_puffs", c)
+
+
+def clouds(theme: str, height: int, seed: int, colour, shade) -> Sprite:
+    """A bank of cloud: puffs along the top, solid below, so it can stand on the horizon."""
+    c = Canvas(LAYER_W, height)
+    rnd = noise(seed)
+    top = height * 0.45
+    c.rect(0, top + 6, LAYER_W - 1, height - 1, shade)
+    for i in range(13):
+        x = i * LAYER_W / 13 + rnd() * 10
+        radius = 12 + rnd() * 14
+        y = top + rnd() * 8
+
+        def one(px, y=y, radius=radius):
+            c.ellipse(px, y, radius, radius * 0.8, colour)
+            c.ellipse(px + radius * 0.2, y + radius * 0.5, radius * 0.9, radius * 0.5, shade)
+        wrapped(one, x)
+    return single(f"bg_{theme}_clouds", c)
+
+
+def castle(c: Canvas, x: float, base: float, s: float, colour, light=None, window=None, roof=None) -> None:
+    """A distant castle silhouette, `s` scales it (1 = about 60 wide, 70 tall)."""
+    c.rect(x - 22 * s, base - 30 * s, x + 22 * s, base, colour)
+    for tx, w, h in ((-24, 7, 46), (-8, 8, 62), (10, 7, 52), (24, 6, 40)):
+        left, right, top = x + (tx - w / 2) * s, x + (tx + w / 2) * s, base - h * s
+        c.rect(left, top, right, base, colour)
+        c.poly([(left - 1.5 * s, top), (x + tx * s, top - 12 * s), (right + 1.5 * s, top)], roof or colour)
+        if light:
+            c.rect(left, top, left + max(1, w * s * 0.25), base, light)
+        if window:
+            c.rect(x + tx * s - 0.5, top + 8 * s, x + tx * s + 0.5, top + 11 * s, window)
+    for k in range(9):                                       # battlements
+        c.rect(x - 22 * s + k * 5 * s, base - 33 * s, x - 20 * s + k * 5 * s, base - 30 * s, colour)
+    if window:
+        c.rect(x - 3 * s, base - 12 * s, x + 3 * s, base, window)
+
+
+def hills(c: Canvas, height: int, seed: int, count: int, tall: tuple, colour, cap=None, light=None) -> None:
     rnd = noise(seed)
     for i in range(count):
         x = i * LAYER_W / count + rnd() * 20
         h = tall[0] + rnd() * (tall[1] - tall[0])
-        w = width[0] + rnd() * (width[1] - width[0])
+        w = h * (1.1 + rnd() * 0.6)
 
         def one(px, h=h, w=w):
-            c.poly([(px - w, height), (px, height - h), (px + w, height)], color)
+            c.poly([(px - w, height), (px, height - h), (px + w, height)], colour)
+            if light:
+                c.poly([(px, height - h), (px + w * 0.15, height - h * 0.6), (px + w, height)], light)
             if cap:
-                c.poly([(px - w * 0.25, height - h * 0.75), (px, height - h), (px + w * 0.25, height - h * 0.75),
-                        (px + w * 0.08, height - h * 0.68), (px - w * 0.1, height - h * 0.7)], cap)
-        wrapped(c, one, x)
-    return single(f"bg_{theme}_{layer}", c)
+                c.poly([(px - w * 0.28, height - h * 0.72), (px, height - h), (px + w * 0.28, height - h * 0.72),
+                        (px + w * 0.1, height - h * 0.64), (px - w * 0.05, height - h * 0.7),
+                        (px - w * 0.15, height - h * 0.62)], cap)
+        wrapped(one, x)
 
 
-def trees(theme: str, layer: str, height: int, seed: int, count: int, trunk, leaf, leaf_light) -> Sprite:
-    c = Canvas(LAYER_W, height)
-    rnd = noise(seed)
-    for i in range(count):
-        x = i * LAYER_W / count + rnd() * 14
-        h = height * (0.55 + rnd() * 0.4)
-        spread = 10 + rnd() * 8
-
-        def one(px, h=h, spread=spread):
-            c.rect(px - 2, height - h * 0.5, px + 2, height, trunk)
-            for k in range(3):
-                top = height - h + k * h * 0.18
-                c.poly([(px - spread * (0.6 + k * 0.2), top + h * 0.3), (px, top), (px + spread * (0.6 + k * 0.2), top + h * 0.3)], leaf)
-            c.poly([(px - spread * 0.3, height - h + h * 0.18), (px, height - h), (px + 2, height - h + h * 0.2)], leaf_light)
-        wrapped(c, one, x)
-    return single(f"bg_{theme}_{layer}", c)
-
-
-def spires(theme: str, layer: str, height: int, seed: int, count: int, color, window) -> Sprite:
+def round_trees(theme: str, layer: str, height: int, seed: int, count: int, trunk, leaf, leaf_l, leaf_d,
+                extra=None) -> Sprite:
+    """Big leafy trees with clustered round canopies (the forest)."""
     c = Canvas(LAYER_W, height)
     rnd = noise(seed)
     for i in range(count):
         x = i * LAYER_W / count + rnd() * 16
-        h = height * (0.4 + rnd() * 0.55)
-        w = 7 + rnd() * 9
+        h = height * (0.6 + rnd() * 0.35)
+        spread = 16 + rnd() * 10
+        blobs = [(rnd() - 0.5, rnd(), 0.5 + rnd() * 0.4) for _ in range(6)]
 
-        def one(px, h=h, w=w, lit=rnd() > 0.4):
-            c.rect(px - w, height - h, px + w, height, color)
-            c.poly([(px - w - 2, height - h), (px, height - h - w * 1.6), (px + w + 2, height - h)], color)
-            if window and lit:
-                for row in range(int(h // 18)):
-                    c.rect(px - 1, height - h + 8 + row * 18, px + 1, height - h + 12 + row * 18, window)
-        wrapped(c, one, x)
+        def one(px, h=h, spread=spread, blobs=blobs):
+            top = height - h
+            c.rect(px - 3, top + spread * 0.6, px + 3, height, trunk)
+            c.poly([(px - 7, height), (px - 3, height - 8), (px + 3, height - 8), (px + 7, height)], trunk)
+            c.line((px - 1, top + spread), (px - 1, height - 4), leaf_d)
+            for dx, dy, rad in blobs:
+                c.ellipse(px + dx * spread * 1.6, top + spread * 0.5 + dy * spread * 0.5, spread * rad,
+                          spread * rad * 0.85, leaf_d)
+            for dx, dy, rad in blobs:
+                c.ellipse(px + dx * spread * 1.6 - 1, top + spread * 0.45 + dy * spread * 0.5 - 1,
+                          spread * rad * 0.8, spread * rad * 0.7, leaf)
+            for dx, dy, rad in blobs[:3]:
+                c.ellipse(px + dx * spread * 1.6 - spread * rad * 0.3, top + spread * 0.3 + dy * spread * 0.45,
+                          spread * rad * 0.35, spread * rad * 0.25, leaf_l)
+        wrapped(one, x)
+    if extra:
+        extra(c)
     return single(f"bg_{theme}_{layer}", c)
 
 
-EARTH_TOP = 12
-
-
-def ground(theme: str, top, top_light, fill, speck, seed: int) -> list[Sprite]:
-    """The ground tile, and its grassless lower part as a tile of its own for stacking underneath
-    where the earth runs deeper than one tile. The game never cuts pieces out of a texture itself:
-    on a device the atlas packs textures together and a cut-out shows its neighbours."""
-    c = Canvas(32, 48)
-    c.rect(0, 0, 31, 47, fill)
-    c.rect(0, 0, 31, 4, top)
-    c.rect(0, 0, 31, 0, top_light)
+def pines(theme: str, layer: str, height: int, seed: int, count: int, leaf, leaf_l, snow, trunk) -> Sprite:
+    c = Canvas(LAYER_W, height)
     rnd = noise(seed)
-    for x in range(0, 32, 4):
-        c.rect(x, 5, x + 1, 5 + int(rnd() * 3), top)
-    for _ in range(26):
-        x, y = int(rnd() * 31), 9 + int(rnd() * 38)
-        c.rect(x, y, x + int(rnd() * 2), y, speck)
+    for i in range(count):
+        x = i * LAYER_W / count + rnd() * 14
+        h = height * (0.5 + rnd() * 0.45)
+        spread = 9 + rnd() * 6
+
+        def one(px, h=h, spread=spread):
+            c.rect(px - 1.5, height - 8, px + 1.5, height, trunk)
+            for k in range(4):
+                top = height - h + k * h * 0.2
+                w = spread * (0.5 + k * 0.22)
+                c.poly([(px - w, top + h * 0.28), (px, top), (px + w, top + h * 0.28)], leaf)
+                c.poly([(px, top), (px + w, top + h * 0.28), (px + w * 0.3, top + h * 0.28)], leaf_l)
+                c.poly([(px - w * 0.55, top + h * 0.17), (px, top), (px + w * 0.55, top + h * 0.17),
+                        (px + w * 0.2, top + h * 0.12), (px - w * 0.2, top + h * 0.14)], snow)
+        wrapped(one, x)
+    return single(f"bg_{theme}_{layer}", c)
+
+
+def dead_trees(c: Canvas, height: int, seed: int, count: int, colour) -> None:
+    rnd = noise(seed)
+    for i in range(count):
+        x = i * LAYER_W / count + rnd() * 30
+        h = height * (0.45 + rnd() * 0.4)
+        lean = (rnd() - 0.5) * 10
+        branches = [(0.35 + rnd() * 0.5, (rnd() - 0.5) * 2, 8 + rnd() * 14) for _ in range(5)]
+
+        def one(px, h=h, lean=lean, branches=branches):
+            c.poly([(px - 4, height), (px + lean - 1, height - h), (px + lean + 1, height - h), (px + 4, height)],
+                   colour)
+            for t, side, length in branches:
+                bx, by = px + lean * t, height - h * t
+                ex, ey = bx + math.copysign(length, side), by - length * 0.6
+                c.line((bx, by), (ex, ey), colour, 2)
+                c.line((ex, ey), (ex + math.copysign(3, side), ey - 4), colour)
+        wrapped(one, x)
+
+
+def towers(c: Canvas, height: int, seed: int, count: int, colour, light, window, chains=None) -> None:
+    rnd = noise(seed)
+    for i in range(count):
+        x = i * LAYER_W / count + rnd() * 16
+        h = height * (0.3 + rnd() * 0.35)
+        w = 8 + rnd() * 8
+        lit = [rnd() > 0.45 for _ in range(8)]
+
+        def one(px, h=h, w=w, lit=lit):
+            c.rect(px - w, height - h, px + w, height, colour)
+            c.rect(px - w, height - h, px - w + 2, height, light)
+            for k in range(int(w * 2 / 4) + 1):                    # battlements
+                c.rect(px - w + k * 4, height - h - 3, px - w + k * 4 + 1.5, height - h, colour)
+            for row in range(int(h // 16)):
+                if lit[row % 8]:
+                    c.rect(px - 1, height - h + 8 + row * 16, px + 1, height - h + 12 + row * 16, window)
+        wrapped(one, x)
+    if chains:
+        for k in range(4):
+            x0 = k * 80 + 20
+            for j in range(20):
+                t = j / 19
+                c.px(x0 + t * 40, height * 0.25 + math.sin(t * math.pi) * 14, chains)
+
+
+def bushes(theme: str, height: int, seed: int, leaf, leaf_light, deco=None) -> Sprite:
+    c = Canvas(LAYER_W, height)
+    rnd = noise(seed)
+    c.rect(0, height * 0.7, LAYER_W - 1, height - 1, leaf)
+    for i in range(20):
+        x = i * LAYER_W / 20 + rnd() * 8
+        radius = height * (0.27 + rnd() * 0.23)
+        y = height - radius * 0.6
+
+        def one(px, y=y, radius=radius):
+            c.ellipse(px, y, radius, radius, leaf)
+            c.ellipse(px - radius * 0.25, y - radius * 0.35, radius * 0.45, radius * 0.35, leaf_light)
+        wrapped(one, x)
+    if deco:
+        deco(c, rnd)
+    return single(f"bg_{theme}_bushes", c)
+
+
+# --- ground ----------------------------------------------------------------------------------------
+
+def ground(theme: str, draw) -> list[Sprite]:
+    """The 32x48 ground tile, and its lower part as a tile of its own for stacking underneath where the
+    earth runs deeper than one tile. The game never cuts pieces out of a texture itself: on a device the
+    atlas packs textures together and a cut-out shows its neighbours."""
+    c = Canvas(32, 48)
+    draw(c)
     earth = Canvas(32, 48 - EARTH_TOP)
     earth.paste(c.img.crop((0, EARTH_TOP, 32, 48)))
     return [single(f"ground_{theme}", c), single(f"ground_{theme}_earth", earth)]
 
 
-def flat(name: str, color) -> Sprite:
-    """One plain colour, for the game to stretch over an area."""
-    c = Canvas(8, 8)
-    c.rect(0, 0, 7, 7, color)
-    return single(name, c)
+def forest_ground(c: Canvas) -> None:
+    c.rect(0, 0, 31, 47, P.BROWN)
+    rnd = noise(3)
+    for _ in range(24):                                      # pebbles and roots in the earth
+        x, y = int(rnd() * 31), 12 + int(rnd() * 34)
+        c.rect(x, y, x + 1, y, P.BROWN_D)
+    for x, y in ((5, 20), (21, 31), (12, 42)):
+        c.ellipse(x, y, 2, 1.5, P.BROWN_L)
+        c.px(x - 1, y - 1, P.SAND)
+    c.rect(0, 0, 31, 5, P.GREEN)
+    c.rect(0, 0, 31, 0, P.LEAF_L)
+    c.rect(0, 1, 31, 1, P.GREEN_L)
+    for x in range(0, 32, 3):                                # turf hanging over the earth
+        c.rect(x, 6, x + 1, 6 + (x * 7 % 4), P.GREEN)
+        c.px(x, 7 + (x * 7 % 4), P.GREEN_D)
+    for x in (3, 14, 25):
+        c.px(x, 2, P.GREEN_D)
+        c.px(x + 1, 3, P.GREEN_D)
 
 
-def ground_fill(theme: str, fill) -> Sprite:
-    """Plain earth colour; stretched under the ground tile where the scene is taller than the tile."""
-    c = Canvas(8, 8)
-    c.rect(0, 0, 7, 7, fill)
-    return single(f"ground_{theme}_fill", c)
+def frost_ground(c: Canvas) -> None:
+    c.rect(0, 0, 31, 47, P.BLUE_L)
+    for y in range(10, 48, 8):                               # packed ice blocks
+        c.line((0, y), (31, y), P.BLUE)
+        off = 0 if (y // 8) % 2 else 8
+        for x in range(off, 32, 16):
+            c.line((x, y), (x, y + 7), P.BLUE)
+        c.line((0, y + 1), (31, y + 1), P.ICE_L)
+    rnd = noise(6)
+    for _ in range(8):
+        x, y = int(rnd() * 30), 12 + int(rnd() * 34)
+        c.px(x, y, P.WHITE)
+    c.rect(0, 0, 31, 6, P.WHITE)
+    for x in range(0, 32, 4):                                # snow drifting over the edge
+        c.rect(x, 7, x + 2, 7 + (x * 5 % 3), P.WHITE)
+    c.rect(0, 5, 31, 5, P.ICE_L)
+    c.px(7, 2, P.CYAN)
+    c.px(23, 3, P.CYAN)
+
+
+def haunted_ground(c: Canvas) -> None:
+    c.rect(0, 0, 31, 47, P.INDIGO)
+    for y in range(8, 48, 8):                                # crypt stones
+        c.line((0, y), (31, y), P.NIGHT)
+        off = 0 if (y // 8) % 2 else 8
+        for x in range(off, 32, 16):
+            c.line((x, y), (x, y + 7), P.NIGHT)
+            c.px(x + 1, y + 1, P.PURPLE_D)
+    rnd = noise(9)
+    for _ in range(10):
+        x, y = int(rnd() * 30), 10 + int(rnd() * 36)
+        c.px(x, y, P.PURPLE_D)
+    c.rect(0, 0, 31, 4, P.PURPLE)
+    c.rect(0, 0, 31, 0, P.VIOLET)
+    for x in range(0, 32, 4):                                # moss over the edge
+        c.rect(x + 1, 5, x + 2, 5 + (x * 3 % 3), P.PURPLE_D)
+    c.px(9, 2, P.SPIRIT)
+    c.px(26, 1, P.LILAC_D)
+
+
+def citadel_ground(c: Canvas) -> None:
+    c.rect(0, 0, 31, 47, P.IRON_D)
+    for y in range(8, 48, 8):                                # basalt bricks
+        c.line((0, y), (31, y), P.NIGHT)
+        off = 4 if (y // 8) % 2 else 12
+        for x in range(off, 32, 16):
+            c.line((x, y), (x, y + 7), P.NIGHT)
+    for x, y in ((9, 19), (25, 36)):                         # glowing cracks in some bricks
+        c.px(x, y, P.RED)
+        c.px(x + 1, y + 1, P.LAVA)
+        c.px(x + 1, y + 2, P.RED)
+        c.px(x + 3, y + 1, P.RED)
+    c.rect(0, 0, 31, 4, P.IRON)
+    c.rect(0, 0, 31, 0, P.IRON_L)
+    for x in (4, 20):
+        c.rect(x, 1, x + 8, 3, P.IRON_L if x == 4 else P.IRON)
+        c.px(x + 1, 2, P.IRON_D)
+    c.rect(0, 5, 31, 5, P.MAROON)
 
 
 def ravine(theme: str, top, top_light, rock, rock_dark, seed: int) -> Sprite:
@@ -122,135 +336,187 @@ def ravine(theme: str, top, top_light, rock, rock_dark, seed: int) -> Sprite:
     c = Canvas(8, 48)
     rnd = noise(seed)
     for y in range(5, 48):
-        # Ragged rock that thins out as it drops into the dark.
         reach = 1 + int(rnd() * 3) if y < 30 else int(rnd() * 2)
         c.rect(0, y, reach, y, rock if y < 18 else rock_dark)
         if y < 18:
             c.px(reach, y, rock_dark)
-    # The turf curls over the rim.
     for y, reach in enumerate((5, 5, 4, 3, 2)):
         c.rect(0, y, reach, y, top)
     c.rect(0, 0, 4, 0, top_light)
     return single(f"ravine_{theme}", c)
 
 
-def ravine_fill(theme: str, deep) -> Sprite:
-    """The dark between the walls: horizontal bands only, so the game can stretch it to any width."""
+def ravine_fill(theme: str, upper, lower, lava: bool = False) -> Sprite:
+    """The pit between the walls: horizontal bands only, so the game can stretch it to any width."""
     c = Canvas(8, 48)
-    c.rect(0, 0, 7, 47, P.BLACK)
-    c.rect(0, 0, 7, 15, deep)
+    c.rect(0, 0, 7, 47, lower)
+    c.rect(0, 0, 7, 15, upper)
+    if lava:                                                 # a lava pool a little way down
+        c.rect(0, 0, 7, 13, P.MAROON)
+        c.rect(0, 14, 7, 47, P.RED)
+        c.rect(0, 14, 7, 15, P.LAVA_L)
+        c.rect(0, 16, 7, 20, P.LAVA)
+        c.rect(0, 30, 7, 47, P.RED_D)
     return single(f"ravine_{theme}_fill", c)
 
 
-def clouds(theme: str, height: int, seed: int, color) -> Sprite:
-    """A bank of cloud: puffs along the top, solid below, so it can stand on the horizon."""
-    c = Canvas(LAYER_W, height)
-    rnd = noise(seed)
-    top = height * 0.42
-    c.rect(0, top, LAYER_W - 1, height - 1, color)
-    count = 13
-    for i in range(count):
-        x = i * LAYER_W / count + rnd() * 10
-        radius = 12 + rnd() * 16
-        y = top + rnd() * 8
-        wrapped(c, lambda px, y=y, radius=radius: c.ellipse(px, y, radius, radius * 0.8, color), x)
-    return single(f"bg_{theme}_clouds", c)
+# --- themes -----------------------------------------------------------------------------------------
+
+def forest() -> list[Sprite]:
+    def far(c):
+        castle(c, 230, 104, 0.9, P.BLUE, P.BLUE_L, P.BLUE_L, P.BLUE_D)
+
+    def flowers(c, rnd):
+        for k in range(26):
+            x, y = rnd() * LAYER_W, 10 + rnd() * 14
+            c.px(x, y, (P.YELLOW, P.PINK, P.WHITE, P.RED)[k % 4])
+        for k in range(5):                                   # toadstools
+            x = 20 + k * 64 + rnd() * 20
+            c.rect(x, 18, x, 21, P.CREAM)
+            c.ellipse(x, 17.5, 2, 1.2, P.RED)
+
+    far_layer = Canvas(LAYER_W, 110)
+    hills(far_layer, 110, 4, 5, (55, 95), P.BLUE_D, None, P.BLUE)
+    far(far_layer)
+    return [
+        *sky("forest", [P.BLUE_D, P.BLUE, P.BLUE, P.BLUE_L]),
+        puffs("forest", 21, P.WHITE, P.ICE_L),
+        clouds("forest", 150, 20, P.WHITE, P.ICE_L),
+        single("bg_forest_far", far_layer),
+        round_trees("forest", "near", 150, 2, 5, P.BROWN_D, P.GREEN, P.GREEN_L, P.FOREST),
+        bushes("forest", 24, 22, P.GREEN_D, P.GREEN, flowers),
+        *ground("forest", forest_ground),
+        flat("ground_forest_fill", P.BROWN),
+        ravine("forest", P.GREEN, P.LEAF_L, P.BROWN_D, P.OUTLINE, 13),
+        ravine_fill("forest", P.OUTLINE, P.BLACK),
+        flat("ravine_forest_deep", P.BLACK),
+    ]
 
 
-def puffs(theme: str, seed: int, color) -> Sprite:
-    """Small clouds on their own, for the open sky above the horizon."""
-    height = 120
-    c = Canvas(LAYER_W, height)
-    rnd = noise(seed)
-    count = 5
-    for i in range(count):
-        x = i * LAYER_W / count + rnd() * 30
-        y = 24 + rnd() * (height - 44)
-        w = 13 + rnd() * 11
+def frost() -> list[Sprite]:
+    far_layer = Canvas(LAYER_W, 150)
+    hills(far_layer, 150, 7, 5, (80, 140), P.BLUE, P.WHITE, P.BLUE_L)
+    castle(far_layer, 120, 150, 1.1, P.ICE_L, P.WHITE, P.CYAN, P.BLUE_L)
 
-        def one(px, y=y, w=w):
-            c.ellipse(px, y, w, w * 0.32, color)
-            c.ellipse(px - w * 0.35, y - w * 0.22, w * 0.42, w * 0.36, color)
-            c.ellipse(px + w * 0.2, y - w * 0.32, w * 0.5, w * 0.46, color)
-        wrapped(c, one, x)
-    return single(f"bg_{theme}_puffs", c)
+    def crystals(c, rnd):
+        for k in range(8):
+            x = 20 + k * 40 + rnd() * 16
+            c.poly([(x - 2, 20), (x, 10 + rnd() * 4), (x + 2, 20)], P.CYAN)
+            c.poly([(x + 1, 20), (x + 4, 14), (x + 5, 20)], P.BLUE_L)
+            c.px(x, 14, P.WHITE)
+
+    return [
+        *sky("frost", [P.BLUE_D, P.BLUE_D, P.BLUE, P.BLUE_L]),
+        puffs("frost", 24, P.WHITE, P.BLUE_L),
+        clouds("frost", 160, 23, P.ICE_L, P.BLUE_L),
+        single("bg_frost_far", far_layer),
+        pines("frost", "near", 130, 5, 8, P.FOREST, P.MOSS, P.WHITE, P.BROWN_D),
+        bushes("frost", 20, 25, P.BLUE, P.BLUE_L, crystals),
+        *ground("frost", frost_ground),
+        flat("ground_frost_fill", P.BLUE_L),
+        ravine("frost", P.WHITE, P.WHITE, P.BLUE, P.ICE_D, 14),
+        ravine_fill("frost", P.ICE_D, P.NAVY),
+        flat("ravine_frost_deep", P.NAVY),
+    ]
 
 
-def bushes(theme: str, height: int, seed: int, leaf, leaf_light) -> Sprite:
-    c = Canvas(LAYER_W, height)
-    rnd = noise(seed)
-    c.rect(0, height * 0.7, LAYER_W - 1, height - 1, leaf)
-    count = 20
-    for i in range(count):
-        x = i * LAYER_W / count + rnd() * 8
-        radius = height * (0.27 + rnd() * 0.23)
-        y = height - radius * 0.6
+def haunted() -> list[Sprite]:
+    far_layer = Canvas(LAYER_W, 140)
+    hills(far_layer, 140, 8, 4, (40, 70), P.INDIGO)
+    castle(far_layer, 170, 140, 1.4, P.NIGHT, P.INDIGO, P.GOLD, P.NIGHT)
+    castle(far_layer, 50, 140, 0.7, P.NIGHT, None, P.GOLD_D, P.NIGHT)
 
-        def one(px, y=y, radius=radius):
-            c.ellipse(px, y, radius, radius, leaf)
-            c.ellipse(px - radius * 0.25, y - radius * 0.35, radius * 0.45, radius * 0.35, leaf_light)
-        wrapped(c, one, x)
-    return single(f"bg_{theme}_bushes", c)
+    near_layer = Canvas(LAYER_W, 120)
+    dead_trees(near_layer, 120, 9, 5, P.NIGHT)
+
+    def graves(c, rnd):
+        for k in range(7):
+            x = 15 + k * 46 + rnd() * 10
+            c.poly([(x - 3, 22), (x - 3, 14), (x, 11), (x + 3, 14), (x + 3, 22)], P.PURPLE_D)
+            c.px(x - 1, 14, P.PURPLE)
+        for k in range(12):                                  # glowing toadstools
+            x = rnd() * LAYER_W
+            c.px(x, 18 + rnd() * 3, P.SPIRIT)
+
+    return [
+        *sky("haunted", [P.NIGHT, P.NIGHT, P.INDIGO, P.PURPLE_D]),
+        puffs("haunted", 27, P.PURPLE_D, P.INDIGO, moon=(P.LILAC, P.LILAC_D)),
+        clouds("haunted", 150, 26, P.PURPLE_D, P.INDIGO),
+        single("bg_haunted_far", far_layer),
+        single("bg_haunted_near", near_layer),
+        bushes("haunted", 22, 28, P.INDIGO, P.PURPLE_D, graves),
+        *ground("haunted", haunted_ground),
+        flat("ground_haunted_fill", P.INDIGO),
+        ravine("haunted", P.PURPLE, P.VIOLET, P.INDIGO, P.NIGHT, 15),
+        ravine_fill("haunted", P.NIGHT, P.BLACK),
+        flat("ravine_haunted_deep", P.BLACK),
+    ]
+
+
+def citadel() -> list[Sprite]:
+    far_layer = Canvas(LAYER_W, 150)
+    hills(far_layer, 150, 10, 4, (50, 90), P.MAROON)
+    castle(far_layer, 150, 150, 1.5, P.NIGHT, P.MAROON, P.LAVA, P.NIGHT)
+    for x in (60, 262):                                      # lava pouring from the rock
+        top = 150 - 70
+        far_layer.ellipse(x + 3, top, 5, 3, P.LAVA)
+        far_layer.rect(x, top, x + 6, 149, P.LAVA)
+        far_layer.rect(x + 2, top, x + 3, 149, P.LAVA_L)
+        far_layer.ellipse(x + 3, 148, 9, 3, P.LAVA_L)
+
+    near_layer = Canvas(LAYER_W, 150)
+    towers(near_layer, 150, 11, 4, P.IRON_D, P.IRON, P.LAVA)
+
+    def rubble(c, rnd):
+        for k in range(14):
+            x = rnd() * LAYER_W
+            c.px(x, 16 + rnd() * 6, P.LAVA if k % 3 else P.LAVA_L)
+
+    return [
+        *sky("citadel", [P.NIGHT, P.MAROON, P.RED_D, P.RED]),
+        puffs("citadel", 30, P.IRON_D, P.NIGHT),
+        clouds("citadel", 150, 29, P.MAROON, P.RED_D),
+        single("bg_citadel_far", far_layer),
+        single("bg_citadel_near", near_layer),
+        bushes("citadel", 22, 31, P.NIGHT, P.IRON_D, rubble),
+        *ground("citadel", citadel_ground),
+        flat("ground_citadel_fill", P.IRON_D),
+        ravine("citadel", P.IRON, P.IRON_L, P.IRON_D, P.NIGHT, 16),
+        ravine_fill("citadel", P.MAROON, P.RED_D, lava=True),
+        flat("ravine_citadel_deep", P.RED_D),
+    ]
+
+
+def menu() -> list[Sprite]:
+    """The start screen: a sunny morning over rooftops and gardens."""
+    horizon = Canvas(LAYER_W, 80)
+    hills(horizon, 80, 18, 6, (24, 46), P.BLUE_L)
+    rnd = noise(33)
+    for k in range(7):                                       # little houses on the hills
+        x = 20 + k * 46 + rnd() * 10
+        base = 58 - rnd() * 8
+        horizon.rect(x - 5, base, x + 5, 79, P.BLUE_L)
+        horizon.rect(x - 5, base - 9, x + 5, base, P.ICE_L)
+        horizon.poly([(x - 7, base - 9), (x, base - 15), (x + 7, base - 9)], P.PINK)
+        horizon.rect(x - 1, base - 5, x, base - 3, P.BLUE)
+
+    def garden(c, rnd):
+        for k in range(30):
+            x, y = rnd() * LAYER_W, 10 + rnd() * 14
+            c.px(x, y, (P.YELLOW, P.PINK, P.WHITE)[k % 3])
+        for k in range(4):                                   # balls of yarn left in the garden
+            x = 40 + k * 80 + rnd() * 20
+            c.ellipse(x, 22, 3, 3, (P.YARN, P.BLUE, P.GOLD, P.YARN_L)[k])
+            c.line((x - 2, 21), (x + 2, 23), P.WHITE)
+
+    return [
+        single("bg_menu_sky", sky("menu", [P.BLUE, P.BLUE, P.BLUE_L])[0].anims["still"].frames[0]),
+        clouds("menu", 110, 17, P.WHITE, P.ICE_L),
+        puffs("menu", 32, P.WHITE, P.ICE_L),
+        single("bg_menu_horizon", horizon),
+        bushes("menu", 26, 19, P.GREEN, P.GREEN_L, garden),
+    ]
 
 
 def build() -> list[Sprite]:
-    return [
-        sky("forest", [P.BLUE, P.BLUE, P.BLUE, P.BLUE_L, P.BLUE_L]),
-        trees("forest", "far", 110, 1, 9, P.FOREST, P.FOREST, P.GREEN_D),
-        trees("forest", "near", 150, 2, 6, P.BROWN_D, P.GREEN_D, P.GREEN),
-        *ground("forest", P.GREEN, P.GREEN_L, P.BROWN, P.BROWN_D, 3),
-        flat("bg_forest_sky_top", P.BLUE),
-        flat("ravine_forest_deep", P.BLACK),
-        ground_fill("forest", P.BROWN),
-        ravine("forest", P.GREEN, P.GREEN_L, P.BROWN_D, P.OUTLINE, 13),
-        ravine_fill("forest", P.OUTLINE),
-        clouds("forest", 170, 20, P.WHITE),
-        puffs("forest", 21, P.WHITE),
-        bushes("forest", 18, 22, P.GREEN_D, P.GREEN),
-
-        sky("mountain", [P.BLUE_D, P.BLUE, P.BLUE, P.BLUE_L, P.BLUE_L]),
-        peaks("mountain", "far", 150, 4, 5, (80, 145), (50, 80), P.BLUE_D, P.WHITE),
-        peaks("mountain", "near", 100, 5, 7, (40, 90), (30, 55), P.GREY_D, P.BLUE_L),
-        *ground("mountain", P.WHITE, P.WHITE, P.GREY_L, P.BLUE_L, 6),
-        flat("bg_mountain_sky_top", P.BLUE_D),
-        flat("ravine_mountain_deep", P.BLACK),
-        ground_fill("mountain", P.GREY_L),
-        ravine("mountain", P.WHITE, P.WHITE, P.GREY, P.GREY_D, 14),
-        ravine_fill("mountain", P.NAVY),
-        clouds("mountain", 170, 23, P.WHITE),
-        puffs("mountain", 24, P.WHITE),
-        bushes("mountain", 18, 25, P.GREY_L, P.WHITE),
-
-        sky("wastes", [P.NAVY, P.NAVY, P.PURPLE_D, P.PURPLE_D, P.PALE_D]),
-        peaks("wastes", "far", 130, 7, 4, (60, 125), (60, 100), P.SLATE, P.PALE_D),
-        peaks("wastes", "near", 70, 8, 9, (20, 60), (14, 30), P.GREY_D, None),
-        *ground("wastes", P.PALE, P.WHITE, P.GREY, P.GREY_D, 9),
-        flat("bg_wastes_sky_top", P.NAVY),
-        flat("ravine_wastes_deep", P.BLACK),
-        ground_fill("wastes", P.GREY),
-        ravine("wastes", P.PALE, P.WHITE, P.GREY_D, P.SLATE, 15),
-        ravine_fill("wastes", P.OUTLINE),
-        clouds("wastes", 170, 26, P.PALE_D),
-        puffs("wastes", 27, P.PALE_D),
-        bushes("wastes", 18, 28, P.GREY_D, P.GREY),
-
-        sky("tower", [P.BLACK, P.BLACK, P.RED_D, P.RED_D, P.RED]),
-        spires("tower", "far", 150, 10, 8, P.BLACK, None),
-        spires("tower", "near", 160, 11, 5, P.SLATE, P.ORANGE),
-        *ground("tower", P.GREY_D, P.GREY, P.SLATE, P.BLACK, 12),
-        flat("bg_tower_sky_top", P.BLACK),
-        flat("ravine_tower_deep", P.BLACK),
-        ground_fill("tower", P.SLATE),
-        ravine("tower", P.GREY_D, P.GREY, P.OUTLINE, P.BLACK, 16),
-        ravine_fill("tower", P.OUTLINE),
-        clouds("tower", 150, 29, P.PURPLE_D),
-        puffs("tower", 30, P.PURPLE_D),
-        bushes("tower", 18, 31, P.BLACK, P.SLATE),
-
-        # The start screen: a bright morning for the hero to run through.
-        sky("menu", [P.BLUE]),
-        clouds("menu", 110, 17, P.WHITE),
-        puffs("menu", 32, P.WHITE),
-        trees("menu", "horizon", 80, 18, 12, P.BLUE_L, P.BLUE_L, P.BLUE_L),
-        bushes("menu", 26, 19, P.GREEN, P.GREEN_L),
-    ]
+    return [*forest(), *frost(), *haunted(), *citadel(), *menu()]

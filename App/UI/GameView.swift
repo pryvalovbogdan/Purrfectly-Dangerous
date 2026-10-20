@@ -154,7 +154,7 @@ private struct HUDView: View {
                         ZStack {
                             Circle().fill(.black.opacity(0.15))
                             if hud.canDoubleJump { FlameRing() }
-                            SpriteImage(sprite: "ability_\(Ability.doubleJump.rawValue)", animation: "still")
+                            SpriteImage(sprite: "ability_\(Ability.doublePounce.rawValue)", animation: "still")
                                 .frame(width: 48, height: 48)
                         }
                     }

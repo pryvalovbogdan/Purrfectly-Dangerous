@@ -1,12 +1,12 @@
 {
  "id": "level_03",
  "nameKey": "level.3.name",
- "background": "wastes",
+ "background": "haunted",
  "speed": 130,
  "length": 6900,
  "entryHeroLevel": 4,
- "boss": "boss_queen",
- "bossRewardLevel": 4,
+ "boss": "boss_phantom",
+ "bossRewardLevel": 5,
  "ravines": [
   {
    "at": 1920,
@@ -40,254 +40,265 @@
  "items": [
   {
    "at": 220,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 236,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 252,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 268,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 420,
-   "kind": "hound"
+   "kind": "ghost_cat"
   },
   {
    "at": 640,
-   "kind": "skeleton"
+   "kind": "skeleton_mouse"
   },
   {
    "at": 820,
-   "kind": "archer"
+   "kind": "bell"
   },
   {
    "at": 1040,
-   "kind": "icicle"
+   "kind": "skull"
   },
   {
    "at": 1220,
-   "kind": "raven"
+   "kind": "bat"
   },
   {
    "at": 1400,
-   "kind": "skeleton"
+   "kind": "skeleton_mouse"
   },
   {
    "at": 1390,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 1404,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 1418,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 1432,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 1446,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 1600,
-   "kind": "hound"
+   "kind": "ghost_cat"
   },
   {
    "at": 1820,
-   "kind": "giant"
+   "kind": "tombstone"
   },
   {
    "at": 2040,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2056,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2072,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2088,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2200,
-   "kind": "archer"
+   "kind": "bell"
   },
   {
    "at": 2440,
-   "kind": "thorns"
+   "kind": "tombstone"
   },
   {
    "at": 2620,
-   "kind": "raven"
+   "kind": "bat"
   },
   {
    "at": 2800,
-   "kind": "ghost"
+   "kind": "ghost_cat"
   },
   {
    "at": 2980,
-   "kind": "hound"
+   "kind": "ghost_cat"
   },
   {
    "at": 3200,
-   "kind": "skeleton"
+   "kind": "skeleton_mouse"
   },
   {
    "at": 3190,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 3204,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 3218,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 3232,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 3246,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 3400,
-   "kind": "giant"
+   "kind": "tombstone"
   },
   {
    "at": 3640,
-   "kind": "archer"
+   "kind": "bell"
   },
   {
    "at": 3880,
-   "kind": "ghost"
+   "kind": "ghost_cat"
   },
   {
    "at": 4060,
-   "kind": "raven"
+   "kind": "bat"
   },
   {
    "at": 4190,
-   "kind": "hound"
+   "kind": "ghost_cat"
   },
   {
    "at": 4400,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4416,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4432,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4448,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4420,
-   "kind": "skeleton"
+   "kind": "skeleton_mouse"
   },
   {
    "at": 4600,
-   "kind": "archer"
+   "kind": "bell"
   },
   {
    "at": 4800,
-   "kind": "icicle"
+   "kind": "skull"
   },
   {
    "at": 5140,
-   "kind": "raven"
+   "kind": "bat"
   },
   {
    "at": 5290,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 5300,
-   "kind": "skeleton"
+   "kind": "skeleton_mouse"
   },
   {
    "at": 5304,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 5318,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 5332,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 5346,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 5480,
-   "kind": "giant"
+   "kind": "tombstone"
   },
   {
    "at": 5700,
-   "kind": "ghost"
+   "kind": "ghost_cat"
   },
   {
    "at": 5952,
-   "kind": "hound"
+   "kind": "ghost_cat"
   },
   {
    "at": 6060,
-   "kind": "thorns"
+   "kind": "tombstone"
   },
   {
    "at": 6220,
-   "kind": "archer"
+   "kind": "bell"
   },
   {
    "at": 6420,
-   "kind": "hound"
+   "kind": "ghost_cat"
   },
   {
    "at": 6680,
-   "kind": "raven"
+   "kind": "bat"
   },
   {
    "at": 6790,
-   "kind": "skeleton"
+   "kind": "skeleton_mouse"
+  }
+ ],
+ "platforms": [
+  {
+   "at": 4890,
+   "width": 70,
+   "y": 14,
+   "mode": "blinks",
+   "period": 2.4,
+   "solidFor": 1.6,
+   "kind": "vanish"
   }
  ]
 }

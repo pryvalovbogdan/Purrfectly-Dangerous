@@ -5,7 +5,7 @@
  "speed": 110,
  "length": 5400,
  "entryHeroLevel": 1,
- "boss": "boss_giant",
+ "boss": "boss_squirrel",
  "bossRewardLevel": 3,
  "shrineLevel": 2,
  "ravines": [
@@ -37,373 +37,389 @@
  "items": [
   {
    "at": 220,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 236,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 252,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 268,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 420,
-   "kind": "root"
+   "kind": "bush"
   },
   {
    "at": 560,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 576,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 592,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 608,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 700,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 690,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 704,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 718,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 732,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 746,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 900,
-   "kind": "goblin"
+   "kind": "squirrel"
   },
   {
    "at": 1060,
-   "kind": "thorns"
+   "kind": "bush"
   },
   {
    "at": 1200,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 1216,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 1232,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 1248,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 1330,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 1320,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 1334,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 1348,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 1362,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 1376,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 1500,
-   "kind": "goblin"
+   "kind": "branch_squirrel"
   },
   {
    "at": 1680,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 1840,
-   "kind": "thorns"
+   "kind": "bush"
   },
   {
    "at": 1980,
-   "kind": "goblin"
+   "kind": "squirrel"
   },
   {
    "at": 2100,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2116,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2132,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2148,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 2240,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 2230,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 2244,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 2258,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 2272,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 2286,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 2400,
-   "kind": "wolf"
+   "kind": "hedgehog"
   },
   {
    "at": 2540,
-   "kind": "root"
+   "kind": "bush"
   },
   {
    "at": 2700,
-   "kind": "shrine"
+   "kind": "yarn_basket"
   },
   {
    "at": 2900,
-   "kind": "goblin"
+   "kind": "squirrel"
   },
   {
    "at": 3040,
-   "kind": "wolf"
+   "kind": "acorn"
   },
   {
    "at": 3200,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 3190,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 3204,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 3218,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 3232,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 3246,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 3380,
-   "kind": "goblin"
+   "kind": "branch_squirrel"
   },
   {
    "at": 3480,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 3496,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 3512,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 3528,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 3540,
-   "kind": "thorns"
+   "kind": "bush"
   },
   {
    "at": 3700,
-   "kind": "goblin"
+   "kind": "squirrel"
   },
   {
    "at": 3884,
-   "kind": "goblin"
+   "kind": "squirrel"
   },
   {
    "at": 3960,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 3976,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 3992,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4008,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 4070,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 4080,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 4084,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 4098,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 4112,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 4126,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 4240,
-   "kind": "wolf"
+   "kind": "hedgehog"
   },
   {
    "at": 4400,
-   "kind": "root"
+   "kind": "bush"
   },
   {
    "at": 4620,
-   "kind": "goblin"
+   "kind": "squirrel"
   },
   {
    "at": 4780,
-   "kind": "thorns"
+   "kind": "bush"
   },
   {
    "at": 4940,
-   "kind": "wolf"
+   "kind": "acorn"
   },
   {
    "at": 5130,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 5146,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 5162,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 5178,
-   "kind": "coin"
+   "kind": "fish"
   },
   {
    "at": 5230,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
   },
   {
    "at": 5240,
-   "kind": "tree"
+   "kind": "stump"
   },
   {
    "at": 5244,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 5258,
-   "kind": "coin",
+   "kind": "fish",
    "y": 40
   },
   {
    "at": 5272,
-   "kind": "coin",
+   "kind": "fish",
    "y": 30
   },
   {
    "at": 5286,
-   "kind": "coin",
+   "kind": "fish",
    "y": 14
+  }
+ ],
+ "slick": [
+  {
+   "at": 1110,
+   "width": 120,
+   "kind": "milk"
+  }
+ ],
+ "platforms": [
+  {
+   "at": 3790,
+   "width": 52,
+   "y": 12,
+   "mode": "crumbles",
+   "kind": "bridge"
   }
  ]
 }

@@ -1,13 +1,13 @@
 import Foundation
 
 public enum Ability: String, Codable, Sendable, CaseIterable {
-    case fireball, doubleJump, chargedFireball
+    case yarnShot, doublePounce, ghostDash, superPounce
 }
 
 /// XP → hero level → abilities. Hero level is 1-based and capped at `maxLevel`.
 public enum Progression {
     /// XP needed to *be* each level; index 0 is level 1.
-    public static let thresholds = [0, 100, 300, 600]
+    public static let thresholds = [0, 100, 300, 600, 1000]
     public static var maxLevel: Int { thresholds.count }
 
     public static func level(forXP xp: Int) -> Int {
@@ -20,9 +20,10 @@ public enum Progression {
 
     public static func ability(unlockedAt level: Int) -> Ability? {
         switch level {
-        case 2: .fireball
-        case 3: .doubleJump
-        case 4: .chargedFireball
+        case 2: .yarnShot
+        case 3: .doublePounce
+        case 4: .ghostDash
+        case 5: .superPounce
         default: nil
         }
     }

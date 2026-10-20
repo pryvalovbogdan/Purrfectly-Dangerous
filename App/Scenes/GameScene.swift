@@ -53,7 +53,9 @@ final class GameScene: SKScene {
     private var scroll = 0.0
     private var jumpHeld = false
     private var fireHeld = false
+    private var pawHeld = false
     private var jumpPending = false
+    private var pawPending = false
     private var reported = false
     private var unlocked: [Ability] = []
 
@@ -209,6 +211,13 @@ final class GameScene: SKScene {
         fireHeld = held
     }
 
+    /// Paw button: a tap is a Ghost Dash, a hold then release a Super Pounce. No on-screen button
+    /// calls this yet; the HUD work adds one.
+    func setPaw(held: Bool) {
+        if held && !pawHeld { pawPending = true }
+        pawHeld = held
+    }
+
     // MARK: - Loop
 
     override func update(_ currentTime: TimeInterval) {
@@ -223,11 +232,13 @@ final class GameScene: SKScene {
             accumulator -= Self.step
             guard !world.isOver else { break }
             let input = bot?.input(for: world, dt: Self.step)
-                ?? Input(jumpPressed: jumpPending, jumpHeld: jumpHeld, fireHeld: fireHeld)
+                ?? Input(jumpPressed: jumpPending, jumpHeld: jumpHeld, fireHeld: fireHeld,
+                         pawPressed: pawPending, pawHeld: pawHeld)
             jumpPending = false
+            pawPending = false
             let moving = world.phase == .running || world.phase == .boss
             handle(world.step(input, dt: Self.step))
-            if moving { scroll += world.level.speed * Self.step }
+            if moving { scroll += world.runSpeed * Self.step }
         }
         render()
         syncHUD()
@@ -268,13 +279,13 @@ final class GameScene: SKScene {
                 entityNodes[id]?.flash()
             case .enemyDefeated(let id, _):
                 retire(entityNodes.removeValue(forKey: id))
-            case .coin(let id):
+            case .fish(let id):
                 play(.coin)
                 if let node = entityNodes.removeValue(forKey: id) {
                     node.run(.sequence([.group([.moveBy(x: 0, y: 14, duration: 0.2), .fadeOut(withDuration: 0.2)]),
                                         .removeFromParent()]))
                 }
-            case .shrine:
+            case .yarnBasket:
                 break
             case .leveledUp(let level, let ability):
                 play(.levelUp)
@@ -284,10 +295,19 @@ final class GameScene: SKScene {
                 } else {
                     showBanner("LEVEL \(level)")
                 }
-            case .fired(_, let charged):
+            case .yarnThrown:
                 castUntil = world.time + 0.3
-                play(charged ? .charged : .fire)
-            case .fireballGone(let id, let hit):
+                play(.fire)
+            case .dashed, .pounced:
+                play(.charged)
+            case .wallBroken(let id):
+                play(.impact)
+                retire(entityNodes.removeValue(forKey: id))
+            case .yarnBounced:
+                play(.block)
+            case .curled, .threw, .bellRang, .trapFired, .fallWarning, .shattered, .platformCrumbling:
+                break
+            case .yarnGone(let id, let hit):
                 guard let node = shotNodes.removeValue(forKey: id) else { break }
                 if hit {
                     play(.impact)
@@ -370,8 +390,8 @@ final class GameScene: SKScene {
                                     .removeFromParent()]))
             }
         }
-        // Fire for the fireballs, feathers for the jump.
-        let rising = ability == .doubleJump ? "spark_feather" : "spark_ember"
+        // Feathers for the jump, embers for the rest.
+        let rising = ability == .doublePounce ? "spark_feather" : "spark_ember"
         if let texture = library.textures(rising, "still").first {
             for (index, offset) in [-16, 9, -5, 15, -11, 3, 12, -8].enumerated() {
                 let node = SKSpriteNode(texture: texture)
@@ -448,9 +468,10 @@ final class GameScene: SKScene {
     }
 
     private static let defaultAnimation: [ItemKind: String] = [
-        .tree: "still", .root: "still", .icicle: "still", .goblin: "walk", .giant: "walk", .archer: "idle",
-        .hound: "run", .raven: "fly", .coin: "spin", .shrine: "glow",
-        .thorns: "still", .wolf: "run", .skeleton: "walk", .ghost: "float",
+        .squirrel: "walk", .hedgehog: "walk", .skeletonMouse: "idle", .branchSquirrel: "idle", .cannon: "idle",
+        .acorn: "roll", .snowball: "roll", .penguin: "slide", .mechMouse: "run",
+        .ghostCat: "float", .bat: "fly", .skull: "fly", .bell: "idle", .gear: "spin",
+        .fish: "spin", .yarnBasket: "glow",
     ]
 
     private func renderEntities() {
@@ -460,15 +481,8 @@ final class GameScene: SKScene {
             let node = entityNodes[entity.id] ?? makeEntityNode(entity)
             node.position = CGPoint(x: screenX(entity.x), y: screenY(entity.y))
             node.xScale = entity.reversed ? -1 : 1
-            let gap = entity.x - world.distance
-            switch entity.kind {
-            case .giant:
-                node.play(gap < 80 && gap > 0 ? "swing" : "walk")
-            case .archer:
-                node.play(gap < world.tuning.archerRange && gap > 30 ? "shoot" : "idle")
-            default:
-                break
-            }
+            // Placeholder until the HUD/visual pass: a phasing ghost shows faintly while it is not there.
+            node.alpha = entity.state == .hidden ? 0.2 : 1
         }
         for (id, node) in entityNodes where !seen.contains(id) {
             node.removeFromParent()
@@ -478,7 +492,7 @@ final class GameScene: SKScene {
 
     private func makeEntityNode(_ entity: Entity) -> ActorNode {
         let node = ActorNode(sprite: entity.kind.rawValue, library: library)
-        node.zPosition = entity.kind == .shrine ? 1 : 3
+        node.zPosition = entity.kind == .yarnBasket ? 1 : 3
         node.play(Self.defaultAnimation[entity.kind] ?? "still")
         actors.addChild(node)
         entityNodes[entity.id] = node
@@ -516,7 +530,7 @@ final class GameScene: SKScene {
 
     /// Where a boss's mouth is, in boss-local units from its anchor, for hazards it spits out.
     private static let launchMouth: [String: (hazard: String, x: Double, y: Double)] = [
-        "boss_dragon": ("icespike", -64, 64),
+        "boss_icedragon": ("ice_spike", -64, 64),
     ]
 
     /// Shows a shard arcing from the boss's mouth onto an arming hazard, landing as it arms.
@@ -557,7 +571,7 @@ final class GameScene: SKScene {
             if let existing = shotNodes[shot.id] {
                 node = existing
             } else {
-                node = ActorNode(sprite: shot.charged ? "fireball_charged" : "fireball", library: library)
+                node = ActorNode(sprite: "yarn", library: library)
                 node.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 node.zPosition = 6
                 node.play("fly")
@@ -570,10 +584,10 @@ final class GameScene: SKScene {
 
     /// Animation a boss plays for an attack; "*" is the fallback for that boss.
     private static let attackAnimation: [String: [String: String]] = [
-        "boss_giant": ["*": "slam"],
-        "boss_dragon": ["tail_sweep": "tail", "ice_rain": "spit", "*": "breath"],
-        "boss_queen": ["mirror_orbs": "cast", "*": "summon"],
-        "boss_stormking": ["*": "lightning"],
+        "boss_squirrel": ["*": "throw"],
+        "boss_icedragon": ["shard_fan": "tail", "dive": "spit", "*": "breath"],
+        "boss_phantom": ["spectral_wave": "cast", "*": "summon"],
+        "boss_mecha": ["*": "attack"],
     ]
 
     private func renderBoss() {
@@ -620,10 +634,10 @@ final class GameScene: SKScene {
         } else {
             show(\.xpFraction, 1)
         }
-        show(\.canFire, stats.has(.fireball))
-        show(\.canCharge, stats.has(.chargedFireball))
-        show(\.canDoubleJump, stats.has(.doubleJump))
-        show(\.chargeFraction, min(1, world.charge / world.tuning.chargeTime))
+        show(\.canFire, stats.has(.yarnShot))
+        show(\.canCharge, stats.has(.superPounce))
+        show(\.canDoubleJump, stats.has(.doublePounce))
+        show(\.chargeFraction, min(1, world.pawCharge / world.tuning.chargeTime))
         if let boss = world.bossState, world.phase == .boss {
             show(\.bossName, text("\(boss.id).name"))
             show(\.bossFraction, boss.hpFraction)

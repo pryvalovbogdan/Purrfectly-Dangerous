@@ -2,7 +2,76 @@ import Foundation
 
 /// Everything a level file can place. Raw values are the ids used in level JSON and asset names.
 public enum ItemKind: String, Codable, Sendable, CaseIterable {
-    case tree, root, thorns, goblin, wolf, skeleton, ghost, giant, icicle, archer, hound, raven, coin, shrine
+    // World 1 — forest
+    case bush, stump, squirrel, acorn, branchSquirrel = "branch_squirrel", hedgehog
+    // World 2 — frost
+    case icicle, snowball, penguin, snowdrift
+    // World 3 — haunted
+    case ghostCat = "ghost_cat", bat, skeletonMouse = "skeleton_mouse", skull, bell, tombstone
+    // World 4 — citadel
+    case vent, piston, cannon, debris, mechMouse = "mech_mouse", gear, crateWall = "crate_wall"
+    // Pickups
+    case fish, yarnBasket = "yarn_basket"
+}
+
+/// Something an enemy throws or sends along the ground on a timer while the hero is in range.
+public struct ThrowSpec: Sendable, Equatable {
+    /// Hazard kind of the projectile (sprite `hazard_<projectile>`).
+    public var projectile: String
+    public var interval: Double
+    /// Throws only while the hero is between 30 and this far away.
+    public var range: Double
+    /// World speed toward the hero.
+    public var speed: Double
+    /// Bottom of the projectile; nil launches it from the thrower's own height.
+    public var y: Double?
+    public var width: Double
+    public var height: Double
+    /// Lobbed: it falls under `Tuning.lobGravity`, then rolls on along the ground.
+    public var arc = false
+}
+
+/// A fixed on/off rhythm read from the world clock, so every copy of the world agrees on it.
+/// Each period starts with the active part; the last `warning` seconds before it are a warning.
+public struct CycleSpec: Sendable, Equatable {
+    public var period: Double
+    public var activeFor: Double
+    public var warning: Double
+
+    public func state(at time: Double) -> EntityState {
+        let phase = time.truncatingRemainder(dividingBy: period)
+        if phase < activeFor { return .active }
+        return phase >= period - warning ? .warning : .idle
+    }
+}
+
+/// What a cycle switches: a trap that only hurts while active, or a body that only exists while active.
+public enum CycleRole: Sendable, Equatable {
+    case trap, phase
+}
+
+/// Hangs overhead; when the hero comes within `trigger` it blinks for `warning` seconds, then drops
+/// and stays on the ground as a spike.
+public struct FallSpec: Sendable, Equatable {
+    public var trigger: Double
+    public var warning: Double
+    /// Hitbox of the shards it leaves on the ground: a low thing to hop.
+    public var shardWidth = 14.0
+    public var shardHeight = 6.0
+}
+
+/// How a flyer's height follows the gap to the hero: `high` while far away, down to `low` once close.
+public struct FlightSpec: Sendable, Equatable {
+    public var high: Double
+    public var low: Double
+    /// Gap to the hero at which the dive starts and ends.
+    public var diveStart: Double
+    public var diveEnd: Double
+
+    public func height(gap: Double) -> Double {
+        let progress = min(1, max(0, (diveStart - gap) / (diveStart - diveEnd)))
+        return high + (low - high) * progress
+    }
 }
 
 public struct ItemSpec: Sendable {
@@ -20,52 +89,88 @@ public struct ItemSpec: Sendable {
     public var stompable = false
     /// That landing also defeats it outright, whatever health it has left, and earns its XP.
     public var stompKills = false
-    /// Fireballs damage it (otherwise they pass through).
-    public var burnable = false
+    /// Yarn damages it (otherwise yarn passes through).
+    public var yarnable = false
+    /// Yarn stops against it and does nothing.
+    public var deflectsYarn = false
+    /// Terrain rather than a creature or hazard: Ghost Dash does not pass through it.
+    public var solid = false
+    /// Only a Super Pounce breaks it.
+    public var breakable = false
     /// Hero level a player needs to get past it without being hit.
     public var minHeroLevel = 1
+    public var throwing: ThrowSpec?
+    /// Curls up into an unstompable, yarn-proof ball once the hero is this close.
+    public var curlsAt: Double?
+    public var cycle: CycleSpec?
+    public var cycleRole: CycleRole = .trap
+    public var fall: FallSpec?
+    public var flight: FlightSpec?
 }
 
 extension ItemKind {
-    /// Moves along the ground, so it cannot cross a ravine.
-    public var walks: Bool { spec.velocity != 0 && spec.baseY == 0 }
+    /// Moves along the ground, so it cannot cross a ravine. A Super Pounce defeats it.
+    public var walks: Bool { spec.velocity != 0 && spec.baseY == 0 && spec.flight == nil }
+
+    public var isPickup: Bool { self == .fish || self == .yarnBasket }
 
     public var spec: ItemSpec {
         switch self {
-        case .tree: ItemSpec(width: 12, height: 24)
-        case .root: ItemSpec(width: 18, height: 7)
-        // Wide and low: needs a committed jump. Fire does nothing to it.
-        case .thorns: ItemSpec(width: 22, height: 14)
-        case .wolf: ItemSpec(width: 20, height: 15, hp: 2, xp: 20, velocity: -50, stompable: true, stompKills: true,
-                             burnable: true)
-        case .skeleton: ItemSpec(width: 12, height: 26, hp: 2, xp: 25, velocity: -14, stompable: true,
-                                 stompKills: true, burnable: true)
-        // Fire and boots pass straight through it. It drifts in overhead, then swoops to the ground.
-        case .ghost: ItemSpec(width: 14, height: 18, baseY: GhostFlight.high, velocity: -20)
-        case .goblin: ItemSpec(width: 18, height: 24, xp: 10, velocity: -20, stompable: true, stompKills: true,
-                               burnable: true)
-        case .giant: ItemSpec(width: 24, height: 56, hp: 3, xp: 40, velocity: -8, burnable: true, minHeroLevel: 2)
-        case .icicle: ItemSpec(width: 10, height: 40, baseY: 42)
-        case .archer: ItemSpec(width: 14, height: 24, hp: 2, xp: 25, stompable: true, burnable: true)
-        case .hound: ItemSpec(width: 20, height: 14, xp: 15, velocity: -70, stompable: true, burnable: true)
-        case .raven: ItemSpec(width: 14, height: 10, baseY: 44, xp: 15, velocity: -40, burnable: true)
-        case .coin: ItemSpec(width: 10, height: 10, baseY: 14, xp: 5, hurtsOnTouch: false)
-        case .shrine: ItemSpec(width: 16, height: 400, hurtsOnTouch: false)
+        // MARK: forest
+        case .bush: ItemSpec(width: 22, height: 14, solid: true)
+        case .stump: ItemSpec(width: 12, height: 24, solid: true)
+        case .squirrel: ItemSpec(width: 14, height: 18, xp: 10, velocity: -20, stompable: true, stompKills: true,
+                                 yarnable: true)
+        case .acorn: ItemSpec(width: 10, height: 9, xp: 10, velocity: -60, yarnable: true)
+        case .branchSquirrel:
+            ItemSpec(width: 14, height: 16, baseY: 44, xp: 20, stompable: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "acorn", interval: 2.0, range: 300, speed: 70, y: nil,
+                                         width: 8, height: 8, arc: true))
+        case .hedgehog: ItemSpec(width: 16, height: 11, xp: 15, velocity: -18, stompable: true, stompKills: true,
+                                 yarnable: true, curlsAt: 90)
+        // MARK: frost
+        case .icicle: ItemSpec(width: 8, height: 18, baseY: 70, fall: FallSpec(trigger: 130, warning: 0.35))
+        case .snowball: ItemSpec(width: 14, height: 14, hp: 2, xp: 20, velocity: -60, yarnable: true)
+        case .penguin: ItemSpec(width: 18, height: 12, xp: 20, velocity: -90, stompable: true, yarnable: true)
+        case .snowdrift: ItemSpec(width: 20, height: 8, solid: true)
+        // MARK: haunted
+        // Drifts in overhead and down to the ground; it only exists while visible, and yarn passes through.
+        case .ghostCat:
+            ItemSpec(width: 14, height: 14, baseY: 44, velocity: -20,
+                     cycle: CycleSpec(period: 2.0, activeFor: 1.2, warning: 0.3), cycleRole: .phase,
+                     flight: FlightSpec(high: 44, low: 2, diveStart: 150, diveEnd: 80))
+        case .bat:
+            ItemSpec(width: 14, height: 10, baseY: 40, xp: 15, velocity: -40, yarnable: true,
+                     flight: FlightSpec(high: 40, low: 18, diveStart: 150, diveEnd: 70))
+        case .skeletonMouse:
+            ItemSpec(width: 14, height: 14, hp: 2, xp: 25, stompable: true, stompKills: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "bone", interval: 1.8, range: 300, speed: 90, y: 2,
+                                         width: 8, height: 5))
+        // A projectile on its own: flies straight in at head height, just over a kitten on the ground.
+        case .skull: ItemSpec(width: 10, height: 10, baseY: 18, velocity: -80)
+        case .bell:
+            ItemSpec(width: 12, height: 14, baseY: 56, hurtsOnTouch: false,
+                     throwing: ThrowSpec(projectile: "soundwave", interval: 2.0, range: 300, speed: 80, y: 0,
+                                         width: 8, height: 8))
+        case .tombstone: ItemSpec(width: 14, height: 24, solid: true)
+        // MARK: citadel
+        // Traps: the hitbox is the flame column / the slammed piston, and is harmless while inactive.
+        case .vent: ItemSpec(width: 12, height: 60, cycle: CycleSpec(period: 2.4, activeFor: 0.8, warning: 0.5))
+        case .piston: ItemSpec(width: 20, height: 70, cycle: CycleSpec(period: 2.0, activeFor: 0.6, warning: 0.4))
+        case .cannon:
+            ItemSpec(width: 14, height: 12, baseY: 24, hp: 2, xp: 25, yarnable: true,
+                     throwing: ThrowSpec(projectile: "cannonball", interval: 2.2, range: 320, speed: 110, y: 20,
+                                         width: 8, height: 8))
+        case .debris: ItemSpec(width: 12, height: 12, baseY: 70, fall: FallSpec(trigger: 130, warning: 0.35))
+        case .mechMouse: ItemSpec(width: 18, height: 12, hp: 2, xp: 30, velocity: -80, stompable: true,
+                                  yarnable: true)
+        case .gear: ItemSpec(width: 20, height: 26, solid: true)
+        case .crateWall: ItemSpec(width: 16, height: 120, deflectsYarn: true, solid: true, breakable: true,
+                                  minHeroLevel: 5)
+        // MARK: pickups
+        case .fish: ItemSpec(width: 10, height: 10, baseY: 14, xp: 5, hurtsOnTouch: false)
+        case .yarnBasket: ItemSpec(width: 16, height: 400, hurtsOnTouch: false)
         }
-    }
-}
-
-/// How a ghost flies: overhead while far away, down to the ground once it is close to the hero.
-public enum GhostFlight {
-    public static let high = 44.0
-    public static let low = 2.0
-    /// Gap to the hero at which the dive starts and ends.
-    public static let diveStart = 150.0
-    public static let diveEnd = 80.0
-
-    public static func height(gap: Double) -> Double {
-        let progress = min(1, max(0, (diveStart - gap) / (diveStart - diveEnd)))
-        return high + (low - high) * progress
     }
 }
 
