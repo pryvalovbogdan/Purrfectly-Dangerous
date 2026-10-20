@@ -81,6 +81,13 @@ public struct Bot: Sendable {
     }
 
     static func survives(_ start: RunnerWorld, plan: BotPlan?, horizon: Double, dt: Double) -> Bool {
+        outcome(start, plan: plan, horizon: horizon, dt: dt).safe
+    }
+
+    /// Plays `plan` on a copy of the world. A plan that ends with the hero stopped against a wall
+    /// is still safe; `distance` tells whether it got anywhere.
+    static func outcome(_ start: RunnerWorld, plan: BotPlan?, horizon: Double,
+                        dt: Double) -> (safe: Bool, distance: Double) {
         var world = start
         var elapsed = 0.0
         var horizon = horizon
@@ -91,11 +98,11 @@ public struct Bot: Sendable {
             let input = plan?.input(elapsed: elapsed, dt: dt, base: base) ?? base
             for event in world.step(input, dt: dt) {
                 switch event {
-                case .heroHit, .heroDied: return false
+                case .heroHit, .heroDied: return (false, world.distance)
                 default: break
                 }
             }
-            if world.phase == .victory || world.isOver { return true }
+            if world.phase == .victory || world.isOver { return (true, world.distance) }
             elapsed += dt
             // A move only has to get the hero back on the ground safely; what comes after that is
             // a fresh decision, so stop looking shortly after touchdown.
@@ -104,7 +111,7 @@ public struct Bot: Sendable {
                 horizon = min(horizon, elapsed + 0.12)
             }
         }
-        return true
+        return (true, world.distance)
     }
 
     func candidates(for world: RunnerWorld) -> [BotPlan] {
@@ -133,14 +140,23 @@ public struct Bot: Sendable {
                 return plan.input(elapsed: elapsed, dt: dt, base: base)
             }
         }
-        guard world.onGround, !Self.survives(world, plan: nil, horizon: 0.45, dt: dt) else {
-            return base
+        guard world.onGround else { return base }
+        let threatened = !Self.survives(world, plan: nil, horizon: 0.45, dt: dt)
+        // Stopped against a step: look for a safe move that gets on top of it.
+        let stuck = world.isAgainstWall
+        guard threatened || stuck else { return base }
+        let options = candidates(for: world)
+        var chosen: BotPlan?
+        if stuck {
+            chosen = options.first {
+                let result = Self.outcome(world, plan: $0, horizon: 1.3, dt: dt)
+                return result.safe && result.distance > world.distance + 1
+            }
         }
-        guard let chosen = candidates(for: world).first(where: {
-            Self.survives(world, plan: $0, horizon: 1.3, dt: dt)
-        }) else {
-            return base
+        if chosen == nil, threatened {
+            chosen = options.first { Self.survives(world, plan: $0, horizon: 1.3, dt: dt) }
         }
+        guard let chosen else { return base }
         plan = chosen
         elapsed = dt
         return chosen.input(elapsed: 0, dt: dt, base: base)
@@ -182,6 +198,7 @@ public enum LevelValidator {
 
         report.problems += ravineProblems(in: level, items: sorted, tuning: tuning)
         report.problems += surfaceProblems(in: level, tuning: tuning)
+        report.problems += terrainProblems(in: level, items: sorted, tuning: tuning)
 
         let boss = bosses[level.boss]
         if let boss {
@@ -194,6 +211,8 @@ public enum LevelValidator {
         let run = botRun(level, boss: boss, tuning: tuning)
         if run.finished {
             report.clearTime = run.time
+        } else if let stuckAt = run.stuckAt {
+            report.problems.append("no-hit bot was stuck against a step at distance \(Int(stuckAt)) for over \(Int(maxStuckTime)) s")
         } else {
             report.problems.append("no-hit bot failed at distance \(Int(run.distance)) (\(run.phase))")
         }
@@ -254,8 +273,78 @@ public enum LevelValidator {
             }
             if platform.at < 150 { problems.append("\(name) is inside the 150-unit start runway") }
             if platform.end > level.length - 60 { problems.append("\(name) is too close to the boss (length \(Int(level.length)))") }
+            if platform.kind == "island", platform.mode != .solid {
+                problems.append("\(name) is an island; islands are always solid")
+            }
             if platform.mode == .blinks, platform.cycle.activeFor <= 0 || platform.cycle.activeFor >= platform.cycle.period {
                 problems.append("\(name) blinks but solidFor must be between 0 and period")
+            }
+        }
+        return problems
+    }
+
+    /// The camera does not follow the hero up or down: steps stay within this of the base ground so
+    /// a double jump from the top and the floor of a dip both stay on screen (the landscape ground
+    /// line is only 40 units above the bottom edge).
+    static let maxTerrainHeight = 60.0
+    static let maxDipDepth = 32.0
+    /// Seconds the bot may stand stopped against a step before the level counts as a softlock.
+    public static let maxStuckTime = 4.0
+    /// Headroom a climb leaves over the top of a jump, as for ledges.
+    static let climbClearance = 6.0
+
+    /// Highest step the hero is sure to climb with the abilities it is guaranteed.
+    static func climbHeight(heroLevel: Int, tuning: Tuning) -> Double {
+        let apex = Progression.abilities(forLevel: heroLevel).contains(.doublePounce) ? tuning.doubleJumpApex : tuning.jumpApex
+        return (apex - climbClearance).rounded(.down)
+    }
+
+    /// Raised blocks and dips: inside the level, apart from ravines and the boss arena, walls low
+    /// enough to climb with the hero level guaranteed there, and nothing standing across a step.
+    static func terrainProblems(in level: LevelDefinition, items: [PlacedItem], tuning: Tuning) -> [String] {
+        var problems: [String] = []
+        let pieces = (level.terrain ?? []).sorted { $0.at < $1.at }
+        guard !pieces.isEmpty else { return problems }
+        let ground = GroundProfile(pieces)
+        for (index, piece) in pieces.enumerated() {
+            let name = "terrain at \(Int(piece.at))"
+            if piece.width < tuning.heroWidth { problems.append("\(name) is narrower than the hero (\(Int(tuning.heroWidth)))") }
+            if piece.height == 0 { problems.append("\(name) has no height") }
+            if piece.height > maxTerrainHeight { problems.append("\(name) is \(Int(piece.height)) high; at most \(Int(maxTerrainHeight)) fits on screen") }
+            if piece.height < -maxDipDepth { problems.append("\(name) is \(Int(-piece.height)) deep; at most \(Int(maxDipDepth)) fits on screen") }
+            if piece.at < 150 { problems.append("\(name) is inside the 150-unit start runway") }
+            if piece.end > level.length - 60 { problems.append("\(name) is too close to the boss (length \(Int(level.length))); the arena stays flat") }
+            if index > 0, piece.at < pieces[index - 1].end {
+                problems.append("\(name) overlaps the terrain at \(Int(pieces[index - 1].at))")
+            }
+            for ravine in level.ravines ?? [] where piece.at < ravine.end + tuning.heroWidth && piece.end > ravine.at - tuning.heroWidth {
+                problems.append("\(name) is too close to the ravine at \(Int(ravine.at)) (leave \(Int(tuning.heroWidth)) of ground)")
+            }
+            for zone in level.slick ?? [] where piece.at < zone.end && piece.end > zone.at {
+                problems.append("\(name) overlaps the slick zone at \(Int(zone.at)) (slick ground is base ground only)")
+            }
+        }
+        let shrineAt = items.first { $0.kind == .yarnBasket }?.at
+        for (at, rise) in ground.rises(step: tuning.stepUp) {
+            var guaranteed = level.entryHeroLevel
+            if let shrineAt, let shrineLevel = level.shrineLevel, at > shrineAt { guaranteed = max(guaranteed, shrineLevel) }
+            let reach = climbHeight(heroLevel: guaranteed, tuning: tuning)
+            if rise > reach {
+                let how = Progression.abilities(forLevel: guaranteed).contains(.doublePounce) ? "a Double Pounce" : "one jump"
+                problems.append("step at \(Int(at)) rises \(Int(rise)); \(how) at hero level \(guaranteed) climbs at most \(Int(reach))")
+            }
+        }
+        for item in items where item.y == nil && item.kind.spec.baseY == 0 && !item.kind.isPickup {
+            let half = item.kind.spec.width / 2
+            if ground.changes(from: item.at - half, to: item.at + half) {
+                problems.append("\(item.kind.rawValue) at \(Int(item.at)) stands across a step")
+            }
+        }
+        for platform in level.platforms ?? [] where ground.highest(from: platform.at, to: platform.end) != 0
+            || ground.lowest(from: platform.at, to: platform.end) != 0 {
+            let under = ground.highest(from: platform.at, to: platform.end)
+            if platform.y - under < 4 {
+                problems.append("platform at \(Int(platform.at)) is \(Int(platform.y - under)) above the terrain under it; it must be at least 4")
             }
         }
         return problems
@@ -280,15 +369,26 @@ public enum LevelValidator {
         return problems
     }
 
+    /// The bot plays the level on one heart. `stuckAt` is set when it stood still against a step for
+    /// longer than `maxStuckTime` (a softlock), and the run stops there.
     static func botRun(_ level: LevelDefinition, boss: BossDefinition?, tuning: Tuning = Tuning(),
-                       dt: Double = 1.0 / 60) -> (finished: Bool, time: Double, distance: Double, phase: Phase) {
+                       dt: Double = 1.0 / 60)
+        -> (finished: Bool, time: Double, distance: Double, phase: Phase, stuckAt: Double?) {
         let stats = HeroStats(xp: Progression.xp(forLevel: level.entryHeroLevel), maxHearts: 1)
         var world = RunnerWorld(level: level, boss: boss, stats: stats, tuning: tuning)
         var bot = Bot()
         let limit = level.length / max(level.speed, 1) + 240
+        var movedAt = 0.0
+        var lastDistance = world.distance
         while !world.isOver, world.time < limit {
             _ = world.step(bot.input(for: world, dt: dt), dt: dt)
+            if world.distance > lastDistance + 1e-6 {
+                movedAt = world.time
+                lastDistance = world.distance
+            } else if world.time - movedAt > maxStuckTime {
+                return (false, world.time, world.distance, world.phase, world.distance)
+            }
         }
-        return (world.phase == .won, world.time, world.distance, world.phase)
+        return (world.phase == .won, world.time, world.distance, world.phase, nil)
     }
 }

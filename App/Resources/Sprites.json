@@ -1605,6 +1605,19 @@
    }
   }
  },
+ "island": {
+  "width": 48,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "leaf": {
   "width": 10,
   "height": 8,
@@ -1681,6 +1694,71 @@
    "gold": {
     "frames": 1,
     "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "menu_clouds": {
+  "width": 120,
+  "height": 40,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "menu_scene_landscape": {
+  "width": 440,
+  "height": 150,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "menu_scene_portrait": {
+  "width": 210,
+  "height": 230,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "menu_sky": {
+  "width": 16,
+  "height": 64,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "menu_waterfall": {
+  "width": 12,
+  "height": 44,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "loop": {
+    "frames": 4,
+    "fps": 8,
     "loop": true
    }
   }
@@ -2263,9 +2341,61 @@
    }
   }
  },
+ "terrain_forest_edge": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_forest_fill": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_forest_top": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_forest_wall": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "title_wreath": {
-  "width": 200,
-  "height": 64,
+  "width": 230,
+  "height": 90,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2277,8 +2407,8 @@
   }
  },
  "title_wreath_small": {
-  "width": 160,
-  "height": 52,
+  "width": 200,
+  "height": 78,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2290,8 +2420,8 @@
   }
  },
  "title_wreath_stone": {
-  "width": 200,
-  "height": 96,
+  "width": 230,
+  "height": 110,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {

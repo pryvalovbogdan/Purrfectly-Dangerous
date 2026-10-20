@@ -54,7 +54,7 @@ public struct Platform: Codable, Sendable, Equatable {
     /// Height of its top above the ground.
     public var y: Double
     public var mode: PlatformMode
-    /// Look only, and the sprite name (`bridge`, `ice_ledge`, `vanish`).
+    /// Look only, and the sprite name (`bridge`, `ice_ledge`, `vanish`, `island`).
     public var kind: String?
     public var crumbleAfter: Double?
     public var period: Double?
@@ -110,6 +110,27 @@ public struct Ravine: Codable, Sendable, Equatable {
     }
 }
 
+/// A step in the ground: a raised block (positive `height`) or a sunken dip (negative), measured
+/// from the base ground. The hero stops against a face higher than its feet and must jump onto it.
+public struct Terrain: Codable, Sendable, Equatable {
+    /// Left end, as a distance from the level start.
+    public var at: Double
+    public var width: Double
+    /// Top of the block above the base ground; negative for a dip.
+    public var height: Double
+
+    public var end: Double { at + width }
+
+    public init(at: Double, width: Double, height: Double) {
+        self.at = at
+        self.width = width
+        self.height = height
+    }
+
+    /// Half-open, so two blocks that touch never both claim the seam.
+    public func contains(_ x: Double) -> Bool { x >= at && x < end }
+}
+
 public struct LevelDefinition: Codable, Sendable, Equatable {
     public var id: String
     /// Key into Lore.json for the display name.
@@ -130,11 +151,13 @@ public struct LevelDefinition: Codable, Sendable, Equatable {
     public var ravines: [Ravine]?
     public var slick: [SlickZone]?
     public var platforms: [Platform]?
+    /// Raised blocks and dips, in any order; they never overlap.
+    public var terrain: [Terrain]?
 
     public init(id: String, nameKey: String, background: String, speed: Double, length: Double,
                 entryHeroLevel: Int, shrineLevel: Int? = nil, boss: String, bossRewardLevel: Int,
                 items: [PlacedItem], ravines: [Ravine]? = nil, slick: [SlickZone]? = nil,
-                platforms: [Platform]? = nil) {
+                platforms: [Platform]? = nil, terrain: [Terrain]? = nil) {
         self.id = id
         self.nameKey = nameKey
         self.background = background
@@ -148,6 +171,7 @@ public struct LevelDefinition: Codable, Sendable, Equatable {
         self.ravines = ravines
         self.slick = slick
         self.platforms = platforms
+        self.terrain = terrain
     }
 
     /// Fish placed in the level: everything a run through it can collect (fish come only from the

@@ -47,6 +47,27 @@ the start; the reward a boss *names* on the award card is the one it grants.
 Ravines are gaps in the ground, themed per world (broken bridge, ice chasm, crypt pit, lava).
 Walkers and rollers turn back at a rim. No ravines in a boss fight.
 
+### Terrain: high and low ground
+
+Levels can raise blocks of ground (mossy earth in the forest) or sink dips into it (`terrain` in
+the level file). Everything stands on the ground where it is: the kitten, enemies, traps and fish.
+
+- **Bump and stop.** Running into the face of a step higher than its feet stops the kitten (a squash
+  and a puff of dust). The level waits: `distance`, scrolling and spawning stand still, while the
+  clock, enemies, cycles and thrown things carry on. A jump that lifts the feet above the top gets it
+  on. A lip of 4 or less is walked onto. A dip's far wall works the same way.
+- Off the edge of a step the kitten drops to the lower ground with a Double Pounce still left, as
+  off a ledge. Ghost Dash does not pass walls and Super Pounce does not break them.
+- Walkers and rollers turn back at any step up or down, as at a ravine rim. Flyers keep their
+  height above the ground below them. Things that fall land on the local ground.
+- Thrown things and yarn break on the face of a step; a rolling acorn or spore drops off a step
+  down and rolls on.
+- Climbable: one jump climbs a step of up to 44; with Double Pounce (kitten level 3) up to 84. The
+  validator checks every rise against the level guaranteed there and fails a level where the bot
+  stands stuck for more than 4 s.
+- The boss arena stays flat. Slick ground is base ground only. Raised blocks are at most 60 high and
+  dips at most 32 deep, so both stay on screen (the camera does not move up or down).
+
 ### 1 — forest (speed 110, Easy)
 | Id | Role | Behaviour | Beat it by |
 | --- | --- | --- | --- |

@@ -58,62 +58,17 @@ def flower(c: Canvas, x: float, y: float, petal=P.WHITE, centre=P.GOLD, shade=P.
     c.paste(layer.outline(P.KIT_GREEN_DD))
 
 
-def stadium(w: float, h: float, inset: float):
-    """Inside test for a rounded band shape: a rectangle with semicircular ends, `inset` px in from the box."""
-    r = (h - 2 * inset) / 2
-    cy = h / 2
-
-    def inside(x: float, y: float) -> bool:
-        lx, rx = inset + r, w - inset - r
-        if lx <= x <= rx:
-            return abs(y - cy) <= r
-        ex = lx if x < lx else rx
-        return (x - ex) ** 2 + (y - cy) ** 2 <= r * r
-    return inside
-
-
-def perimeter(w: float, h: float, inset: float, count: int):
-    """`count` evenly spaced (x, y, outward angle) points along a stadium's edge."""
-    r = (h - 2 * inset) / 2
-    cy = h / 2
-    lx, rx = inset + r, w - inset - r
-    straight = rx - lx
-    total = 2 * straight + 2 * math.pi * r
-    pts = []
-    for i in range(count):
-        d = i / count * total
-        if d < straight:                                     # top edge, left to right
-            pts.append((lx + d, cy - r, -math.pi / 2))
-        elif d < straight + math.pi * r:                     # right cap
-            a = -math.pi / 2 + (d - straight) / r
-            pts.append((rx + math.cos(a) * r, cy + math.sin(a) * r, a))
-        elif d < 2 * straight + math.pi * r:                 # bottom edge, right to left
-            pts.append((rx - (d - straight - math.pi * r), cy + r, math.pi / 2))
-        else:                                                # left cap
-            a = math.pi / 2 + (d - 2 * straight - math.pi * r) / r
-            pts.append((lx + math.cos(a) * r, cy + math.sin(a) * r, a))
-    return pts
-
-
-def leaf_ring(c: Canvas, w: int, h: int, inset: float, seed: int, count: int, size: float, side_boost: float = 1.0,
-              skip_bottom: bool = False) -> None:
-    """Two layers of leaves pointing out from a stadium edge; bigger at the two ends."""
+def cluster(c: Canvas, x: float, y: float, angle: float, spread: float, count: int, size: float, seed: int) -> None:
+    """A fan of big leaves from one point: `count` leaves around `angle` (radians, y down) within `spread`,
+    the outer ones darker and drawn first, so the bright middle leaves sit on top."""
     rnd = noise(seed)
-    for layer, cols, shift in ((0, LEAF_BACK, 0.5), (1, LEAF_FRONT, 0.0)):
-        pts = perimeter(w, h, inset, count)
-        for i, (x, y, a) in enumerate(pts):
-            if shift:
-                x2, y2, a2 = pts[(i + 1) % len(pts)]
-                x, y, a = (x + x2) / 2, (y + y2) / 2, math.atan2(math.sin(a) + math.sin(a2), math.cos(a) + math.cos(a2))
-            if skip_bottom and math.sin(a) > 0.85:
-                continue
-            end = abs(math.cos(a))                           # 1 at the two ends, 0 along top and bottom
-            if end < 0.3:                                    # along the top and bottom, lean alternately
-                a += (0.55 if i % 2 else -0.55) * (1 - end)
-            length = size * (0.8 + rnd() * 0.4) * (1 + end * (side_boost - 1)) * (0.85 if layer == 0 else 1)
-            width = length * (0.62 + rnd() * 0.12)
-            a += (rnd() - 0.5) * 0.9
-            leaf(c, x - math.cos(a) * length * 0.35, y - math.sin(a) * length * 0.35, a, length, width, cols)
+    order = sorted(range(count), key=lambda k: -abs(k - (count - 1) / 2))
+    for k in order:
+        t = 0.5 if count == 1 else k / (count - 1)
+        a = angle + (t - 0.5) * spread + (rnd() - 0.5) * 0.25
+        length = size * (0.8 + rnd() * 0.35) * (1.0 - abs(t - 0.5) * 0.35)
+        cols = LEAF_FRONT if abs(t - 0.5) < 0.3 else LEAF_BACK
+        leaf(c, x - math.cos(a) * 2, y - math.sin(a) * 2, a, length, length * (0.6 + rnd() * 0.1), cols)
 
 
 def vine_curl(c: Canvas, x: float, y: float, length: int, direction: int, seed: int) -> None:
@@ -131,54 +86,73 @@ def vine_curl(c: Canvas, x: float, y: float, length: int, direction: int, seed: 
         a -= direction * (0.05 + k * 0.012)
 
 
-def wreath(name: str, w: int, h: int, hole: tuple, seed: int, flowers: list, vines: list,
-           leaf_size: float) -> Sprite:
-    """A rounded band of leaves with yellow-green tips, vines and small flowers, dark-outlined, with a clear
-    `hole` (width, height, stadium-shaped) in the middle where the title text goes."""
+def leaves_around(c: Canvas, w: int, h: int, seed: int, size: float, top: float, bottom: float) -> None:
+    """Big leaves peeking out round the outside of a title, pointing outward from a rounded-rectangle edge (no
+    band behind them): dense and largest at the two ends, `bottom` (0-1) of the bottom edge, `top` of the top.
+    The middle stays empty: the letters are the shape."""
+    rnd = noise(seed)
+    cx, cy = w / 2, h / 2
+    ax, by = w / 2 - size * 1.15, h / 2 - size * 0.85
+    count = int((w + h) / size * 2.4)
+    for layer in (0, 1):
+        for i in range(count):
+            t = (i + 0.5 * layer + rnd() * 0.3) / count * math.tau
+            ct, st = math.cos(t), math.sin(t)
+            x = cx + ax * math.copysign(abs(ct) ** 0.5, ct)          # a squarish superellipse
+            y = cy + by * math.copysign(abs(st) ** 0.5, st)
+            a = math.atan2(math.copysign(abs(st) ** 0.5, st) / by, math.copysign(abs(ct) ** 0.5, ct) / ax)
+            end = abs(math.cos(a))
+            up, down = -math.sin(a), math.sin(a)
+            if up > 0.75 and rnd() > top:
+                continue
+            if down > 0.75 and rnd() > bottom * (0.35 + 0.65 * abs(x - cx) / ax):
+                continue
+            length = size * (0.75 + rnd() * 0.35) * (1 + 0.35 * end) * (0.85 if layer == 0 else 1)
+            a += (rnd() - 0.5) * 0.8
+            cols = LEAF_BACK if layer == 0 else LEAF_FRONT
+            leaf(c, x - math.cos(a) * length * 0.3, y - math.sin(a) * length * 0.3, a, length,
+                 length * (0.6 + rnd() * 0.1), cols)
+    # bushy ends: rows of big leaves fanning outward, outer rows first, so inner ones lie over their stems
+    for side in (-1, 1):
+        for row in range(3):
+            n = 5 - row
+            for k in range(n):
+                f = (k + 0.5) / n
+                y = h * (0.16 + 0.68 * f) + (rnd() - 0.5) * 3
+                x = cx + side * (ax - row * size * 0.55 - abs(f - 0.5) * size * 0.8)
+                a = (0 if side > 0 else math.pi) + side * (f - 0.5) * 1.6 + (rnd() - 0.5) * 0.5
+                length = size * (1.15 + rnd() * 0.3 - row * 0.1)
+                leaf(c, x - math.cos(a) * length * 0.25, y - math.sin(a) * length * 0.25, a, length,
+                     length * (0.62 + rnd() * 0.1), LEAF_BACK if row == 0 else LEAF_FRONT)
+
+
+def wreath(name: str, w: int, h: int, seed: int, size: float, flowers: list, vines: list, top: float = 0.35,
+           bottom: float = 0.8) -> Sprite:
+    """Leaves, vines and a few white flowers around the outside of a title; the middle is fully transparent."""
     c = Canvas(w, h)
-    inset = leaf_size * 0.75
-    inside = stadium(w, h, inset + 1)
-    for y in range(h):                                       # the leafy mass behind the leaves
-        for x in range(w):
-            if inside(x + 0.5, y + 0.5):
-                c.px(x, y, P.KIT_GREEN_DD)
-    for k in range(int(w * h / 18)):                         # shadowed leaves in the mass
-        rnd = noise(seed * 7 + k)
-        x, y = rnd() * w, rnd() * h
-        if inside(x, y):
-            c.px(x, y, P.KIT_GREEN_D)
-            c.px(x + 1, y, P.KIT_GREEN_D)
-    leaf_ring(c, w, h, inset + 2, seed, int((w + h) / leaf_size * 1.15), leaf_size, side_boost=1.45)
     for (x, y, d, n) in vines:
         vine_curl(c, x, y, n, d, seed + int(x))
-    for k, (x, y) in enumerate(flowers):
-        flower(c, x, y, (P.WHITE, P.PINK, P.WHITE, P.YELLOW)[k % 4], P.GOLD if k % 4 != 3 else P.ORANGE)
-    hw, hh = hole
-    clear = stadium(hw, hh, 0)
-    ox, oy = (w - hw) / 2, (h - hh) / 2
-    for y in range(h):
-        for x in range(w):
-            if clear(x - ox + 0.5, y - oy + 0.5):
-                c.px(x, y, P.CLEAR)
+    leaves_around(c, w, h, seed, size, top, bottom)
+    for x, y in flowers:
+        flower(c, x, y)
     c.outline()
     return single(name, c)
 
 
 def stone_wreath() -> Sprite:
-    """`title_wreath_stone`: a mossy grey stone slab with an arched top, ringed with big leaves and small white
-    five-petal flowers. Its plain middle is left for the text."""
-    w, h = 200, 96
+    """`title_wreath_stone`: a mossy grey boulder with an arched crown behind "game over", with clusters of big
+    leaves and small white five-petal flowers round its edge. Its plain middle is left for the text."""
+    w, h = 230, 110
     c = Canvas(w, h)
     rnd = noise(91)
-    # leaves behind the slab, all round, big at the sides
-    leaf_ring(c, w, h, 14, 92, 34, 15, side_boost=1.3)
-    # slab: a rounded boulder with an arched crown; lumpy and shaded round its rim, plain in the middle
+    size = 15
+    leaves_around(c, w, h, 92, size, 0.6, 0.8)
     slab = Canvas(w, h)
-    cx, cy, ax, by = w / 2, h / 2 + 4, w / 2 - 16, h / 2 - 12
+    cx, cy, ax, by = w / 2, h / 2 + 4, w / 2 - 22, h / 2 - 16
     for y in range(h):
         for x in range(w):
             u = (x + 0.5 - cx) / ax
-            crown = 8 * max(0.0, 1 - u * u * 2.2)             # the arch rises in the middle
+            crown = 9 * max(0.0, 1 - u * u * 2.2)             # the arch rises in the middle
             v = (y + 0.5 - cy) / (by + (crown if y < cy else 0))
             lump = math.sin(x * 0.55) * 0.03 + math.sin(y * 0.8 + x * 0.2) * 0.03
             if abs(u) ** 4 + abs(v) ** 4 <= 1 + lump:
@@ -186,7 +160,7 @@ def stone_wreath() -> Sprite:
     px = slab.img.load()
 
     def solid(x, y):
-        return 0 <= x < w and 0 <= y < h and px[x, y][3]
+        return 0 <= x < w and 0 <= y < h and px[int(x), int(y)][3]
     changes = []
     for y in range(h):
         for x in range(w):
@@ -198,7 +172,7 @@ def stone_wreath() -> Sprite:
                 changes.append((x, y, P.ROCK_D))
     for x, y, col in changes:
         px[x, y] = col
-    for k in range(26):                                      # lumps and chips in a band round the rim
+    for k in range(30):                                      # lumps and chips in a band round the rim
         a = rnd() * math.tau
         rr = 0.86 + rnd() * 0.08
         x, y = cx + math.cos(a) * ax * rr, cy + math.sin(a) * by * rr * (1.25 if math.sin(a) < 0 else 1)
@@ -214,8 +188,7 @@ def stone_wreath() -> Sprite:
         if solid(x, y):
             slab.line((x, y), (x + rnd() * 4 - 2, y + 3), P.ROCK_DD)
     c.paste(slab.outline())
-    # moss over the crown, dripping a little down the sides
-    for x in range(int(cx - ax + 6), int(cx + ax - 6)):
+    for x in range(int(cx - ax + 6), int(cx + ax - 6)):      # moss over the crown
         top = next((y for y in range(h) if solid(x, y)), None)
         if top is None:
             continue
@@ -226,16 +199,12 @@ def stone_wreath() -> Sprite:
             c.px(x, top, P.KIT_GREEN_L)
         if x % 11 == 0:
             c.px(x, top - 1, P.LEAF_Y)
-    # a tuft and sprig on the crown, and clusters of big leaves over the corners
-    for k, (x, y, a, n) in enumerate(((w / 2 - 6, 12, -2.0, 9), (w / 2 + 4, 11, -1.2, 8), (w / 2, 10, -1.6, 7))):
-        leaf(c, x, y, a, n, 5)
-    for cx, cy, base in ((18, 24, -2.4), (w - 18, 24, -0.7), (14, h - 22, 2.6), (w - 14, h - 22, 0.6),
-                         (40, 12, -1.9), (w - 40, 12, -1.2), (36, h - 10, 2.0), (w - 36, h - 10, 1.1)):
-        for j in range(4):
-            a = base + (j - 1.5) * 0.45
-            leaf(c, cx, cy, a, 13 + (j % 2) * 3, 8)
-    for x, y in ((24, 20), (w - 26, 30), (12, 50), (w - 12, 62), (46, 10), (w - 50, 9), (30, h - 14), (w - 30, h - 18),
-                 (w / 2 + 14, 12)):
+    # fans of leaves over the four corners of the slab and a sprig on its crown
+    for x, y, a in ((30, 26, -2.3), (w - 30, 26, -0.85), (26, h - 22, 2.5), (w - 26, h - 22, 0.65)):
+        cluster(c, x, y, a, 1.5, 4, 15, int(x + y))
+    cluster(c, w / 2, 14, -math.pi / 2, 1.0, 3, 9, 7)
+    for x, y in ((24, 22), (w - 30, 34), (14, 56), (w - 14, 68), (52, 12), (w - 56, 11), (34, h - 14), (w - 34, h - 18),
+                 (w / 2 + 16, 13)):
         flower(c, x, y)
     c.outline()
     return single("title_wreath_stone", c)
@@ -511,12 +480,10 @@ def stars_dizzy() -> Sprite:
 
 def build() -> list[Sprite]:
     return [
-        wreath("title_wreath", 200, 64, (156, 40), 11,
-               flowers=[(14, 22), (40, 9), (100, 6), (158, 8), (186, 40), (24, 50), (178, 18), (120, 58)],
-               vines=[(10, 40, 1, 18), (190, 38, -1, 16), (64, 56, 1, 7), (140, 56, -1, 8)], leaf_size=14),
-        wreath("title_wreath_small", 160, 52, (124, 32), 23,
-               flowers=[(12, 18), (52, 6), (110, 6), (148, 34), (22, 42), (140, 12)],
-               vines=[(8, 32, 1, 14), (152, 30, -1, 13)], leaf_size=12),
+        wreath("title_wreath", 230, 90, 11, 17, flowers=[(12, 30), (218, 50), (40, 82), (172, 81), (150, 9)],
+               vines=[(14, 60, 1, 22), (216, 58, -1, 20)], top=0.35, bottom=0.8),
+        wreath("title_wreath_small", 200, 78, 23, 15, flowers=[(10, 28), (190, 46), (48, 70), (150, 8)],
+               vines=[(12, 50, 1, 18), (188, 50, -1, 16)], top=0.35, bottom=0.8),
         stone_wreath(),
         *icons(),
         *confetti(),

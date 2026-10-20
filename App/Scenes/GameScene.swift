@@ -70,6 +70,11 @@ final class GameScene: SKScene {
 
     private var parallax: [ParallaxNode] = []
     private var groundNodes: [(at: Double, width: Double, node: SKNode)] = []
+    /// The base ground fill and strip, each cropped so they leave gaps above the floor of a dip;
+    /// empty in a level without dips. Each has its own mask (a node has one parent), kept in step.
+    private var groundCrops: [SKCropNode] = []
+    /// White rectangles of each crop's mask: one per stretch of ground on screen.
+    private var groundMaskRects: [[SKSpriteNode]] = []
     /// The hero went down a ravine: the drop is animated here, so `renderHero` leaves them alone.
     private var fell = false
     private let scenery = SKNode()
@@ -176,11 +181,197 @@ final class GameScene: SKScene {
         scenery.removeAllChildren()
         parallax.removeAll()
         groundNodes.removeAll()
+        groundCrops.removeAll()
+        groundMaskRects.removeAll()
         let theme = world.level.background
         if library.textures("bg_\(theme)_sky", "still").isEmpty { backgroundColor = .darkGray }
-        parallax = LevelBackdrop.build(theme: theme, size: size, groundY: groundY, library: library, into: scenery)
+        var layers: (fill: SKNode, strip: SKNode)?
+        if world.ground.pieces.contains(where: { $0.height < 0 }) {
+            // Fill at -5 and strip at -4, as without dips; raised blocks go between them (-4.5).
+            for z in [-5.0, -4.0] {
+                let crop = SKCropNode()
+                crop.maskNode = SKNode()
+                crop.zPosition = CGFloat(z)
+                scenery.addChild(crop)
+                groundCrops.append(crop)
+                groundMaskRects.append([])
+            }
+            layers = (groundCrops[0], groundCrops[1])
+        }
+        parallax = LevelBackdrop.build(theme: theme, size: size, groundY: groundY, library: library, into: scenery,
+                                       groundLayers: layers)
         buildRavines(theme: theme)
         buildSlickZones()
+        buildTerrain(theme: theme)
+    }
+
+    /// Sprites for raised blocks and dips (contract in docs/sprite-spec.md, "Forest terrain"),
+    /// falling back to the plain ground pieces while a theme has no terrain art. Without an end cap
+    /// or wall a block simply has square sides.
+    private struct TerrainArt {
+        let top: (texture: SKTexture, size: CGSize)
+        let fill: (texture: SKTexture, size: CGSize)?
+        let edge: (texture: SKTexture, size: CGSize)?
+        let wall: (texture: SKTexture, size: CGSize)?
+    }
+
+    private func terrainArt(theme: String) -> TerrainArt? {
+        func piece(_ names: String...) -> (texture: SKTexture, size: CGSize)? {
+            for name in names {
+                if let texture = library.textures(name, "still").first, let sheet = library.sheet(name) {
+                    return (texture, CGSize(width: sheet.width, height: sheet.height))
+                }
+            }
+            return nil
+        }
+        let prefix = "terrain_\(theme)"
+        guard let top = piece("\(prefix)_top", "ground_\(theme)") else { return nil }
+        return TerrainArt(top: top, fill: piece("\(prefix)_fill", "ground_\(theme)_earth", "ground_\(theme)_fill"),
+                          edge: piece("\(prefix)_edge"), wall: piece("\(prefix)_wall"))
+    }
+
+    /// Screen height of a walk surface `height` above the base ground.
+    private func surfaceY(_ height: Double) -> CGFloat { (groundY + CGFloat(height)).rounded() }
+
+    /// z of terrain: a raised block sits just behind the ground strip (-4) so the base turf passes in
+    /// front of its foot; a dip and the faces around it sit in front of the strip.
+    private static let raisedZ: CGFloat = -4.5
+    private static let dipZ: CGFloat = -3.9
+
+    /// Raised blocks and dips. Each piece: top tiles with their frame top on the surface S, and fill
+    /// behind them on the 16-unit grid from G - 48 up to the tile holding S - 16. Each seam where the
+    /// height changes: an end cap on the higher side (top on its S), mirrored on a right-hand end,
+    /// over walls tiled upward from the lower side's surface.
+    private func buildTerrain(theme: String) {
+        let ground = world.ground
+        guard !ground.isFlat, let art = terrainArt(theme: theme) else { return }
+        let capWidth = Double(art.edge?.size.width ?? 0)
+
+        for piece in ground.pieces {
+            let left = ground.height(leftOf: piece.at), right = ground.height(at: piece.end)
+            let leftCapped = left < piece.height && art.edge != nil
+            let rightCapped = right < piece.height && art.edge != nil
+            // A block exactly two caps wide is only its caps and walls.
+            if leftCapped, rightCapped, piece.width <= capWidth * 2 { continue }
+            // Inset under a cap, 8 under a taller neighbour (1 for a dip below the base ground), flush otherwise.
+            func reach(capped: Bool, neighbour: Double, seamIsBase: Bool) -> Double {
+                if capped { return -capWidth }
+                guard neighbour > piece.height else { return 0 }
+                return piece.height < 0 && seamIsBase ? 1 : 8
+            }
+            let x0 = reach(capped: leftCapped, neighbour: left,
+                           seamIsBase: !ground.pieces.contains { $0.end == piece.at })
+            let x1 = reach(capped: rightCapped, neighbour: right,
+                           seamIsBase: !ground.pieces.contains { $0.at == piece.end })
+            let spanLeft = -x0, span = piece.width + x0 + x1
+            guard span > 0 else { continue }
+
+            let node = SKNode()
+            node.zPosition = piece.height < 0 ? Self.dipZ : Self.raisedZ
+            let surface = surfaceY(piece.height)
+            let topSize = art.top.size
+            if let fill = art.fill {
+                // Tile bottoms on the grid G - 48 + 16k, from the lowest up to the one holding S - 16.
+                let base = groundY - 48
+                let rows = Int(((surface - topSize.height - base) / fill.size.height).rounded(.down))
+                for row in 0...max(rows, 0) {
+                    for column in Self.tileOffsets(span: span, tile: Double(fill.size.width)) {
+                        let tile = SKSpriteNode(texture: fill.texture, size: fill.size)
+                        tile.anchorPoint = .zero
+                        tile.position = CGPoint(x: CGFloat(spanLeft + column).rounded(),
+                                                y: base + CGFloat(row) * fill.size.height)
+                        tile.zPosition = -0.02
+                        node.addChild(tile)
+                    }
+                }
+            }
+            for column in Self.tileOffsets(span: span, tile: Double(topSize.width)) {
+                let tile = SKSpriteNode(texture: art.top.texture, size: topSize)
+                tile.anchorPoint = .zero
+                tile.position = CGPoint(x: CGFloat(spanLeft + column).rounded(), y: surface - topSize.height)
+                node.addChild(tile)
+            }
+            scenery.addChild(node)
+            groundNodes.append((piece.at + spanLeft, span, node))
+        }
+
+        guard let edge = art.edge else { return }
+        for seam in ground.edges {
+            let left = ground.height(leftOf: seam), right = ground.height(at: seam)
+            guard left != right else { continue }
+            // The higher side gets the cap; a right-hand end is the left cap mirrored.
+            let facesLeft = right > left
+            let high = surfaceY(max(left, right)), low = surfaceY(min(left, right))
+            let node = SKNode()
+            node.zPosition = min(left, right) < 0 ? Self.dipZ : Self.raisedZ
+            // The node starts at the left of the cap's column. A mirrored sprite (anchored at its
+            // left edge) flips onto the span left of its position, so it is placed at the right.
+            func place(_ sprite: SKSpriteNode, y: CGFloat) {
+                sprite.anchorPoint = .zero
+                sprite.position = CGPoint(x: facesLeft ? 0 : edge.size.width, y: y)
+                if !facesLeft { sprite.xScale = -1 }
+                node.addChild(sprite)
+            }
+            let cap = SKSpriteNode(texture: edge.texture, size: edge.size)
+            cap.zPosition = 0.02
+            place(cap, y: high - edge.size.height)
+            if let wall = art.wall {
+                // Upward from the lower side's surface until a tile reaches S - 16; behind the cap.
+                var bottom = low
+                while bottom < high - edge.size.height {
+                    let sprite = SKSpriteNode(texture: wall.texture, size: wall.size)
+                    sprite.zPosition = 0.01
+                    place(sprite, y: bottom)
+                    bottom += wall.size.height
+                }
+            }
+            scenery.addChild(node)
+            groundNodes.append((facesLeft ? seam : seam - Double(edge.size.width), Double(edge.size.width), node))
+        }
+    }
+
+    /// Hides the base ground above the floor of each dip on screen, over [x0 - 8, x1 + 8), and shows
+    /// it everywhere else. The mask is a row of rectangles: full height, or up to a dip's floor.
+    private func updateGroundMask() {
+        guard !groundCrops.isEmpty else { return }
+        let margin: CGFloat = 8
+        var holes: [(x0: CGFloat, x1: CGFloat, floor: CGFloat)] = []
+        for dip in world.ground.pieces where dip.height < 0 {
+            let x0 = screenX(dip.at).rounded() - margin, x1 = screenX(dip.at).rounded() + CGFloat(dip.width) + margin
+            if x1 > 0, x0 < size.width { holes.append((x0, x1, surfaceY(dip.height))) }
+        }
+        // Cut the screen at every hole's ends; each stretch shows up to the lowest floor over it.
+        var cuts: [CGFloat] = [-2, size.width + 2]
+        for hole in holes { cuts += [hole.x0, hole.x1] }
+        cuts = Array(Set(cuts.map { min(max($0, -2), size.width + 2) })).sorted()
+        var rects: [CGRect] = []
+        for (a, b) in zip(cuts, cuts.dropFirst()) where b > a {
+            let middle = (a + b) / 2
+            let height = holes.filter { $0.x0 <= middle && $0.x1 > middle }.map(\.floor).min() ?? size.height
+            if let last = rects.last, last.maxX == a, last.height == height {
+                rects[rects.count - 1].size.width += b - a
+            } else {
+                rects.append(CGRect(x: a, y: 0, width: b - a, height: height))
+            }
+        }
+        for (index, crop) in groundCrops.enumerated() {
+            guard let mask = crop.maskNode else { continue }
+            while groundMaskRects[index].count < rects.count {
+                let rect = SKSpriteNode(color: .white, size: CGSize(width: 1, height: 1))
+                rect.anchorPoint = .zero
+                mask.addChild(rect)
+                groundMaskRects[index].append(rect)
+            }
+            for (slot, sprite) in groundMaskRects[index].enumerated() {
+                guard slot < rects.count else {
+                    sprite.isHidden = true
+                    continue
+                }
+                sprite.isHidden = false
+                sprite.position = rects[slot].origin
+                sprite.size = rects[slot].size
+            }
+        }
     }
 
     /// Pits drawn over the ground strip, one per ravine; `render()` moves them with the level.
@@ -251,7 +442,10 @@ final class GameScene: SKScene {
             let node = SKNode()
             node.zPosition = 1
             var tiles: [SKSpriteNode] = []
-            for left in Self.tileOffsets(span: platform.width, tile: Double(tileSize.width)) {
+            // A floating island is one drawn piece, centred on the ledge; the rest repeat their tile.
+            let lefts = name == "island" ? [((platform.width - Double(tileSize.width)) / 2).rounded()]
+                : Self.tileOffsets(span: platform.width, tile: Double(tileSize.width))
+            for left in lefts {
                 let tile = SKSpriteNode(texture: nil, color: sheet == nil ? .magenta : .clear, size: tileSize)
                 tile.anchorPoint = .zero
                 tile.position.x = CGFloat(left)
@@ -434,6 +628,17 @@ final class GameScene: SKScene {
                 break
             case .shattered(let id):
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.shatter) }
+            case .bumped:
+                // Stopped against a step: a squash and a puff of dust at the front paws.
+                play(.thump)
+                hero.run(.sequence([.scaleX(to: 1.15, y: 0.82, duration: 0.05), .scale(to: 1, duration: 0.15)]),
+                         withKey: "bump")
+                dust(at: CGPoint(x: framing.heroScreenX + CGFloat(world.tuning.heroWidth / 2), y: screenY(world.heroY) + 2))
+            case .hazardBroke(let id):
+                if let node = hazardNodes.removeValue(forKey: id) {
+                    if node.position.x > -20, node.position.x < size.width + 20 { dust(at: node.position) }
+                    node.removeFromParent()
+                }
             case .droppedDown(let id):
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.thump) }
             case .platformCrumbling(let index):
@@ -536,6 +741,21 @@ final class GameScene: SKScene {
         }
     }
 
+    /// A few earth-coloured pixels kicked up and fading.
+    private func dust(at origin: CGPoint) {
+        for (index, (dx, dy)) in [(-6.0, 5.0), (-3.0, 8.0), (2.0, 7.0), (-8.0, 2.0), (4.0, 3.0)].enumerated() {
+            let node = SKSpriteNode(color: SKColor(red: 0.72, green: 0.62, blue: 0.46, alpha: 1),
+                                    size: CGSize(width: index % 2 == 0 ? 2 : 1, height: index % 2 == 0 ? 2 : 1))
+            node.position = CGPoint(x: origin.x.rounded(), y: origin.y.rounded())
+            node.zPosition = 7
+            actors.addChild(node)
+            let fly = SKAction.moveBy(x: dx, y: dy, duration: 0.3)
+            fly.timingMode = .easeOut
+            node.run(.sequence([.group([fly, .sequence([.wait(forDuration: 0.15), .fadeOut(withDuration: 0.15)])]),
+                                .removeFromParent()]))
+        }
+    }
+
     /// A new ability is the big moment of a run: an award card on the HUD and a burst around the hero.
     private func award(_ ability: Ability) {
         hud.award = ability
@@ -602,6 +822,7 @@ final class GameScene: SKScene {
             node.position.x = screenX(at).rounded()
             node.isHidden = node.position.x > size.width || node.position.x + CGFloat(width) < 0
         }
+        updateGroundMask()
         renderPlatforms()
         renderHero()
         renderEntities()

@@ -40,6 +40,8 @@ final class MenuScene: SKScene {
     private var clouds: [ParallaxNode] = []
     private var lastTime: TimeInterval?
     private var scroll: CGFloat = 0
+    /// The composed menu picture is up (it has the cat sign painted in).
+    private var hasPicture = false
 
     /// - Parameters:
     ///   - celebrate: confetti and big sparkles (level complete).
@@ -102,7 +104,7 @@ final class MenuScene: SKScene {
         let place: CGFloat = upright ? 0.5 : (wideHeroPlace ?? (pose == .running ? 0.22 : 0.13))
         hero.position = CGPoint(x: (size.width * place).rounded(), y: groundY)
         addChild(hero)
-        if theme == nil {
+        if theme == nil, !hasPicture {
             addSign(groundY: groundY, heroPlace: place)
         }
 
@@ -120,23 +122,43 @@ final class MenuScene: SKScene {
 
     // MARK: - Backdrop
 
-    /// The start screen's own morning: menu sky and hills over the forest ground.
+    /// Where `menu_waterfall` goes on each composed scene, as the artist gives it (WATERFALL in
+    /// Tools/sprites/characters/menu_scene.py): the overlay's top-left corner, in picture pixels from
+    /// the picture's top-left. A picture without a spot gets no overlay (the still has its own).
+    static let waterfallSpots: [String: CGPoint] = [
+        "menu_scene_portrait": CGPoint(x: 126, y: 162),
+        "menu_scene_landscape": CGPoint(x: 286, y: 78),
+    ]
+
+    /// The start screen's own morning: a smooth sky with clouds drifting across it, the composed
+    /// Purrwood picture for this orientation standing on the ground line, then the forest ground.
+    /// Nothing scrolls but the clouds. Without the picture (not drawn yet) the older menu strips stand
+    /// in for it, still.
     private func addMenuBackdrop(groundY: CGFloat) {
-        if let sky = library.textures("bg_menu_sky", "still").first {
-            let node = SKSpriteNode(texture: sky, size: size)
+        addSky()
+        let pictureName = upright ? "menu_scene_portrait" : "menu_scene_landscape"
+        var pictureTop = groundY + (upright ? 120 : 70)
+        if let picture = library.textures(pictureName, "still").first ?? firstFrame(pictureName),
+           let sheet = library.sheet(pictureName) {
+            // Whole-number scale, the largest that is no wider than the screen (at least 1).
+            let scale = max(1, (size.width / sheet.width).rounded(.down))
+            let node = SKSpriteNode(texture: picture, size: CGSize(width: sheet.width * scale, height: sheet.height * scale))
             node.anchorPoint = .zero
-            node.zPosition = -10
+            node.position = CGPoint(x: ((size.width - node.size.width) / 2).rounded(), y: groundY)
+            node.zPosition = -8
             addChild(node)
+            pictureTop = groundY + node.size.height
+            hasPicture = true
+            addWaterfall(on: pictureName, origin: node.position, scale: scale)
+            addClouds(above: pictureTop)
+        } else {
+            addClouds(above: pictureTop)
+            if let bank = addStrip("bg_menu_clouds", bottom: groundY, factor: 0.08, z: -9) {
+                clouds.append(bank)
+            }
+            addStrip("bg_menu_horizon", bottom: groundY, factor: 0.2, z: -8)
+            addStrip("bg_menu_bushes", bottom: groundY, factor: 0.55, z: -7)
         }
-        // Loose clouds fill the open sky an upright screen has above the cloud bank.
-        if let puffs = addStrip("bg_menu_puffs", bottom: groundY + (upright ? 120 : 70), factor: 0.04, z: -9.5) {
-            clouds.append(puffs)
-        }
-        if let bank = addStrip("bg_menu_clouds", bottom: groundY, factor: 0.08, z: -9) {
-            clouds.append(bank)
-        }
-        addStrip("bg_menu_horizon", bottom: groundY, factor: 0.2, z: -8)
-        addStrip("bg_menu_bushes", bottom: groundY, factor: 0.55, z: -7)
         if let fill = library.textures("ground_forest_fill", "still").first {
             let node = SKSpriteNode(texture: fill, size: CGSize(width: size.width, height: groundY))
             node.anchorPoint = .zero
@@ -155,6 +177,52 @@ final class MenuScene: SKScene {
                 parallax.append(row)
             }
         }
+    }
+
+    /// A smooth gradient sky over the whole scene. It is drawn with smooth filtering: stretched with
+    /// nearest-neighbour, a gradient tile shows hard bands.
+    private func addSky() {
+        let name = library.sheet("menu_sky") != nil ? "menu_sky" : "bg_menu_sky"
+        guard let animation = library.animationName(name, preferring: "still"),
+              library.animation(name, animation)?.frames ?? 0 > 0 else { return }
+        let texture = SKTexture(imageNamed: "\(name)_\(animation)_0")
+        texture.filteringMode = .linear
+        let node = SKSpriteNode(texture: texture, size: size)
+        node.anchorPoint = .zero
+        node.zPosition = -10
+        addChild(node)
+    }
+
+    /// Clouds drifting slowly across the sky, behind the picture so they never cross the scenery.
+    private func addClouds(above pictureTop: CGFloat) {
+        let name = library.sheet("menu_clouds") != nil ? "menu_clouds" : "bg_menu_puffs"
+        guard let sheet = library.sheet(name), let animation = library.animationName(name, preferring: "still"),
+              let texture = library.textures(name, animation).first else { return }
+        // Tucked half behind the top of the picture, but always on screen.
+        let bottom = min(pictureTop - (sheet.height * 0.5).rounded(), size.height - sheet.height)
+        let node = ParallaxNode(texture: texture, size: CGSize(width: sheet.width, height: sheet.height),
+                                viewWidth: size.width, factor: 0.05)
+        node.position.y = max(0, bottom)
+        node.zPosition = -9
+        addChild(node)
+        clouds.append(node)
+    }
+
+    /// The animated waterfall over the still picture, at the spot the artist gives for it.
+    private func addWaterfall(on picture: String, origin: CGPoint, scale: CGFloat) {
+        guard let spot = Self.waterfallSpots[picture], let pictureSheet = library.sheet(picture),
+              let sheet = library.sheet("menu_waterfall"), let waterfall = actor("menu_waterfall") else { return }
+        waterfall.setScale(scale)
+        // From a top-left corner (top-down) to the node's anchor point (bottom-up), in picture pixels.
+        let anchorX = spot.x + sheet.width * sheet.anchorX
+        let anchorY = pictureSheet.height - spot.y - sheet.height * (1 - sheet.anchorY)
+        waterfall.position = CGPoint(x: origin.x + anchorX * scale, y: origin.y + anchorY * scale)
+        waterfall.zPosition = -7.5
+        addChild(waterfall)
+    }
+
+    private func firstFrame(_ sprite: String) -> SKTexture? {
+        library.animationName(sprite, preferring: "still").flatMap { library.textures(sprite, $0).first }
     }
 
     @discardableResult

@@ -4,8 +4,11 @@ import SpriteKit
 /// and the screen that announces the next level, so both show the same place.
 enum LevelBackdrop {
     /// Adds the layers for `theme` to `parent` and returns the strips that scroll, back to front.
+    /// With `groundLayers` the base ground goes into them instead: the fill into `fill`, the strip
+    /// and its earth into `strip`, at z 0 inside each; the caller places them at z -5 and -4 (the
+    /// game masks sunken dips out of both, and draws raised blocks between them).
     static func build(theme: String, size: CGSize, groundY: CGFloat, library: SpriteLibrary,
-                      into parent: SKNode) -> [ParallaxNode] {
+                      into parent: SKNode, groundLayers: (fill: SKNode, strip: SKNode)? = nil) -> [ParallaxNode] {
         var parallax: [ParallaxNode] = []
         if let sky = library.textures("bg_\(theme)_sky", "still").first {
             // The banded sky keeps its drawn height and sits on the ground line, so the horizon looks the
@@ -28,8 +31,8 @@ enum LevelBackdrop {
         if let fill = library.textures("ground_\(theme)_fill", "still").first {
             let node = SKSpriteNode(texture: fill, size: CGSize(width: size.width, height: groundY))
             node.anchorPoint = .zero
-            node.zPosition = -5
-            parent.addChild(node)
+            node.zPosition = groundLayers == nil ? -5 : 0
+            (groundLayers?.fill ?? parent).addChild(node)
         }
         // Back to front. The loose clouds float above the tree line, so they mostly show upright,
         // where there is open sky; everything else stands on the ground line.
@@ -49,16 +52,16 @@ enum LevelBackdrop {
             let node = ParallaxNode(texture: texture, size: CGSize(width: sheet.width, height: sheet.height),
                                     viewWidth: size.width, factor: 1)
             node.position.y = groundY - sheet.height
-            node.zPosition = -4
-            parent.addChild(node)
+            node.zPosition = groundLayers == nil ? -4 : 0
+            (groundLayers?.strip ?? parent).addChild(node)
             parallax.append(node)
             // Upright the earth runs deeper than the tile; keep it textured and scrolling as one piece.
             if let earth = library.textures("\(name)_earth", "still").first, let earthSheet = library.sheet("\(name)_earth") {
                 for row in ParallaxNode.earth(below: node.position.y, tile: earth,
                                               tileSize: CGSize(width: earthSheet.width, height: earthSheet.height),
                                               viewWidth: size.width) {
-                    row.zPosition = -4
-                    parent.addChild(row)
+                    row.zPosition = groundLayers == nil ? -4 : 0
+                    (groundLayers?.strip ?? parent).addChild(row)
                     parallax.append(row)
                 }
             }

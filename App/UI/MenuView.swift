@@ -53,9 +53,10 @@ struct MenuView: View {
         let side = max(16, insets.leading)
         let width = min(size.width - 2 * side, 380)
         let titleTop = insets.top + 12
-        let titleHeight = max(110, size.height - heroTop - titleTop - 52)
+        let titleHeight = max(130, size.height - heroTop - titleTop - 52)
         return VStack(spacing: 0) {
-            titleBlock(width: width, maxHeight: titleHeight)
+            // The title spans about nine tenths of an upright screen.
+            titleBlock(width: (size.width * Self.tallTitleShare).rounded(), maxHeight: titleHeight)
                 .padding(.top, titleTop)
             Spacer(minLength: 0)
             actions(width: width)
@@ -68,29 +69,34 @@ struct MenuView: View {
     /// On its side: title over the buttons in a left column; the hero stands on the right.
     private func wide(size: CGSize, insets: EdgeInsets) -> some View {
         let leading = max(insets.leading, 20)
-        let width = min(400, size.width * Self.wideHeroPlace - leading - size.width * 0.16)
+        let titleWidth = (size.width * Self.wideTitleShare).rounded()
+        let width = min(400, titleWidth, size.width * Self.wideHeroPlace - leading - size.width * 0.16)
         let top = insets.top + 10
         let bottom = max(insets.bottom, 10) + 8
         let titleHeight = max(90, size.height - top - bottom - Self.actionsHeight - 44)
         return VStack(spacing: 8) {
-            titleBlock(width: width, maxHeight: titleHeight)
+            titleBlock(width: titleWidth, maxHeight: titleHeight)
             Spacer(minLength: 0)
             actions(width: width)
         }
-        .frame(width: width)
+        .frame(width: titleWidth)
         .padding(.top, top)
         .padding(.bottom, bottom)
         .padding(.leading, leading)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
-    private static let actionsHeight: CGFloat = 58 + 10 + 64
+    private static let actionsHeight: CGFloat = 58 + 10 + 66
+    /// Share of the screen width the title spans: upright, and in the left column on its side.
+    private static let rowGap: CGFloat = 12
+    private static let tallTitleShare: CGFloat = 0.9
+    private static let wideTitleShare: CGFloat = 0.45
 
     /// The title in its wreath with the hero peeking over it, and the tagline under it.
     private func titleBlock(width: CGFloat, maxHeight: CGFloat) -> some View {
         VStack(spacing: 10) {
             WreathTitle(text: model.text("game.title"), wreath: "title_wreath", width: width, maxHeight: maxHeight,
-                        topper: ["peek", "idle"], topperOverlap: 0.15, fish: true, paw: true)
+                        topper: ["peek", "idle"], fish: true, paw: true)
             Text(model.text("game.tagline"))
                 .font(.pixel(13))
                 .foregroundStyle(Color.menuPaper)
@@ -111,14 +117,19 @@ struct MenuView: View {
                 model.startEndless()
             }
             .accessibilityHint(model.text("mode.endless.name"))
-            HStack(spacing: 12) {
-                SecondaryButton(title: model.ui("levels"), icon: "icon_trophy", layout: .stacked, height: 64, fontSize: 14) {
+            // Sized as in the three-button design (a third of START less the gaps), two of them centred.
+            let small = ((width - 2 * Self.rowGap) / 3).rounded(.down)
+            HStack(spacing: Self.rowGap) {
+                SecondaryButton(title: model.ui("levels"), icon: "icon_trophy", layout: .stacked, height: 66, fontSize: 14) {
                     overlay = .levels
                 }
-                SecondaryButton(title: model.ui("cats"), icon: "icon_cat", layout: .stacked, height: 64, fontSize: 14) {
+                .frame(width: small)
+                SecondaryButton(title: model.ui("cats"), icon: "icon_cat", layout: .stacked, height: 66, fontSize: 14) {
                     overlay = .cats
                 }
+                .frame(width: small)
             }
+            .frame(maxWidth: .infinity)
         }
         .frame(width: width)
     }

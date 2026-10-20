@@ -35,6 +35,11 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | stump | 22×26 | still 1 |
 | milk | 32×6 | still 1 (tiles horizontally; its bottom 3 rows sit on the turf) |
 | bridge | 48×12 | still 1, crumble 4 (walk surface = top row) |
+| island | 48×24 | still 1. Floating island: grassy top (walk surface = top row, placed like `bridge`: frame top on the platform's y), rounded earth-and-rock underside, vines to row 23. One per platform, not tiled |
+| terrain_forest_top | 16×16 | still 1. Raised/sunken ground surface; tiles horizontally; walk surface = top row; opaque |
+| terrain_forest_edge | 8×16 | still 1. Left end cap (mirror for the right); top row level with `terrain_forest_top`'s |
+| terrain_forest_wall | 8×16 | still 1. Left side face below the cap (mirror for the right); tiles vertically |
+| terrain_forest_fill | 16×16 | still 1. Block interior; tiles both ways; opaque |
 | boss_squirrel | 112×132 | idle 4, throw 6, roll 6, climb 6 (leaps with the giant acorn), hurt 2, death 8 |
 | snowball | 16×16 | roll 4, death 4 |
 | penguin | 36×16 | slide 4, death 4 |
@@ -64,9 +69,14 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | fish | 16×12 | spin 6 |
 | yarn_basket | 28×28 | glow 4 |
 | medal | 32×32 | bronze 1, silver 1, gold 1 |
-| title_wreath | 200×64 | still 1. Leafy band behind the start-screen title; clear stadium-shaped hole 156×40 in the middle |
-| title_wreath_small | 160×52 | still 1. The same for "level complete"; clear hole 124×32 |
-| title_wreath_stone | 200×96 | still 1. Mossy grey boulder ringed with leaves and white flowers behind "game over"; its middle (about 140×52) is plain stone for the text |
+| title_wreath | 230×90 | still 1. Clusters of big leaves and a few white flowers peeking out round the outside of the start-screen title: bushy at the two ends, some along the bottom, a few on top. No band or ring; the middle is fully transparent (the lettering covers the leaves' stems) |
+| title_wreath_small | 200×78 | still 1. The same for "level complete" |
+| title_wreath_stone | 230×110 | still 1. Mossy grey boulder behind "game over" with leaf clusters and white flowers round its edge; its middle (about 160×60) is plain stone for the text |
+| menu_scene_portrait | 210×230 | still 1. The start screen's backdrop as one opaque picture for an upright screen (landmarks inside the middle 195 columns, x 7-202, so any screen 195-210 wide shows them whole): tree with a red-roofed house and a cat signpost (left), pines, blue mountains and a river (middle), castle on a cliff with a waterfall, wooden bridges, bushes and flowers (right). Sky drawn in full-row bands; its top rows are `menu_sky`'s bottom colour. Bottom row sits directly on `ground_forest` (anchor at the bottom). Nothing tiles or scrolls |
+| menu_scene_landscape | 440×150 | still 1. The same for a wide screen: landmarks inside the middle 333 columns (x 54-386); the extra width at the sides is forest (left) and cliff, river and bridge (right) |
+| menu_sky | 16×64 | still 1. Sky above the scene, four full-row bands ending in the scenes' top colour; stretch it, its bands have no dithering |
+| menu_clouds | 120×40 | still 1. A puffy cloud to drift across the sky; transparent all round |
+| menu_waterfall | 12×44 | loop 4 (water streaks running down, foam churning). Overlay in place at top-left (126, 162) in `menu_scene_portrait` and (286, 78) in `menu_scene_landscape` (pixels from the scene's top-left; from the bottom-left: (126, 24) and (286, 28)); its frame 0 is identical to the scene's own pixels there |
 | icon_trophy, icon_cat, icon_retry, icon_home, icon_play, icon_paw, icon_lock | 16×16 | still 1 each. Button and badge icons |
 | confetti_red, confetti_yellow, confetti_blue, confetti_green | 8×8 | loop 6 (a paper piece spinning and flipping) |
 | sparkle_big | 12×12 | loop 4 (four-point twinkle swelling and shrinking) |
@@ -88,8 +98,30 @@ Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, 
 `bg_<theme>_sky_top`; `bg_<theme>_puffs|clouds|far|near|bushes` (320 wide, tiling horizontally, standing on the
 ground line); `ground_<theme>` (32×48), `ground_<theme>_earth` (32×36, stacked below it; it must tile vertically and continue from the ground tile's bottom row; the forest draws it as deep grey cobbles rather than reusing the tile's lower part) and `ground_<theme>_fill`; `ravine_<theme>` (the
 left wall of a ravine, mirrored for the right one), `ravine_<theme>_fill` (stretched between them; citadel's is
-a lava pool) and `ravine_<theme>_deep`. The start screen has its own backdrop: `bg_menu_sky`, `bg_menu_clouds`,
-`bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes`, over the forest ground, in the Purrwood look
+a lava pool) and `ravine_<theme>_deep`. Forest terrain (`characters/terrain.py`) is tiled to a contract so no seam can form. Units are world units, y up, `G` = the
+ground line, `S` = a piece's walk surface. All five sprites use anchor (0, 0) when placed by their bottom-left corner.
+- `terrain_forest_top`: frame top on `S` (node y = `S` − 16), tiled with `tileOffsets` across the piece, inset 8 at an
+  end that gets an end cap, extended 8 under a taller neighbour, flush where a neighbour has the same height.
+- `terrain_forest_fill`: the same x span, behind the top tiles; tile bottoms on the grid `G` − 48 + 16k, from the
+  lowest needed up to the one holding `S` − 16 (its overshoot is hidden by the opaque top tiles). The fill's 8-row
+  cobble rows end on a stone's dark rim at row 15, and `ground_forest_earth` starts on a stone's light top, so the
+  fill stacks straight onto the earth with no half stones.
+- `terrain_forest_edge`: at an end whose neighbour is lower, frame [x0, x0 + 8) with its top on `S`, mirrored with
+  frame [x1 − 8, x1) on the right. Columns 1-7 are opaque, so the inset top/fill tiles run under it. Col 0 holds only
+  the grass lip, which overhangs by 1 px, and some tufts and a root.
+- `terrain_forest_wall`: under each edge, in the same columns, tiled upward from the lower neighbour's surface (lowest
+  tile bottom on it) until a tile reaches `S` − 16. It is drawn behind the edge. Its stone ends are 8-row rows like
+  the fill's, so heights and depths in multiples of 8 keep them in line.
+- A raised piece is drawn just behind the ground strip, so the base turf passes in front of its foot. For a dip,
+  the ground strip is hidden above the floor over [x0 − 8, x1 + 8) (not by cutting the texture). The upper ground
+  gets a mirrored edge on [x0 − 8, x0) and an edge on [x1, x1 + 8), with walls down to the floor. The floor's top
+  and fill span [x0 − 1, x1 + 1) and fill down to `G` − 48.
+- Pieces are at least 24 wide. A piece 16 wide is just its two end columns, with no top or fill tiles.
+`island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
+
+The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
+`menu_sky`, `menu_clouds` and `menu_waterfall`. The older scrolling strips `bg_menu_sky`, `bg_menu_clouds`,
+`bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes` (still used by `MenuScene` and `Tools/store/header.py`) stand on the forest ground, in the Purrwood look
 (`docs/concept/Purrfectly Dangerous Pixel Game Screens.png`): the treehouse at x 0-50 and the castle on its cliff with
 the waterfall at x 116-194 of the 110-tall `bg_menu_clouds` strip, so an upright screen (which shows about the first
 195 units) frames them as the reference does; `bg_menu_horizon` holds the forest band, the lake, a red-roofed cottage

@@ -255,105 +255,84 @@ struct OutlinedText: View {
     }
 }
 
-/// A heading as the chunky logo lettering: dark outline and drop shadow; the first of two lines in
-/// cream and the rest in a yellow-to-orange gradient (or every line in the gradient). With `paw` the
-/// last "O" of the last line is the paw icon.
+/// A heading in the chunky pixel lettering (see `LogoTitle`): the first of two lines cream, the rest
+/// yellow-to-orange (or every line, with `allGradient`), or one flat `tint` for numerals. `size` is
+/// roughly the height of one line in points; a heading too wide for its space steps down whole
+/// pixels until it fits. With `paw` the last "O" of the last line is the paw icon.
 struct PixelTitle: View {
     let text: String
     let size: CGFloat
     var alignment = HorizontalAlignment.leading
-    /// One flat colour instead of the logo fill; used for numerals.
     var tint: Color?
     /// Text with at least this many words is set on two lines.
     var splitFrom = 3
-    /// Every line in the gradient (the game-over title) instead of a cream first line.
     var allGradient = false
     var paw = false
 
-    static let gradient = LinearGradient(
-        stops: [.init(color: .menuCream, location: 0), .init(color: .menuYellow, location: 0.35),
-                .init(color: .menuOrange, location: 0.75), .init(color: .menuOrangeDeep, location: 1)],
-        startPoint: .top, endPoint: .bottom)
-
-    /// The text split the way the title sets it: one line, or two balanced by word count.
-    static func lines(_ text: String, splitFrom: Int) -> [String] {
-        let words = text.uppercased().split(separator: " ")
-        guard words.count >= splitFrom else { return [text.uppercased()] }
-        let first = words.count / 2
-        return [words.prefix(first).joined(separator: " "), words.dropFirst(first).joined(separator: " ")]
-    }
-
-    /// The largest font size at which `text` fits `box` (monospaced, so by character count).
-    static func fittingSize(_ text: String, splitFrom: Int, box: CGSize) -> CGFloat {
-        let lines = lines(text, splitFrom: splitFrom)
-        let longest = CGFloat(lines.map(\.count).max() ?? 1)
-        let byWidth = box.width / (longest * 0.62 + 0.6)
-        let byHeight = box.height / (CGFloat(lines.count) * 1.2)
-        return max(8, min(byWidth, byHeight).rounded(.down))
-    }
-
-    private var lines: [String] { Self.lines(text, splitFrom: splitFrom) }
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        VStack(alignment: alignment, spacing: size * 0.02) {
-            ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                lineView(line, isLast: index == lines.count - 1, fill: fill(forLine: index))
+        let lines = LogoTitle.lines(text, splitFrom: splitFrom, allGradient: allGradient, tint: tint)
+        let preferred = max(1, Int((size * displayScale / 16).rounded()))
+        ViewThatFits(in: .horizontal) {
+            ForEach(Array((1...preferred).reversed()), id: \.self) { sub in
+                LogoTitle(lines: lines, sub: sub, paw: paw)
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
         .accessibilityAddTraits(.isHeader)
     }
+}
 
-    private func fill(forLine index: Int) -> AnyShapeStyle {
-        if let tint { return AnyShapeStyle(tint) }
-        if lines.count > 1, index == 0, !allGradient { return AnyShapeStyle(Color.menuCream) }
-        return AnyShapeStyle(Self.gradient)
+extension SpriteLibrary {
+    /// The box (sprite pixels, top-left origin) holding every opaque pixel of an animation's frames,
+    /// so a figure can be placed by what is drawn rather than by its padded frame.
+    @MainActor
+    func opaqueBounds(_ sprite: String, _ animation: String) -> CGRect? {
+        let key = "\(sprite)/\(animation)"
+        if let cached = OpaqueBoundsCache.values[key] { return cached }
+        var union: CGRect?
+        for image in images(sprite, animation) {
+            guard let box = Self.opaqueBox(image) else { continue }
+            union = union.map { $0.union(box) } ?? box
+        }
+        OpaqueBoundsCache.values[key] = union
+        return union
     }
 
-    @ViewBuilder
-    private func lineView(_ line: String, isLast: Bool, fill: AnyShapeStyle) -> some View {
-        let shadow = tint == nil
-        if paw, isLast, let split = Self.pawSplit(line) {
-            HStack(spacing: 0) {
-                OutlinedText(text: split.before, size: size, fill: fill, shadow: shadow)
-                PawLetter(size: size)
-                OutlinedText(text: split.after, size: size, fill: fill, shadow: shadow)
+    private static func opaqueBox(_ image: CGImage) -> CGRect? {
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        var minX = width, minY = height, maxX = -1, maxY = -1
+        // Bitmap rows run top to bottom in memory.
+        for y in 0..<height {
+            for x in 0..<width where pixels[(y * width + x) * 4 + 3] > 0 {
+                minX = min(minX, x); maxX = max(maxX, x)
+                minY = min(minY, y); maxY = max(maxY, y)
             }
-        } else {
-            OutlinedText(text: line, size: size, fill: fill, shadow: shadow)
         }
-    }
-
-    /// The line around its last "O" (not the first letter), if it has one.
-    static func pawSplit(_ line: String) -> (before: String, after: String)? {
-        guard let index = line.lastIndex(of: "O"), index != line.startIndex else { return nil }
-        return (String(line[..<index]), String(line[line.index(after: index)...]))
+        guard maxX >= 0 else { return nil }
+        return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
     }
 }
 
-/// The paw icon standing in for a letter "O", one character wide. Falls back to the letter.
-private struct PawLetter: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.displayScale) private var displayScale
-    let size: CGFloat
-
-    var body: some View {
-        if let sheet = model.sprites.sheet("icon_paw") {
-            let target = size * 0.78
-            let scale = max(1, Int((target * displayScale / max(sheet.width, sheet.height)).rounded(.down)))
-            PixelSprite(sprite: "icon_paw", pixelScale: scale)
-                .frame(width: size * 0.62, height: size * 1.1)
-        } else {
-            OutlinedText(text: "O", size: size, fill: AnyShapeStyle(PixelTitle.gradient), shadow: true)
-        }
-    }
+@MainActor
+private enum OpaqueBoundsCache {
+    static var values: [String: CGRect?] = [:]
 }
 
-/// A logo-style heading set inside a leafy (or stony) wreath sprite, with the hero lying or standing
-/// on top of it, optionally a sunburst behind the hero, a fish tucked in at the lower right and leaves
-/// drifting around it. Everything shares one whole-pixel scale, the largest that fits `width` ×
-/// `maxHeight`. Missing sprites are left out; without the wreath the lettering stands alone.
+/// A logo-style heading in the pixel lettering, with the hero on top of it (resting on the letters,
+/// or standing behind them), optionally a sunburst behind the hero, a fish just past the last line,
+/// leaves drifting round it, and a wreath sprite framing the letters from behind. The letters take
+/// the largest whole-pixel size that fits `width` × `maxHeight` with the hero included; the hero is
+/// scaled (whole pixels) so its head is about one line of lettering tall. Missing sprites are left out.
 struct WreathTitle: View {
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
@@ -361,12 +340,11 @@ struct WreathTitle: View {
     var wreath = "title_wreath"
     let width: CGFloat
     let maxHeight: CGFloat
-    /// Hero animations for the figure on top of the wreath, in order of preference; empty for none.
+    /// Hero animations for the figure over the title, in order of preference; empty for none.
     var topper: [String] = []
-    /// Share of the topper's height that overlaps the top of the wreath.
-    var topperOverlap: CGFloat = 0.3
-    /// The topper stands behind the wreath (cheering from behind it) rather than lying over it.
-    var topperBehind = false
+    /// Share of the figure's drawn height that stands behind the letters. 0: it rests on top of them
+    /// (paws on the outline) and never covers a letter.
+    var topperSink: CGFloat = 0
     var sunburst = false
     var fish = false
     var leaves = false
@@ -375,61 +353,97 @@ struct WreathTitle: View {
     var splitFrom = 2
 
     private var library: SpriteLibrary { model.sprites }
-    private var topperAnimation: String? { topper.first { library.animation("hero", $0) != nil } }
+
+    private struct Figure {
+        let animation: String
+        let bounds: CGRect
+        let sheet: SpriteLibrary.Sheet
+    }
+
+    private var figure: Figure? {
+        guard let sheet = library.sheet("hero"),
+              let animation = topper.first(where: { library.animation("hero", $0) != nil }),
+              let bounds = library.opaqueBounds("hero", animation) else { return nil }
+        return Figure(animation: animation, bounds: bounds, sheet: sheet)
+    }
+
+    /// Whole-pixel scale of the figure for letters at `sub`: the head (the drawn height less the paws)
+    /// about as tall as one 16-sub-pixel line.
+    private func figureScale(_ figure: Figure?, sub: Int) -> Int {
+        guard let figure else { return 1 }
+        let head = max(8, figure.bounds.height - 2)
+        return max(1, Int((CGFloat(16 * sub) / head).rounded(.up)))
+    }
 
     var body: some View {
-        let wreathSheet = library.sheet(wreath)
-        let box = CGSize(width: wreathSheet?.width ?? 170, height: wreathSheet?.height ?? 64)
-        let topperHeight = topperAnimation == nil ? 0 : (library.sheet("hero")?.height ?? 36)
-        let raised = topperHeight * (1 - topperOverlap)
-        let fit = min(width * displayScale / box.width, maxHeight * displayScale / (box.height + raised))
-        let scale = max(1, Int(fit.rounded(.down)))
-        let unit = CGFloat(scale) / max(displayScale, 1)
-        let size = CGSize(width: box.width * unit, height: box.height * unit)
-        // The lettering keeps inside the wreath's leaves.
-        // The wreaths are open rings; like the logo, the lettering may run onto the leaves a little.
-        let textBox = CGSize(width: size.width * (wreathSheet == nil ? 0.96 : 0.86),
-                             height: size.height * (wreathSheet == nil ? 0.96 : 0.76))
-        let fontSize = PixelTitle.fittingSize(text, splitFrom: splitFrom, box: textBox)
+        let scale = max(displayScale, 1)
+        let lines = LogoTitle.lines(text, splitFrom: splitFrom, allGradient: allGradient, tint: nil)
+        let fishSize = fish ? library.sheet("fish").map { (Int($0.width), Int($0.height)) } : nil
+        let hasPaw = paw && library.sheet("icon_paw") != nil
+        let metrics = LogoTitle.metrics(lines, paw: hasPaw, fish: fishSize)
+        let figure = figure
+        // The largest letters that fit, or one size up when that lands nearer the width asked for
+        // (whole device pixels per sub-pixel make the steps coarse: 82% or 94% of a phone, say).
+        let fits: (Int) -> Bool = { sub in
+            let raised = (figure?.bounds.height ?? 0) * CGFloat(figureScale(figure, sub: sub)) * (1 - topperSink)
+            return CGFloat(metrics.height * sub) + raised <= maxHeight * scale
+        }
+        let target = width * scale
+        let fitting = (1...16).reversed().first { CGFloat(metrics.width * $0) <= target && fits($0) } ?? 1
+        let larger = fitting + 1
+        let sub = fits(larger) && CGFloat(metrics.width * larger) <= target * 1.05
+            && CGFloat(metrics.width * larger) - target < target - CGFloat(metrics.width * fitting) ? larger : fitting
+        let unit = CGFloat(sub) / scale
+        // The letters' middle, which the fish can push off the middle of the whole block.
+        let lettersShift = (metrics.firstLineCenter - CGFloat(metrics.width) / 2) * unit
 
-        ZStack {
-            if wreathSheet != nil {
-                PixelSprite(sprite: wreath, pixelScale: scale)
+        VStack(spacing: 0) {
+            if let figure {
+                figureView(figure, figureScale: figureScale(figure, sub: sub), shift: lettersShift)
+                    .zIndex(topperSink > 0 ? 0 : 1)
+                    // Resting: the paws overlap only the one-sub-pixel outline. Standing behind: sunk.
+                    .padding(.bottom, -(unit + figure.bounds.height * CGFloat(figureScale(figure, sub: sub)) / scale * topperSink))
             }
-            PixelTitle(text: text, size: fontSize, alignment: .center, splitFrom: splitFrom,
-                       allGradient: allGradient, paw: paw)
+            LogoTitle(lines: lines, sub: sub, paw: hasPaw, fish: fish)
+                .background {
+                    wreathView(letters: CGSize(width: metrics.width * sub, height: metrics.height * sub))
+                        .offset(x: lettersShift)
+                }
+                .overlay {
+                    if leaves { DriftingLeaves(pixelScale: sub) }
+                }
+                .zIndex(topperSink > 0 ? 1 : 0)
         }
-        .frame(width: size.width, height: size.height)
-        .overlay(alignment: .bottomTrailing) {
-            if fish {
-                PixelSprite(sprite: "fish", pixelScale: scale, animated: false)
-                    .alignmentGuide(.trailing) { $0[.trailing] - $0.width * 0.45 }
-                    .alignmentGuide(.bottom) { $0[.bottom] - $0.height * 0.15 }
-            }
-        }
-        .overlay {
-            if leaves { DriftingLeaves(pixelScale: scale) }
-        }
-        .background(alignment: .top) {
-            if topperBehind { topperView(scale: scale, overlap: topperHeight * topperOverlap * unit) }
-        }
-        .overlay(alignment: .top) {
-            if !topperBehind { topperView(scale: scale, overlap: topperHeight * topperOverlap * unit) }
-        }
-        .padding(.top, raised * unit)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
         .accessibilityAddTraits(.isHeader)
     }
 
+    private func figureView(_ figure: Figure, figureScale: Int, shift: CGFloat) -> some View {
+        let scale = max(displayScale, 1)
+        let k = CGFloat(figureScale) / scale
+        // Centre what is drawn (not the padded frame) over the first line, and stand its lowest drawn
+        // row on the bottom of the box.
+        let dx = (figure.sheet.width / 2 - figure.bounds.midX) * k + shift
+        let dy = (figure.sheet.height - figure.bounds.maxY) * k
+        return PixelSprite(sprite: "hero", animations: [figure.animation], pixelScale: figureScale, anyAnimation: false)
+            .background {
+                if sunburst { Sunburst(maxWidth: width * 1.1, preferredScale: figureScale) }
+            }
+            .offset(x: dx, y: dy)
+            .frame(height: figure.bounds.height * k, alignment: .bottom)
+    }
+
+    /// The wreath behind the letters (sizes in device pixels) at the smallest whole-pixel scale that
+    /// is wider and taller than them, so its leaves (or stone) frame them round the edges.
     @ViewBuilder
-    private func topperView(scale: Int, overlap: CGFloat) -> some View {
-        if let topperAnimation {
-            PixelSprite(sprite: "hero", animations: [topperAnimation], pixelScale: scale, anyAnimation: false)
-                .background {
-                    if sunburst { Sunburst(maxWidth: width * 1.1, preferredScale: scale) }
-                }
-                .alignmentGuide(.top) { $0[.bottom] - overlap }
+    private func wreathView(letters: CGSize) -> some View {
+        if let sheet = library.sheet(wreath) {
+            let wide = max(Int((letters.width * 1.06 / sheet.width).rounded(.up)),
+                           Int((letters.height * 1.15 / sheet.height).rounded(.up)))
+            let limit = Int((width * max(displayScale, 1) * 1.15 / sheet.width).rounded(.down))
+            PixelSprite(sprite: wreath, pixelScale: max(1, min(wide, max(limit, 1))))
+                .allowsHitTesting(false)
         }
     }
 }

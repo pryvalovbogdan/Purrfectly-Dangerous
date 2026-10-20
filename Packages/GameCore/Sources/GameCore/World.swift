@@ -38,8 +38,19 @@ public struct Tuning: Sendable, Equatable {
     public static let narrowBossOffset = 140.0
     public var bossIntro = 1.5
     public var victoryDelay = 2.0
+    /// A lip of ground up to this high is stepped onto without a jump.
+    public var stepUp = 4.0
 
     public init() {}
+
+    /// Height of a full jump from the ground.
+    public var jumpApex: Double { jumpVelocity * jumpVelocity / (2 * gravity) }
+
+    /// Height of a full jump followed by a full Double Pounce at its top.
+    public var doubleJumpApex: Double {
+        let second = jumpVelocity * doubleJumpScale
+        return jumpApex + second * second / (2 * gravity)
+    }
 
     /// Horizontal reach of a full jump from the ground at `speed`.
     public func jumpReach(speed: Double) -> Double {
@@ -153,6 +164,8 @@ public struct Hazard: Sendable, Equatable, Identifiable {
     public var vy = 0.0
     /// Pulls a lobbed hazard down; it is zero once it rolls along the ground.
     public var gravity = 0.0
+    /// Landed and rolling along the ground: it drops again off a step down.
+    public var rolling = false
 
     public var isArmed: Bool { arm <= 0 }
     public var box: AABB { AABB(centerX: x, bottom: y, width: width, height: height) }
@@ -222,6 +235,10 @@ public enum GameEvent: Sendable, Equatable {
     case shattered(id: Int)
     /// A creature dropped from its thread, reached the ground and starts walking.
     case droppedDown(id: Int)
+    /// The hero ran into the face of a step too high to walk onto and stopped; sent once per contact.
+    case bumped
+    /// A thrown thing ran into the face of a step and broke.
+    case hazardBroke(id: Int)
     /// The hero landed on a crumbling platform; it gives way shortly.
     case platformCrumbling(index: Int)
     case bossAppeared(id: String)
@@ -243,12 +260,15 @@ public struct RunnerWorld: Sendable {
     public let ravines: [Ravine]
     public let slick: [SlickZone]
     public let platforms: [Platform]
+    /// Raised blocks and dips. Like ravines, none reach the boss arena.
+    public let ground: GroundProfile
     public private(set) var tuning: Tuning
 
     public private(set) var time = 0.0
     /// Hero's world x; the level scrolls by increasing this.
     public private(set) var distance = 0.0
-    /// How fast `distance` grew on the last step (slick ground and a pounce make it faster).
+    /// How fast `distance` grew on the last step (slick ground and a pounce make it faster; it is 0
+    /// while the hero is stopped against a wall).
     public private(set) var runSpeed: Double
     public private(set) var heroY = 0.0
     public private(set) var heroVY = 0.0
@@ -272,6 +292,9 @@ public struct RunnerWorld: Sendable {
     public private(set) var pouncing = false
     public private(set) var fishCollected = 0
     public private(set) var score = 0
+    /// Pressed against the face of a step too high to walk onto: `distance` does not grow, so the
+    /// level waits, while the clock, enemies and thrown things carry on.
+    public private(set) var isAgainstWall = false
 
     private var nextItem = 0
     private var nextID = 1
@@ -296,6 +319,7 @@ public struct RunnerWorld: Sendable {
         slick = (level.slick ?? []).filter { $0.at < level.length }.sorted { $0.at < $1.at }
         platforms = (level.platforms ?? []).filter { $0.at < level.length }.sorted { $0.at < $1.at }
         platformLanded = Array(repeating: nil, count: platforms.count)
+        ground = GroundProfile((level.terrain ?? []).filter { $0.at < level.length })
         self.boss = boss
         self.stats = stats
         self.tuning = tuning
@@ -323,9 +347,15 @@ public struct RunnerWorld: Sendable {
     public var isDashing: Bool { dashTime > 0 }
     public var canDash: Bool { stats.has(.ghostDash) && dashCooldownLeft <= 0 }
     public var isOver: Bool { phase == .won || phase == .dead }
-    /// On the ground (not a ledge) over a slick zone.
+    /// On the base ground (not a ledge or a step) over a slick zone.
     public var onSlick: Bool {
-        onGround && standingOn == nil && slick.contains { $0.contains(distance) }
+        onGround && standingOn == nil && heroY == 0 && slick.contains { $0.contains(distance) }
+    }
+
+    /// Height of the ground at `x`: 0 on the base ground, more on a raised block, less in a dip.
+    /// Ravines are holes in the base ground and are not part of it.
+    public func groundHeight(at x: Double) -> Double {
+        ground.height(at: x)
     }
 
     public func platformState(_ index: Int) -> PlatformState {
@@ -354,7 +384,6 @@ public struct RunnerWorld: Sendable {
         // Speed is kept through a jump: what counts is the ground the hero left from.
         if onGround { slickFactor = onSlick ? tuning.slickSpeed : 1 }
         runSpeed = level.speed * slickFactor + (pouncing ? tuning.pounceBoost : 0)
-        distance += runSpeed * dt
         invulnerable = max(0, invulnerable - dt)
         yarnCooldown = max(0, yarnCooldown - dt)
         dashTime = max(0, dashTime - dt)
@@ -367,7 +396,7 @@ public struct RunnerWorld: Sendable {
         spawnItems()
         moveEntities(dt: dt, events: &events)
         updateBoss(dt: dt, events: &events)
-        moveHazards(dt: dt)
+        moveHazards(dt: dt, events: &events)
         moveProjectiles(dt: dt, events: &events)
         if phase == .running || phase == .boss {
             collideHero(previousBottom: previousBottom, events: &events)
@@ -395,8 +424,37 @@ public struct RunnerWorld: Sendable {
         ravines.contains { $0.isOpen(at: x) }
     }
 
+    /// What the hero's feet rest on at the current position: the highest ground under its box, or
+    /// nil over a ravine (decided by the middle of the box, as before terrain existed).
+    private var floor: Double? {
+        let half = tuning.heroWidth / 2
+        let top = ground.highest(from: distance - half, to: distance + half)
+        if top <= 0, groundIsOpen(at: distance) { return nil }
+        return top
+    }
+
+    /// Runs forward, unless the face of a step higher than the feet is in the way: then the hero
+    /// stops against it and `distance` stays put until a jump lifts the feet above its top.
+    private mutating func advance(dt: Double, events: inout [GameEvent]) {
+        let start = distance
+        let half = tuning.heroWidth / 2
+        let front = distance + half
+        if let wall = ground.wall(from: front, to: front + runSpeed * dt, feet: heroY, step: tuning.stepUp) {
+            distance = max(distance, wall - half)
+            runSpeed = (distance - start) / dt
+            if !isAgainstWall { events.append(.bumped) }
+            isAgainstWall = true
+        } else {
+            distance += runSpeed * dt
+            isAgainstWall = false
+        }
+        // A low lip is walked (or risen) onto.
+        if standingOn == nil, let floor, heroY < floor { heroY = floor }
+    }
+
     private mutating func moveHero(_ input: Input, dt: Double, events: inout [GameEvent]) {
         jumpBuffer = input.jumpPressed ? tuning.jumpBuffer : max(0, jumpBuffer - dt)
+        advance(dt: dt, events: &events)
 
         if onGround {
             if let index = standingOn {
@@ -406,7 +464,15 @@ public struct RunnerWorld: Sendable {
                     standingOn = nil
                     jumpsUsed = 1
                 }
-            } else if groundIsOpen(at: distance) {
+            } else if let floor {
+                if floor < heroY - tuning.stepUp {
+                    // Off the edge of a step: falling, with only a Double Pounce left, as off a ledge.
+                    onGround = false
+                    jumpsUsed = 1
+                } else {
+                    heroY = floor
+                }
+            } else {
                 // Ran off the rim: nothing to push off from, so no jump can save this.
                 onGround = false
                 jumpsUsed = 2
@@ -451,7 +517,8 @@ public struct RunnerWorld: Sendable {
                   platformHolds(index), platform.y > (best?.top ?? -.infinity) else { continue }
             best = (index, platform.y)
         }
-        if best == nil, heroY <= 0, !groundIsOpen(at: distance) { best = (nil, 0) }
+        let groundFloor = self.floor
+        if best == nil, let groundFloor, heroY <= groundFloor { best = (nil, groundFloor) }
         if let best {
             heroY = best.top
             heroVY = 0
@@ -464,7 +531,7 @@ public struct RunnerWorld: Sendable {
                 platformLanded[index] = time
                 events.append(.platformCrumbling(index: index))
             }
-        } else if heroY < 0, groundIsOpen(at: distance), phase != .dead {
+        } else if heroY < 0, groundFloor == nil, phase != .dead {
             // Below the rim there is no way back, whatever hearts are left.
             stats.hearts = 0
             phase = .dead
@@ -546,7 +613,9 @@ public struct RunnerWorld: Sendable {
             }
             guard item.at <= distance + tuning.spawnAhead else { break }
             let spec = item.kind.spec
-            entities.append(Entity(id: takeID(), kind: item.kind, x: item.at, y: item.y ?? spec.baseY, hp: spec.hp,
+            // Everything stands (or hangs, or floats) above the ground where it is placed.
+            entities.append(Entity(id: takeID(), kind: item.kind, x: item.at,
+                                   y: groundHeight(at: item.at) + (item.y ?? spec.baseY), hp: spec.hp,
                                    cycleOffset: item.cycleOffset ?? 0))
             nextItem += 1
         }
@@ -559,16 +628,23 @@ public struct RunnerWorld: Sendable {
             let velocity = entity.isHanging ? 0 : (entity.reversed ? -spec.velocity : spec.velocity)
             entity.x += velocity * dt
             if entity.walks {
-                // Stop at the rim and head back the other way.
-                let front = entity.x + (velocity < 0 ? -spec.width : spec.width) / 2
+                // Stop at a rim or a step (up or down) and head back the other way.
+                let half = spec.width / 2
+                let front = entity.x + (velocity < 0 ? -half : half)
                 if let ravine = ravines.first(where: { $0.isOpen(at: front) }) {
-                    entity.x = velocity < 0 ? ravine.end + spec.width / 2 : ravine.at - spec.width / 2
+                    entity.x = velocity < 0 ? ravine.end + half : ravine.at - half
+                    entity.reversed.toggle()
+                } else if let edge = ground.step(from: entity.x, to: front, level: entity.y) {
+                    entity.x = velocity < 0 ? edge + half : edge - half
                     entity.reversed.toggle()
                 }
             }
             let gap = entity.x - distance
             if let flight = spec.flight {
-                entity.y = flight.height(gap: gap)
+                entity.y = groundHeight(at: entity.x) + flight.height(gap: gap)
+            } else if velocity != 0, !entity.walks, spec.fall == nil {
+                // Flyers without a dive (skulls, bee cats) keep their height above the ground below.
+                entity.y = groundHeight(at: entity.x) + spec.baseY
             }
             if let curlsAt = spec.curlsAt, entity.state != .curled, gap < curlsAt {
                 entity.state = .curled
@@ -590,7 +666,8 @@ public struct RunnerWorld: Sendable {
                 if entity.timer <= 0 {
                     entity.timer = throwing.interval
                     hazards.append(Hazard(id: takeID(), kind: throwing.projectile, x: entity.x - 10,
-                                          y: throwing.y ?? entity.y, width: throwing.width, height: throwing.height,
+                                          y: throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y,
+                                          width: throwing.width, height: throwing.height,
                                           vx: -throwing.speed, arm: 0,
                                           gravity: throwing.arc ? tuning.lobGravity : 0))
                     events.append(entity.kind == .bell ? .bellRang(id: entity.id) : .threw(id: entity.id))
@@ -617,11 +694,12 @@ public struct RunnerWorld: Sendable {
         case .active:
             entity.vy -= tuning.gravity * dt
             entity.y += entity.vy * dt
-            if entity.y <= 0 {
-                if groundIsOpen(at: entity.x) {
+            let floor = groundHeight(at: entity.x)
+            if entity.y <= floor {
+                if floor <= 0, groundIsOpen(at: entity.x) {
                     if entity.y < -60 { entity.hp = 0 }
                 } else {
-                    entity.y = 0
+                    entity.y = floor
                     entity.vy = 0
                     entity.state = .landed
                     events.append(fall.walksOnLanding ? .droppedDown(id: entity.id) : .shattered(id: entity.id))
@@ -632,23 +710,40 @@ public struct RunnerWorld: Sendable {
         }
     }
 
-    private mutating func moveHazards(dt: Double) {
-        for index in hazards.indices {
-            var hazard = hazards[index]
+    private mutating func moveHazards(dt: Double, events: inout [GameEvent]) {
+        var kept: [Hazard] = []
+        for var hazard in hazards {
             hazard.x += hazard.vx * dt
             hazard.arm = max(0, hazard.arm - dt)
+            // Anything low enough to run into the face of a step breaks on it.
+            if !ground.isFlat, hazard.vx != 0 {
+                let front = hazard.x + (hazard.vx < 0 ? -hazard.width : hazard.width) / 2
+                let face = hazard.vx < 0 ? ground.height(leftOf: front) : ground.height(at: front)
+                if face > hazard.y + 0.001, !groundIsOpen(at: front) {
+                    events.append(.hazardBroke(id: hazard.id))
+                    continue
+                }
+            }
+            let floor = groundHeight(at: hazard.x)
+            if hazard.rolling, hazard.y > floor + 0.001 {
+                // Rolled off a step down: it drops and rolls on below.
+                hazard.rolling = false
+                hazard.gravity = tuning.lobGravity
+            }
             if hazard.gravity > 0 {
                 hazard.vy -= hazard.gravity * dt
                 hazard.y += hazard.vy * dt
-                if hazard.y <= 0, !groundIsOpen(at: hazard.x) {
+                if hazard.y <= floor, !(floor <= 0 && groundIsOpen(at: hazard.x)) {
                     // A lobbed acorn lands and rolls on.
-                    hazard.y = 0
+                    hazard.y = floor
                     hazard.vy = 0
                     hazard.gravity = 0
+                    hazard.rolling = true
                 }
             }
-            hazards[index] = hazard
+            kept.append(hazard)
         }
+        hazards = kept
     }
 
     private mutating func moveProjectiles(dt: Double, events: inout [GameEvent]) {
@@ -657,6 +752,9 @@ public struct RunnerWorld: Sendable {
             shot.x += shot.vx * dt
             if hit(with: shot, events: &events) {
                 events.append(.yarnGone(id: shot.id, hit: true))
+            } else if ground.height(at: shot.x + shot.size / 2) > shot.y + 0.001 {
+                // Yarn stops against the face of a step.
+                events.append(.yarnGone(id: shot.id, hit: false))
             } else if shot.x > distance + tuning.projectileRange {
                 events.append(.yarnGone(id: shot.id, hit: false))
             } else {
