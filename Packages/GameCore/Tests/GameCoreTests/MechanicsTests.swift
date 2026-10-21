@@ -599,6 +599,282 @@ import Testing
         #expect(LevelValidator.botRun(flatLevel(items: items, length: 2700), boss: nil).finished)
     }
 
+    // MARK: - Frost creatures (Frostpaw Mountains sheet)
+
+    static let frostCreatures: [ItemKind] = [.iceSlime, .snowCat, .iceBat, .iceGolem, .penguinSoldier, .snowyOwl,
+                                             .iceHedgehog, .snowman, .iciclePlant, .miniYeti]
+
+    /// A flat test level at world 2's speed.
+    func frostLevel(_ items: [PlacedItem], terrain: [Terrain]? = nil, length: Double = 2000, entry: Int = 1)
+        -> LevelDefinition {
+        var level = flatLevel(items: items, length: length, entry: entry, reward: max(entry, 2))
+        level.speed = 120
+        level.terrain = terrain
+        return level
+    }
+
+    /// Fires one ball of yarn, then lets it fly.
+    func shoot(_ world: inout RunnerWorld, flight: Double = 0.5) -> [GameEvent] {
+        world.run(0.05, Input(fireHeld: true)) + world.run(max(flight, world.tuning.yarnCooldown))
+    }
+
+    /// A kitten with Yarn Shot fires `count` balls at `kind` from 280 away, then lets them land.
+    func volley(at kind: ItemKind, count: Int) -> [GameEvent] {
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: kind)]), boss: nil, stats: hero(2))
+        advance(&world) { gap($0, kind) < 280 }
+        var events: [GameEvent] = []
+        for _ in 0..<count { events += world.run(0.05, Input(fireHeld: true)) + world.run(0.4) }
+        return events + world.run(1)
+    }
+
+    /// Exactly `hp` balls of yarn defeat it: one fewer does not.
+    func takesYarn(_ kind: ItemKind, _ hp: Int) -> Bool {
+        !defeated(volley(at: kind, count: hp - 1), kind) && defeated(volley(at: kind, count: hp), kind)
+    }
+
+    @Test func frostCreaturesHaveTheirIdsAndHitboxes() {
+        let expected: [(ItemKind, String, Double, Double, Int, Int)] = [
+            (.iceSlime, "ice_slime", 20, 14, 1, 12), (.snowCat, "snow_cat", 20, 20, 2, 25),
+            (.iceBat, "ice_bat", 18, 14, 1, 15), (.iceGolem, "ice_golem", 26, 30, 3, 40),
+            (.penguinSoldier, "penguin_soldier", 18, 24, 2, 25), (.snowyOwl, "snowy_owl", 20, 16, 1, 25),
+            (.iceHedgehog, "ice_hedgehog", 20, 16, 1, 20), (.snowman, "snowman", 20, 30, 2, 25),
+            (.iciclePlant, "icicle_plant", 18, 24, 2, 25), (.miniYeti, "mini_yeti", 30, 34, 4, 60),
+        ]
+        for (kind, id, width, height, hp, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.hp == hp, "\(id) hp")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+            #expect(kind.spec.yarnable, "\(id) is yarnable")
+        }
+        #expect(ItemKind.iceGolem.spec.minHeroLevel == 3)
+        #expect(ItemKind.miniYeti.spec.minHeroLevel == 3)
+        // The original frost set is still there.
+        for id in ["icicle", "snowball", "penguin", "snowdrift"] { #expect(ItemKind(rawValue: id) != nil) }
+    }
+
+    @Test func iceSlimeHopsInOnTheGroundAndAStompKillsIt() throws {
+        var world = RunnerWorld(level: frostLevel([.init(at: 500, kind: .iceSlime)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let start = try #require(world.entities.first?.x)
+        var highest = 0.0
+        for _ in 0..<60 {
+            _ = world.step(Input(), dt: dt)
+            highest = max(highest, world.entities.first?.y ?? 0)
+        }
+        // The hop is only drawn: the hitbox stays on the ground.
+        #expect(highest == 0)
+        let moved = start - (world.entities.first?.x ?? start)
+        #expect(moved > 18 && moved < 26)
+        #expect(stompAttempts(.iceSlime).contains { defeated($0, .iceSlime) && !hit($0) })
+    }
+
+    @Test func snowCatRunsInFastSlashesFromTheSideAndTakesAStompOrTwoYarn() throws {
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .snowCat)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let start = try #require(world.entities.first?.x)
+        var standing = world
+        standing.run(1)
+        #expect(start - (standing.entities.first?.x ?? start) > 50)
+        #expect(hit(standing.run(4)))
+        #expect(stompAttempts(.snowCat).contains { defeated($0, .snowCat) && !hit($0) })
+        #expect(takesYarn(.snowCat, 2))
+    }
+
+    @Test func iceBatSwoopsButNeverLowEnoughToHitAStandingKitten() {
+        var world = RunnerWorld(level: frostLevel([.init(at: 500, kind: .iceBat)]), boss: nil)
+        var lowest = Double.infinity
+        var events: [GameEvent] = []
+        while world.time < 6 {
+            events += world.step(Input(), dt: dt)
+            if let bat = world.entities.first(where: { $0.kind == .iceBat }) { lowest = min(lowest, bat.y) }
+        }
+        #expect(lowest >= 28)
+        #expect(lowest < ItemKind.iceBat.spec.baseY)
+        #expect(!hit(events))
+    }
+
+    @Test func iceGolemIsASafeBounceTakesThreeYarnAndCrawls() throws {
+        let landings = stompAttempts(.iceGolem)
+        #expect(!landings.isEmpty)
+        for events in landings {
+            #expect(!defeated(events, .iceGolem))
+        }
+        #expect(landings.contains { !hit($0) })
+
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .iceGolem)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let start = try #require(world.entities.first?.x)
+        world.run(1)
+        let moved = start - (world.entities.first?.x ?? start)
+        #expect(moved > 6 && moved < 10)
+        #expect(takesYarn(.iceGolem, 3))
+    }
+
+    @Test func penguinSoldierPatrolsAroundItsPostAndThrustsAShortSpear() throws {
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .penguinSoldier)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        var xs: [Double] = []
+        var turns = 0
+        var facing = world.entities.first?.reversed
+        while gap(world, .penguinSoldier) > 120 {
+            _ = world.step(Input(), dt: dt)
+            guard let penguin = world.entities.first else { break }
+            xs.append(penguin.x)
+            if penguin.reversed != facing { turns += 1 }
+            facing = penguin.reversed
+        }
+        #expect(turns >= 1)
+        #expect((xs.min() ?? 0) >= 700 - 31 && (xs.max() ?? 0) <= 700 + 31)
+        #expect((xs.max() ?? 0) - (xs.min() ?? 0) > 40)
+
+        // The spear only comes out at close range, low, and fast.
+        var thrusts: [Double] = []
+        var events: [GameEvent] = []
+        while world.time < 12, !world.isOver, world.entities.contains(where: { $0.kind == .penguinSoldier }) {
+            let step = world.step(Input(), dt: dt)
+            events += step
+            if step.contains(where: { if case .threw = $0 { true } else { false } }) {
+                thrusts.append(gap(world, .penguinSoldier))
+            }
+        }
+        #expect(!thrusts.isEmpty)
+        #expect(thrusts.allSatisfy { $0 <= 70 })
+        #expect(hit(events))
+        let level = frostLevel([.init(at: 700, kind: .penguinSoldier)])
+        var spearWorld = RunnerWorld(level: level, boss: nil)
+        advance(&spearWorld) { $0.hazards.contains { $0.kind == "spear" } }
+        let spear = try #require(spearWorld.hazards.first)
+        #expect(spear.y == 6 && spear.width == 14 && spear.height == 4)
+        #expect(spear.vx == -140 && spear.gravity == 0)
+
+        #expect(stompAttempts(.penguinSoldier).contains { defeated($0, .penguinSoldier) })
+    }
+
+    @Test func snowyOwlBlinksThenDropsAnIcicleStraightDownAheadOfTheKitten() throws {
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .snowyOwl)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let owl = try #require(world.entities.first)
+        #expect(owl.y == 60)
+        #expect(!ItemKind.snowyOwl.spec.stompable)
+        let warned = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(!warned.contains { if case .threw = $0 { true } else { false } })
+        #expect(world.hazards.isEmpty)
+        let events = advance(&world, limit: 2) { !$0.hazards.isEmpty }
+        #expect(events.contains { if case .threw = $0 { true } else { false } })
+        #expect(world.entities.first.map { $0.x < owl.x } == true)
+        let shot = try #require(world.hazards.first)
+        #expect(shot.kind == "icicle_shot")
+        #expect(shot.vx == 0)
+        #expect(shot.y > 40)
+        advance(&world, limit: 2) { $0.hazards.first?.y == 0 }
+        let landed = try #require(world.hazards.first)
+        #expect(landed.x == shot.x)
+        #expect(landed.x - world.distance > 30)
+        // It lies there: a kitten that never jumps runs into it.
+        #expect(hit(world.run(2)))
+    }
+
+    @Test func iceHedgehogCurlsThenRollsInFastAndTurnsAtAStep() throws {
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .iceHedgehog)]), boss: nil, stats: hero(2))
+        let before = advance(&world) { $0.entities.first?.state == .curled }
+        #expect(before.contains { if case .curled = $0 { true } else { false } })
+        #expect(gap(world, .iceHedgehog) <= 100 && gap(world, .iceHedgehog) > 90)
+        let curledAt = try #require(world.entities.first?.x)
+        world.run(0.1)
+        let rolled = curledAt - (world.entities.first?.x ?? curledAt)
+        #expect(rolled > 10 && rolled < 14)
+        let late = shoot(&world, flight: 0.4)
+        #expect(late.contains { if case .yarnBounced = $0 { true } else { false } })
+        #expect(!defeated(late, .iceHedgehog))
+        #expect(stompAttempts(.iceHedgehog).isEmpty)
+
+        // Shot before it curls, it is defeated.
+        #expect(defeated(volley(at: .iceHedgehog, count: 1), .iceHedgehog))
+
+        // Rolling, it still turns back at a step.
+        // The kitten is held back at the block's near face; the hedgehog rolls in from the far side.
+        let block = Terrain(at: 680, width: 20, height: 10)
+        var stepper = RunnerWorld(level: frostLevel([.init(at: 800, kind: .iceHedgehog)], terrain: [block]),
+                                  boss: nil)
+        advance(&stepper) { $0.entities.first?.state == .curled }
+        advance(&stepper, limit: 1) { $0.entities.first?.reversed == true }
+        #expect(stepper.entities.first?.reversed == true)
+        #expect((stepper.entities.first?.x ?? 0) >= block.end)
+        #expect(stepper.entities.first?.state == .curled)
+        #expect(stepper.stats.hearts == 3)
+    }
+
+    @Test func snowmanLobsSnowballsThatLandAheadAndIsOnlyABounce() throws {
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .snowman)]), boss: nil)
+        advance(&world) { $0.hazards.contains { $0.kind == "snowball_shot" } }
+        let ball = try #require(world.hazards.first)
+        #expect(ball.y > 20)
+        #expect(ball.gravity > 0)
+        advance(&world, limit: 2) { $0.hazards.first?.y == 0 }
+        let landed = try #require(world.hazards.first { $0.id == ball.id })
+        #expect(landed.x - world.distance > 40)
+        #expect(world.entities.first?.x == 700)
+
+        let landings = stompAttempts(.snowman)
+        #expect(!landings.isEmpty)
+        #expect(landings.allSatisfy { !defeated($0, .snowman) })
+        #expect(takesYarn(.snowman, 2))
+    }
+
+    @Test func iciclePlantFiresABoltEachTimeItOpensAndYarnHurtsItShut() throws {
+        let cycle = try #require(ItemKind.iciclePlant.spec.cycle)
+        var world = RunnerWorld(level: frostLevel([.init(at: 700, kind: .iciclePlant)]), boss: nil)
+        var opened = 0
+        var bolts = Set<Int>()
+        while gap(world, .iciclePlant) > 40 {
+            let step = world.step(Input(), dt: dt)
+            let fired = step.contains { if case .trapFired = $0 { true } else { false } }
+            let fresh = world.hazards.filter { !bolts.contains($0.id) }
+            if fired, gap(world, .iciclePlant) < 300 { opened += 1 }
+            // A new bolt only ever comes out on the frame it opens.
+            #expect(fresh.isEmpty || fired)
+            for bolt in fresh {
+                #expect(bolt.kind == "icicle_bolt")
+                #expect(bolt.y == 4)
+                #expect(bolt.gravity == 0)
+                bolts.insert(bolt.id)
+            }
+        }
+        #expect(opened >= 1)
+        #expect(bolts.count == opened)
+
+        // A trap like plant_cat: shut it is harmless to touch, open it hurts. Yarn hits it any time.
+        #expect(ItemKind.iciclePlant.spec.cycleRole == .trap)
+        #expect(!ItemKind.iciclePlant.spec.stompable)
+        var shut = Entity(id: 1, kind: .iciclePlant, x: 0, y: 0, hp: 2)
+        #expect(!shut.isTangible && shut.catchesYarn)
+        shut.state = cycle.state(at: 0)
+        #expect(shut.isTangible)
+        #expect(takesYarn(.iciclePlant, 2))
+    }
+
+    @Test func miniYetiCannotBeStompedAndTakesFourYarn() throws {
+        #expect(!ItemKind.miniYeti.spec.stompable)
+        #expect(stompAttempts(.miniYeti).isEmpty)
+        #expect(takesYarn(.miniYeti, 4))
+    }
+
+    static let frostBotCases: [(ItemKind, Int)] = frostCreatures.flatMap { kind in
+        [1, 3].filter { $0 >= kind.spec.minHeroLevel }.map { (kind, $0) }
+    }
+
+    @Test(arguments: MechanicsTests.frostBotCases)
+    func botClearsEachFrostCreatureWithoutAHit(kind: ItemKind, entry: Int) {
+        let level = frostLevel([.init(at: 400, kind: kind), .init(at: 800, kind: kind)], length: 1300, entry: entry)
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
+    @Test func botClearsAFrostRunOfEveryCreature() {
+        let items = Self.frostCreatures.enumerated().map { PlacedItem(at: 400 + Double($0.offset) * 280, kind: $0.element) }
+        #expect(LevelValidator.botRun(frostLevel(items, length: 3400, entry: 3), boss: nil).finished)
+    }
+
     // MARK: - Bot
 
     @Test func botPouncesThroughCrateWalls() {

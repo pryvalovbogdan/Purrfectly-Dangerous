@@ -8,6 +8,9 @@ public enum ItemKind: String, Codable, Sendable, CaseIterable {
     case stumpCat = "stump_cat", snailCat = "snail_cat", spiderCat = "spider_cat"
     // World 2 — frost
     case icicle, snowball, penguin, snowdrift
+    case iceSlime = "ice_slime", snowCat = "snow_cat", iceBat = "ice_bat", iceGolem = "ice_golem"
+    case penguinSoldier = "penguin_soldier", snowyOwl = "snowy_owl", iceHedgehog = "ice_hedgehog", snowman
+    case iciclePlant = "icicle_plant", miniYeti = "mini_yeti"
     // World 3 — haunted
     case ghostCat = "ghost_cat", bat, skeletonMouse = "skeleton_mouse", skull, bell, tombstone
     // World 4 — citadel
@@ -29,8 +32,15 @@ public struct ThrowSpec: Sendable, Equatable {
     public var y: Double?
     public var width: Double
     public var height: Double
-    /// Lobbed: it falls under `Tuning.lobGravity`, then rolls on along the ground.
+    /// Lobbed: it falls under `Tuning.lobGravity`, then rolls on along the ground. With no `speed`
+    /// it drops straight down and lies where it lands.
     public var arc = false
+    /// Seconds in range before the first throw (the clock only runs while the hero is in range).
+    public var windup = 0.6
+    /// The thrower shows `EntityState.warning` for this long before each throw (0: no warning).
+    public var warning = 0.0
+    /// Fires once each time its trap cycle opens (turns active), instead of on `interval`.
+    public var onCycleOpen = false
 }
 
 /// A fixed on/off rhythm read from the world clock, so every copy of the world agrees on it.
@@ -109,6 +119,10 @@ public struct ItemSpec: Sendable {
     public var curlsAt: Double?
     /// Once curled it is a hard shell rather than spikes: landing on it is a safe bounce (no kill).
     public var shellBounce = false
+    /// Once curled it rolls at this world velocity instead of walking at `velocity`.
+    public var rollSpeed: Double?
+    /// Walks back and forth no more than this far either side of where it was placed.
+    public var patrol: Double?
     public var cycle: CycleSpec?
     public var cycleRole: CycleRole = .trap
     public var fall: FallSpec?
@@ -175,6 +189,50 @@ extension ItemKind {
         case .snowball: ItemSpec(width: 14, height: 14, hp: 2, xp: 20, velocity: -60, yarnable: true)
         case .penguin: ItemSpec(width: 18, height: 12, xp: 20, velocity: -90, stompable: true, yarnable: true)
         case .snowdrift: ItemSpec(width: 20, height: 8, solid: true)
+        // Hops along (the hop is drawn only; the hitbox stays on the ground).
+        case .iceSlime: ItemSpec(width: 20, height: 14, xp: 12, velocity: -22, stompable: true, stompKills: true,
+                                 yarnable: true)
+        // A fast runner whose paw slash is its body: touching it from the side hurts.
+        case .snowCat: ItemSpec(width: 20, height: 20, hp: 2, xp: 25, velocity: -55, stompable: true,
+                                stompKills: true, yarnable: true)
+        // Like the forest bat: swoops to just over a standing kitten's head (24), never lower.
+        case .iceBat:
+            ItemSpec(width: 18, height: 14, baseY: 42, xp: 15, velocity: -45, yarnable: true,
+                     flight: FlightSpec(high: 42, low: 28, diveStart: 150, diveEnd: 70))
+        // Slow and tough; landing on it is a safe bounce that does not break it.
+        case .iceGolem: ItemSpec(width: 26, height: 30, hp: 3, xp: 40, velocity: -8, stompable: true,
+                                 yarnable: true, minHeroLevel: 3)
+        // Marches back and forth around its post; close up it thrusts its spear (a short, fast, low throw).
+        case .penguinSoldier:
+            ItemSpec(width: 18, height: 24, hp: 2, xp: 25, velocity: -30, stompable: true, stompKills: true,
+                     yarnable: true,
+                     throwing: ThrowSpec(projectile: "spear", interval: 1.0, range: 70, speed: 140, y: 6,
+                                         width: 14, height: 4, windup: 0.1, warning: 0.1),
+                     patrol: 30)
+        // Hovers high, drifting in; it blinks, then drops an icicle straight down ahead of the kitten,
+        // where it lies as a spike to hop.
+        case .snowyOwl:
+            ItemSpec(width: 20, height: 16, baseY: 60, xp: 25, velocity: -10, yarnable: true,
+                     throwing: ThrowSpec(projectile: "icicle_shot", interval: 3.0, range: 170, speed: 0, y: nil,
+                                         width: 6, height: 10, arc: true, windup: 0.4, warning: 0.4))
+        // Curls up close and then rolls in fast; curled, its spikes can't be stomped and yarn bounces off.
+        case .iceHedgehog:
+            ItemSpec(width: 20, height: 16, xp: 20, velocity: -20, stompable: true, stompKills: true,
+                     yarnable: true, curlsAt: 100, rollSpeed: -110)
+        // Lobs snowballs from its head that land ahead of the kitten and roll on; a stomp only bounces.
+        case .snowman:
+            ItemSpec(width: 20, height: 30, hp: 2, xp: 25, stompable: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "snowball_shot", interval: 2.2, range: 300, speed: 60, y: 28,
+                                         width: 8, height: 8, arc: true))
+        // A trap like plant_cat (shut, opening, open); each time it opens it fires a bolt along the ground.
+        case .iciclePlant:
+            ItemSpec(width: 18, height: 24, hp: 2, xp: 25, yarnable: true,
+                     throwing: ThrowSpec(projectile: "icicle_bolt", interval: 2.4, range: 300, speed: 100, y: 4,
+                                         width: 10, height: 4, onCycleOpen: true),
+                     cycle: CycleSpec(period: 2.4, activeFor: 0.6, warning: 0.5))
+        // A slow bruiser with a wide swipe (its wide hitbox): no stomp, four yarn, or a Double Pounce over.
+        case .miniYeti: ItemSpec(width: 30, height: 34, hp: 4, xp: 60, velocity: -6, yarnable: true,
+                                 minHeroLevel: 3)
         // MARK: haunted
         // Drifts in overhead and down to the ground; it only exists while visible, and yarn passes through.
         case .ghostCat:

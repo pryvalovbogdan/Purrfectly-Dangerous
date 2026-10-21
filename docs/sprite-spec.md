@@ -61,6 +61,20 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | snowdrift | 24×11 | still 1. Low snow mound outlined in navy, with an ice crystal |
 | ice | 32×6 | still 1 (as `milk`): glossy blue ice with a pale rim |
 | ice_ledge | 48×14 | still 1, crumble 4. Faceted blue ice slab under lumpy snow with icicles (walk surface = top row) |
+| ice_slime | 34×34 | idle 2, walk 4 (hops), attack 3 (crouch, leap 7 px, land), hit 2, death 4 (melts). Ice-blue gumdrop with a crystal peak and snow at its foot; feet on row 31, x 17; 20×14 hitbox |
+| snow_cat | 40×34 | idle 2, walk 4, attack 4 (crouch, raise paw, slash with an ice arc, recover), hit 2, death 4. Fluffy white cat, blue scarf; feet on row 31, x 16; 20×20 hitbox |
+| ice_bat | 46×32 | fly 4, attack 3 (wings up, swept-back dive, pull up), hit 2, death 3. White cat-faced bat, ice-blue wings; feet on row 25, x 23; 18×14 hitbox (wings stick out) |
+| ice_golem | 52×42 | idle 2, walk 4, attack 4 (draw back, punch, punch with an ice arc, recover), hit 2, death 4. Blue-grey boulder with ice crystals, glowing eyes; feet on row 39, x 22; 26×30 hitbox |
+| penguin_soldier | 48×34 | idle 2, walk 4 (waddle), attack 4 (spear drawn back twice, thrust, upright), hit 2, death 4. Blue penguin with an ice-tipped spear; feet on row 31, x 16; 18×24 hitbox |
+| spear | 16×6 | fly 2. Thrown ice spear tip (about 14×4), point first |
+| snowy_owl | 46×36 | fly 4, attack 3 (wings up holding an icicle, wings down as it drops it, recover), hit 2, death 4. White owl with ear tufts; feet on row 28, x 23; 20×16 hitbox. In attack 0 the held icicle hangs below the feet |
+| icicle_shot | 8×14 | fly 2. Falling icicle about 6×12, point down (the frame bottom is the tip) |
+| ice_hedgehog | 36×28 | walk 4, curl 3, roll 4 (spinning ice ball with frosty speed streaks trailing behind), hit 2, death 4. White hedgehog with crystal quills; feet on row 26, x 18; 20×16 hitbox |
+| snowman | 44×44 | idle 2, walk 4 (hops), attack 4 (wind up with a snowball, throw, release), hit 2, death 4. Blue beanie and scarf, carrot nose, twig arms; foot on row 41, x 20; 20×30 hitbox |
+| snowball_shot | 10×10 | fly 4. Snowball about 8×8 with a lump turning |
+| icicle_plant | 38×36 | closed 2 (tall crystal bud), open 2 (crystal petals round a snowy cat face), attack 3 (charge, fire, recoil), hit 2, death 4. Snow mound at the foot; base on row 33, x 16; 18×24 hitbox |
+| icicle_bolt | 14×7 | fly 2. Horizontal ice bolt about 12×5, point first, with a frost trail |
+| mini_yeti | 60×46 | idle 2, walk 4, attack 4 (arm back, wind up, swipe with a big ice arc, recover), hit 2, death 4. Hunched shaggy white yeti, dark face, golden eyes, ice-rimed fists knuckles-down; feet on row 43, x 22; 30×34 hitbox |
 | boss_icedragon | 190×134 | idle 6, shards 6, breath 8, dive 6, hurt 2, death 8 |
 | ghost_cat | 38×26 | float 4, fade 4 (blinking out) |
 | bat | 22×16 | fly 4, death 3 |
@@ -203,7 +217,8 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. The forest critters are built from shaded parts in `critters.py` (`shaded` lights each part's top-left
+afterwards. The forest critters (`forest_critters.py`) and the frost critters (`frost_critters.py`; slash arcs are glowing ice
+crescents laid on after the outline, hits are a white flash then ice sparkles) are built from shaded parts in `critters.py` (`shaded` lights each part's top-left
 rim and darkens the far rim, `face` draws the big cat eyes with a shine, `ear`, `sparkle`). Death frames come from `vanish()` (flash, then sink or rise while fading), `shatter()` (breaks
 into blocks that fly and fall; also used for crumbling platforms) or `topple()`; `see_through()` lowers
 opacity for ghosts and fades.

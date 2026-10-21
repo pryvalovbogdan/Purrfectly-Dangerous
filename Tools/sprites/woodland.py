@@ -496,7 +496,8 @@ def under_turf_shadow(c: Canvas, width: int, y0: int, y1: int, colour) -> None:
 
 # --- the forest's hilltop castle, cliff and waterfall (bg_forest_far) ------------------------------
 
-def _tower(c: Canvas, cx: float, base: float, w: int, body: int, roof, flag=None, windows: bool = True) -> None:
+def _tower(c: Canvas, cx: float, base: float, w: int, body: int, roof, flag=None, windows: bool = True,
+           cone: float = 1.4) -> None:
     """One round tower: light left face, dark right face, a parapet ring, rows of dark windows, a cone
     roof shaded on the right and a flag. `body` = wall height above `base`; the cone is about 1.4*w tall."""
     left, right, top = cx - w / 2, cx + w / 2 - 1, base - body
@@ -511,7 +512,7 @@ def _tower(c: Canvas, cx: float, base: float, w: int, body: int, roof, flag=None
         for wy in range(int(top + 3), int(base - 3), 6):
             c.rect(cx - 0.5, wy, cx + 0.5 if w >= 6 else cx - 0.5, wy + 1, P.CASTLE_OUT)
     dark = P.RED_D if roof == P.RED else P.MOUNT_DD
-    tip = top - 3 - round(w * 1.4)
+    tip = top - 3 - round(w * cone)
     c.poly([(left - 1.5, top - 2), (cx - 0.5, tip), (right + 1.5, top - 2)], roof)
     c.poly([(cx - 0.5, tip), (right + 1.5, top - 2), (cx, top - 2)], dark)
     c.rect(left - 1, top - 3, right + 1, top - 3, dark)                  # eave
@@ -526,51 +527,66 @@ def _crenels(c: Canvas, x0: float, x1: float, top: float) -> None:
         c.px(x, top - 2, P.CASTLE_L)
 
 
-def hill_castle(c: Canvas, x: float, base: float) -> None:
-    """A white castle seen from below the hill, about 58 wide and 38 tall from `base` to its highest flag:
-    a tall central tower behind a keep, towers stepping down to each side, a crenellated curtain wall with
-    a gate arch in front. Three depth layers, each outlined, so the towers read in front of one another."""
+def hill_castle(c: Canvas, x: float, base: float, sw: float = 1.0, sh: float = 1.0) -> None:
+    """A white castle seen from below the hill: at scale 1 about 60 wide and 39 tall from `base` to its highest
+    flag (`sw`/`sh` stretch it across/up for bigger pictures). A tall central tower behind a keep, towers
+    stepping down to each side, a crenellated curtain wall with a gate arch in front. Three depth layers,
+    each outlined, so the towers read in front of one another."""
     w, h = c.size
+
+    def X(v: float) -> float:
+        return x + v * sw
+
+    def Y(v: float) -> float:
+        return base - v * sh
+
+    def tower(layer, dx, lift, tw, body, roof, flag, windows=True):
+        _tower(layer, X(dx), Y(lift), round(tw * sw), round(body * sh), roof, flag, windows, 1.4 * sh)
+
     # back: the central tower and the two outermost towers
     back = Canvas(w, h)
-    _tower(back, x - 0.5, base - 10, 8, 12, P.RED, P.GOLD)
-    _tower(back, x - 25, base - 4, 5, 12, P.MOUNT_D, P.RED)
-    _tower(back, x + 24, base - 4, 5, 11, P.RED, P.GOLD)
+    tower(back, -0.5, 10, 8, 12, P.RED, P.GOLD)
+    tower(back, -25, 4, 5, 12, P.MOUNT_D, P.RED)
+    tower(back, 24, 4, 5, 11, P.RED, P.GOLD)
     outline_wrapped(back, P.CASTLE_OUT, wrap=False)
     c.paste(back)
     # middle: the keep, with a tower at each shoulder
     mid = Canvas(w, h)
-    mid.rect(x - 11, base - 14, x + 10, base, P.CASTLE)
-    mid.rect(x - 11, base - 14, x - 11, base, P.CASTLE_L)
-    mid.rect(x + 4, base - 14, x + 10, base, P.CASTLE_D)
-    _crenels(mid, x - 11, x + 9, base - 14)
-    for wx in (x - 7, x - 2, x + 3):                                     # a row of tall windows
-        mid.rect(wx, base - 12, wx + 1, base - 10, P.CASTLE_OUT)
-    _tower(mid, x - 16, base - 2, 7, 17, P.MOUNT_D, P.RED)
-    _tower(mid, x + 15, base - 2, 7, 16, P.RED, P.GOLD)
+    mid.rect(X(-11), Y(14), X(10), base, P.CASTLE)
+    mid.rect(X(-11), Y(14), X(-11), base, P.CASTLE_L)
+    mid.rect(X(4), Y(14), X(10), base, P.CASTLE_D)
+    _crenels(mid, X(-11), X(9), Y(14))
+    for wx in (-7, -2, 3):                                                # a row of tall windows
+        mid.rect(X(wx), Y(12), X(wx) + 1, Y(10), P.CASTLE_OUT)
+    tower(mid, -16, 2, 7, 17, P.MOUNT_D, P.RED)
+    tower(mid, 15, 2, 7, 16, P.RED, P.GOLD)
     outline_wrapped(mid, P.CASTLE_OUT, wrap=False)
     c.paste(mid)
     # front: the curtain wall, gate arch and two little corner turrets
     front = Canvas(w, h)
-    front.rect(x - 26, base - 8, x + 25, base, P.CASTLE)
-    front.rect(x + 10, base - 8, x + 25, base, P.CASTLE_D)
-    front.rect(x - 26, base - 8, x + 25, base - 8, P.CASTLE_L)
-    _crenels(front, x - 26, x + 24, base - 8)
-    front.ellipse(x - 0.5, base - 4, 3, 3, P.CASTLE_OUT)                # gate arch
-    front.rect(x - 3.5, base - 4, x + 2.5, base, P.CASTLE_OUT)
-    front.rect(x - 2.5, base - 3, x + 1.5, base, P.BARK_D)
-    front.line((x - 0.5, base - 3), (x - 0.5, base), P.BARK_DD)
-    front.rect(x - 4.5, base - 7, x + 3.5, base - 7, P.CASTLE_D)          # arch stones
-    for tx, roof in ((x - 28, P.RED), (x + 27, P.MOUNT_D)):
-        _tower(front, tx, base, 4, 11, roof, None, windows=False)
+    front.rect(X(-26), Y(8), X(25), base, P.CASTLE)
+    front.rect(X(10), Y(8), X(25), base, P.CASTLE_D)
+    front.rect(X(-26), Y(8), X(25), Y(8), P.CASTLE_L)
+    _crenels(front, X(-26), X(24), Y(8))
+    front.ellipse(x - 0.5, base - 4 * sh, 3 * sw, 3 * sh, P.CASTLE_OUT)       # gate arch
+    front.rect(x - 3.5 * sw, base - 4 * sh, x + 2.5 * sw, base, P.CASTLE_OUT)
+    front.rect(x - 2.5 * sw, base - 3 * sh, x + 1.5 * sw, base, P.BARK_D)
+    front.line((x - 0.5, base - 3 * sh), (x - 0.5, base), P.BARK_DD)
+    front.rect(x - 4.5 * sw, Y(7), x + 3.5 * sw, Y(7), P.CASTLE_D)          # arch stones
+    for tx, roof in ((-28, P.RED), (27, P.MOUNT_D)):
+        tower(front, tx, 0, 4, 11, roof, None, windows=False)
     outline_wrapped(front, P.CASTLE_OUT, wrap=False)
     c.paste(front)
 
 
-def rock_cliff(c: Canvas, left: float, right: float, top: float, seed: int, notch: tuple | None = None) -> None:
+def rock_cliff(c: Canvas, left: float, right: float, top: float, seed: int, notch: tuple | None = None,
+               bottom: int | None = None) -> None:
     """A rocky cliff from `top` to the bottom of the layer: a grass cap with a bright rim, chunky rock
-    faces lit on the left and shaded on the right, ledges with moss, and grass tufts over the edge."""
+    faces lit on the left and shaded on the right, ledges with moss, and grass tufts over the edge. It reaches
+    row `bottom` (default: the bottom of the canvas)."""
     w, h = c.size
+    if bottom is not None:
+        h = bottom + 1
     rnd = noise(seed)
     face = Canvas(w, h)
     face.poly([(left, h), (left + 3, top + 10), (left + 8, top + 2), (right - 8, top + 2), (right - 2, top + 12),

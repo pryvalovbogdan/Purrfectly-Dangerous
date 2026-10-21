@@ -42,6 +42,9 @@ final class AppModel {
     private(set) var autoplay = false
     /// Debug builds only: `-silent` keeps every sound off, for simulator runs (Tools/run-sim.sh).
     private var silent = false
+    /// Debug builds only: `-uitest-jump` plays a flat, empty copy of level 1 with real touches and no
+    /// bot, for the jump-height UI test (UITests/JumpHoldUITests.swift). Never set in Release.
+    private(set) var jumpTest = false
     private let music = MusicPlayer()
     /// False while the app is in the background or behind the app switcher; the music never plays then.
     private var isActive = true
@@ -66,6 +69,11 @@ final class AppModel {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         silent = arguments.contains("-silent")
+        if arguments.contains("-uitest-jump") {
+            jumpTest = true
+            silent = true
+            screen = .playing(level: 0, attempt: 0)
+        }
         if let flag = arguments.firstIndex(of: "-autoplay"), arguments.indices.contains(flag + 1) {
             if arguments[flag + 1] == "endless" {
                 autoplay = true
@@ -78,6 +86,24 @@ final class AppModel {
         }
         #endif
         updateMusic()
+    }
+
+    /// The level to play at `index`. In the debug jump test, level 1 with nothing in it: no items,
+    /// ravines, platforms, slick ground or terrain, and no boss within reach, so every jump starts and
+    /// ends on the same flat ground.
+    func playableLevel(_ index: Int) -> LevelDefinition {
+        var level = levels[index]
+        #if DEBUG
+        if jumpTest {
+            level.items = []
+            level.ravines = nil
+            level.slick = nil
+            level.platforms = nil
+            level.terrain = nil
+            level.length = 1_000_000
+        }
+        #endif
+        return level
     }
 
     /// Sound effects and music play only when the player has sound on and no debug run asked for quiet.

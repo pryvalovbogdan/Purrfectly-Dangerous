@@ -611,14 +611,29 @@ final class GameScene: SKScene {
     private static let thrownBy: [ItemKind: String] = [
         .branchSquirrel: "acorn_thrown", .skeletonMouse: "bone", .cannon: "cannonball", .bell: "hazard_wave",
         .mushroomCat: "spore", .beeCat: "sting", .stumpCat: "leaf",
+        .penguinSoldier: "spear", .snowyOwl: "icicle_shot", .snowman: "snowball_shot", .iciclePlant: "icicle_bolt",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
     private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
-                                           "spore": "spore", "sting": "sting", "leaf": "leaf"]
-    /// Hiding animation and the pose held afterwards, for things that curl up or hide in a shell.
-    private static let curlAnimation: [ItemKind: (start: String, hold: String)] = [
-        .hedgehog: ("curl", "rolled"), .snailCat: ("hide", "shell"),
+                                           "spore": "spore", "sting": "sting", "leaf": "leaf",
+                                           "spear": "spear", "icicle_shot": "icicle_shot",
+                                           "snowball_shot": "snowball_shot", "icicle_bolt": "icicle_bolt"]
+    /// Hiding animation and the poses held afterwards (first one the sprite has), for things that
+    /// curl up or hide in a shell.
+    private static let curlAnimation: [ItemKind: (start: String, hold: [String])] = [
+        .hedgehog: ("curl", ["rolled"]), .snailCat: ("hide", ["shell"]), .iceHedgehog: ("curl", ["roll", "attack"]),
     ]
+    /// Animation for throwing or firing, first one the sprite has.
+    private static let throwAnimation = ["throw", "attack", "fire"]
+
+    /// Plays the first of `names` that the node's sprite has, so a sheet that is still being drawn
+    /// (or names a pose differently) degrades to the next best pose instead of a blank sprite.
+    private static func playAny(_ node: ActorNode?, _ names: [String], restart: Bool = false,
+                                then completion: (() -> Void)? = nil) {
+        guard let node else { return }
+        let name = names.first { node.has($0) } ?? names.first ?? "idle"
+        node.play(name, restart: restart, completion: completion)
+    }
 
     private func handle(_ events: [GameEvent]) {
         for event in events {
@@ -649,7 +664,12 @@ final class GameScene: SKScene {
             case .stomped:
                 play(.stomp)
             case .enemyHit(let id):
-                entityNodes[id]?.flash()
+                let node = entityNodes[id]
+                node?.flash()
+                // A brief flinch where the sprite has one, then back to what it was doing.
+                if let node, node.has("hit"), let kind = world.entities.first(where: { $0.id == id })?.kind {
+                    node.play("hit", restart: true) { [weak node] in Self.playAny(node, Self.restAnimation(kind)) }
+                }
             case .enemyDefeated(let id, _):
                 retire(entityNodes.removeValue(forKey: id))
             case .fish(let id):
@@ -694,14 +714,15 @@ final class GameScene: SKScene {
             case .curled(let id):
                 play(.curl)
                 let kind = world.entities.first { $0.id == id }?.kind
-                let names = kind.flatMap { Self.curlAnimation[$0] } ?? ("curl", "rolled")
-                entityNodes[id]?.play(names.start) { [weak node = entityNodes[id]] in node?.play(names.hold) }
+                let names = kind.flatMap { Self.curlAnimation[$0] } ?? ("curl", ["rolled"])
+                entityNodes[id]?.play(names.start) { [weak node = entityNodes[id]] in Self.playAny(node, names.hold) }
             case .threw(let id):
                 guard let entity = world.entities.first(where: { $0.id == id }) else { break }
                 tagThrownHazard(from: entity)
                 let node = entityNodes[id]
-                let name = node?.has("throw") == true ? "throw" : "fire"
-                node?.play(name, restart: true) { [weak node] in node?.play(Self.defaultAnimation[entity.kind] ?? "idle") }
+                Self.playAny(node, Self.throwAnimation, restart: true) { [weak node] in
+                    Self.playAny(node, Self.restAnimation(entity.kind))
+                }
                 if entity.kind == .cannon { play(.cannon) }
             case .bellRang(let id):
                 play(.bell)
@@ -713,6 +734,7 @@ final class GameScene: SKScene {
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) {
                     switch entity.kind {
                     case .piston, .plantCat: play(.slam)
+                    case .iciclePlant: play(.shatter)
                     default: play(.flame)
                     }
                 }
@@ -1002,6 +1024,20 @@ final class GameScene: SKScene {
         .fish: "spin", .yarnBasket: "glow",
     ]
 
+    /// World 2 creatures, drawn from one sheet: what they show while going about their business,
+    /// first one the sprite has.
+    private static let frostRest: [ItemKind: [String]] = [
+        .iceSlime: ["move", "walk", "idle"], .snowCat: ["run", "walk", "idle"], .iceBat: ["fly", "idle"],
+        .iceGolem: ["walk", "idle"], .penguinSoldier: ["walk", "idle"], .snowyOwl: ["fly", "idle"],
+        .iceHedgehog: ["walk", "move", "idle"], .snowman: ["idle", "walk"], .iciclePlant: ["closed", "idle"],
+        .miniYeti: ["walk", "idle"],
+    ]
+
+    /// The resting animation of a kind, best first.
+    private static func restAnimation(_ kind: ItemKind) -> [String] {
+        frostRest[kind] ?? [defaultAnimation[kind] ?? "idle", "idle", "still"]
+    }
+
     private func renderEntities() {
         var seen = Set<Int>()
         for entity in world.entities {
@@ -1053,11 +1089,36 @@ final class GameScene: SKScene {
             default:
                 node.play("float")
             }
-        case .hedgehog, .snailCat:
+        case .hedgehog, .snailCat, .iceHedgehog:
             // Normally started by the `curled` event; this catches a node made after it fired.
-            let names = Self.curlAnimation[entity.kind] ?? ("curl", "rolled")
-            if entity.state == .curled, node.current == "walk" {
-                node.play(names.start) { [weak node] in node?.play(names.hold) }
+            let names = Self.curlAnimation[entity.kind] ?? ("curl", ["rolled"])
+            if entity.state == .curled, node.current != names.start, !names.hold.contains(node.current) {
+                node.play(names.start) { [weak node] in Self.playAny(node, names.hold) }
+            }
+        case .iciclePlant:
+            switch entity.state {
+            case .warning: Self.playAny(node, ["open", "idle"])
+            case .active: Self.playAny(node, ["attack", "open"])
+            default: Self.playAny(node, ["closed", "idle"])
+            }
+        case .penguinSoldier, .snowyOwl:
+            // Winding up a thrust or a drop: the sheet's prepare pose, and the owl blinks.
+            if entity.state == .warning, !node.isBusy {
+                Self.playAny(node, ["prepare", "attack"] + Self.restAnimation(entity.kind))
+                if entity.kind == .snowyOwl {
+                    node.color = .white
+                    node.colorBlendFactor = blink ? 0.7 : 0
+                }
+            } else if !node.isBusy {
+                Self.playAny(node, Self.restAnimation(entity.kind))
+            }
+        case .snowCat, .iceGolem, .miniYeti:
+            // Melee: swing once in reach (looks only; the hitbox decides the hit).
+            let reach = entity.kind.spec.width / 2 + world.tuning.heroWidth / 2 + 14
+            if abs(entity.x - world.distance) < reach, node.has("attack") {
+                node.play("attack")
+            } else if !node.isBusy {
+                Self.playAny(node, Self.restAnimation(entity.kind))
             }
         case .plantCat:
             switch entity.state {
@@ -1084,7 +1145,7 @@ final class GameScene: SKScene {
     private func makeEntityNode(_ entity: Entity) -> ActorNode {
         let node = ActorNode(sprite: entity.kind.rawValue, library: library)
         node.zPosition = entity.kind == .yarnBasket ? 1 : (entity.kind == .crateWall ? 4 : 3)
-        node.play(Self.defaultAnimation[entity.kind] ?? "still")
+        Self.playAny(node, Self.frostRest[entity.kind] ?? [Self.defaultAnimation[entity.kind] ?? "still"])
         actors.addChild(node)
         entityNodes[entity.id] = node
         return node

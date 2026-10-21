@@ -653,20 +653,12 @@ def menu_clouds() -> Canvas:
         far.paste(layer)
     W.mountains(far, h, 14, 6, (34, 56), (P.MOUNT_L, P.MOUNT_L, P.MOUNT), tips=P.SKY_HAZE)
     W.mountains(far, h, 15, 5, (22, 40), (P.MOUNT_L, P.MOUNT, P.MOUNT_D))
-    top, left, right = 40, 116, 194                           # the castle cliff
-    far.poly([(left - 4, h), (left, top + 6), (left + 6, top), (right - 6, top), (right, top + 8), (right + 6, h)],
-             P.CLIFF)
-    for k in range(left + 4, right, 6):
-        far.line((k, top + 4), (k - 2 + (k % 3), h), P.CLIFF_D)
-        far.line((k + 2, top + 5), (k + 1, top + 18 + (k * 7) % 12), P.CLIFF_L)
-    far.rect(left + 5, top, right - 5, top + 3, P.FAR_GRASS)
-    far.rect(left + 5, top, right - 5, top, P.KIT_GREEN_L)
-    for k in range(left + 6, right - 6, 4):
-        far.rect(k, top + 4, k + 1, top + 4 + (k * 5) % 4, P.FAR_GRASS)
-    W.castle(far, 150, top + 1)
-    for tx in (124, 186):
-        W.canopy(far, tx, top - 4, 12, 10, tx, W.DISTANT, (3, 5))
-    W.waterfall(far, 172, top + 2, h - 3, 9)
+    top, left, right = 40, 106, 200                           # the castle cliff (the forest's rock and castle)
+    falls = (180, 187)
+    W.rock_cliff(far, left, right, top, 18, notch=falls)
+    W.rim_bushes(far, [(114, 6), (192, 6)], top - 1, 150)
+    W.hill_castle(far, 145, top + 1)
+    W.cascade(far, falls[0], top, h - 3, falls[1] - falls[0] + 1, 2)
     W.haze(far, P.SKY_HAZE, 0.1)
     c.paste(far)
     W.piece(c, lambda layer, px: treehouse(layer, px, h - 1), 24)

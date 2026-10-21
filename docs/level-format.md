@@ -66,6 +66,16 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | frost | `snowball` | Fast roller, 2 HP |
 | frost | `penguin` | Very fast slider; stomp is a safe bounce |
 | frost | `snowdrift` | Static, low |
+| frost | `ice_slime` | Walker (22/s); a stomp kills |
+| frost | `snow_cat` | Fast walker (55/s), 20 tall; a stomp kills; 2 HP |
+| frost | `ice_bat` | Like `forest_bat`: flies at 42, swoops to 28 (just over a standing kitten) as it nears |
+| frost | `ice_golem` | Slow walker (8/s), 26×30; stomp is a safe bounce; 3 HP; needs hero level 3 |
+| frost | `penguin_soldier` | Walks back and forth up to 30 either side of where it is placed (and turns at rims and steps); within 70 of the hero it thrusts a `spear` (low, at 6, 14×4, fast); a stomp kills; 2 HP |
+| frost | `snowy_owl` | Hovers 60 up, drifting in at 10/s; 170 from the hero it blinks 0.4 s, then drops an `icicle_shot` straight down (lands ~50 ahead of the hero and lies there, 10 tall); no stomp |
+| frost | `ice_hedgehog` | Walker; within 100 of the hero it curls up and rolls in at 110/s (turning at rims and steps): then no stomp, and yarn bounces off |
+| frost | `snowman` | Stands, 30 tall; lobs `snowball_shot` hazards from 28 up that land ahead of the hero and roll on; stomp is a safe bounce; 2 HP |
+| frost | `icicle_plant` | Trap on the world clock: open (24 high, hurts) for 0.6 s of every 2.4 s, opening as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); each time it opens in range it fires an `icicle_bolt` along the ground at 4; no stomp; yarn hits it any time, 2 HP |
+| frost | `mini_yeti` | Very slow walker (6/s), 30×34; no stomp; 4 HP; needs hero level 3 |
 | haunted | `ghost_cat` | Drifts in high and down to the ground; visible 1.2 s of every 2 s and harmless otherwise; yarn passes through |
 | haunted | `bat` | Flies at 40, swoops to 26 (just over a standing kitten) as it nears |
 | haunted | `skeleton_mouse` | Stands and throws low `bone` hazards; stomp kills; 2 HP |

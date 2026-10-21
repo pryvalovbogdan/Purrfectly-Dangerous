@@ -99,14 +99,30 @@ Boss `boss_squirrel` — **The Great Squirrel King**, always vulnerable, 20 HP.
 3. Climbs a tree and drops a giant acorn that makes a shockwave (blinking warning, then low wave).
 
 ### 2 — frost (speed 120, Medium)
+The creature roster follows the expanded concept, `docs/concept/Purrfectly_Dangerous_Game_Concept_Expanded.txt`
+§9 (World 2 — Frostpaw Mountains), and its sprite sheet `docs/concept/Frostpaw Mountains Enemy Sprite Sheet.png`.
+
 | Id | Role | Behaviour | Beat it by |
 | --- | --- | --- | --- |
 | `ice` | ice patch (zone) | slick, as `milk` | timing |
-| `icicle` | falling icicle | hangs from above; when the kitten is ~120 units away it blinks, then drops and shatters | pass before it falls, or wait |
+| `icicle` | falling icicle | hangs from above; when the kitten is ~130 units away it blinks, then drops and shatters | pass before it falls, or wait |
 | `snowball` | rolling snowball | fast roller, 2 HP | jump, or 2 yarn |
 | `penguin` | sliding penguin | very fast belly-slider | jump/stomp (safe bounce, no kill) or yarn |
-| `ice_ledge` | crumbling ice platform (platform) | crumbles 0.4 s after landing | keep moving |
 | `snowdrift` | snow mound | static, low | hop |
+| `ice_slime` | ice slime | hops along toward the kitten (the hop is only drawn; it stays on the ground) | stomp (kills), yarn, or hop |
+| `snow_cat` | snow cat | fast runner; its paw slash is its body, so touching it from the side hurts. 2 HP | stomp (kills), 2 yarn, or jump |
+| `ice_bat` | ice bat | swoops as it nears, never lower than just over a standing kitten (28) | stay down; yarn |
+| `ice_golem` | small ice golem | slow, tough walker, 3 HP; landing on it is a safe bounce that doesn't break it. Needs kitten level 3 | jump/Double Pounce or bounce over it, or 3 yarn |
+| `penguin_soldier` | penguin soldier | marches back and forth about 30 either side of its post; within ~70 it thrusts its spear (a short, fast, low stab), 2 HP | jump it early, stomp (kills), or 2 yarn |
+| `snowy_owl` | snowy owl | hovers ~60 up, drifting in; it blinks, then drops an icicle straight down ahead of the kitten, which lies there as a spike. Can't be stomped | hop the icicle; yarn it from a jump |
+| `ice_hedgehog` | ice hedgehog | walks; curls up when close (~100 units) and then rolls in fast (110), turning back at steps and rims. Curled, it can't be stomped and yarn bounces off | jump it, or yarn/stomp before it curls |
+| `snowman` | snowman | stands and lobs snowballs that land ahead and roll on; a stomp is only a bounce. 2 HP | hop the snowballs, jump it, or 2 yarn |
+| `icicle_plant` | icicle plant | trap like `plant_cat`: shut and harmless, opening (warning), then open: it hurts and fires an icicle bolt low along the ground each time it opens. Yarn hits it in any state, 2 HP | jump the bolt; pass while shut or jump it; 2 yarn |
+| `mini_yeti` | mini yeti | slow bruiser with a wide swipe (a wide hitbox), 4 HP; can't be stomped. Needs kitten level 3 | Double Pounce over it, or 4 yarn |
+| `ice_ledge` | crumbling ice platform (platform) | crumbles 0.4 s after landing | keep moving |
+
+§9 of the expanded concept also lists creature rosters for worlds 3 and 4; those are future work and
+not in the game yet (the tables below are what the game builds).
 
 Wide ravines (needing Double Pounce) appear here. Boss `boss_icedragon` — **Glacipurr**,
 vulnerable only while recovering, 24 HP.

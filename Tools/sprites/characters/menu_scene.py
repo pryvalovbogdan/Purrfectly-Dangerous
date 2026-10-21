@@ -130,7 +130,8 @@ def signpost(c: Canvas, x: float, ground: float) -> None:
 def waterfall_frame(c: Canvas, x: float, y: float, phase: int) -> None:
     """The falling water at (x, y): streaks that run down 2 px per phase (a loop of 4), foam at the foot."""
     c.rect(x + 1, y, x + FALL_W - 2, y + FALL_H - 6, P.WATER)
-    c.rect(x + 1, y, x + 2, y + FALL_H - 6, P.WATER_D)
+    c.rect(x + 1, y, x + 1, y + FALL_H - 6, P.WATER_L)                     # lit left edge, shaded right
+    c.rect(x + 2, y, x + 2, y + FALL_H - 6, P.WATER)
     c.rect(x + FALL_W - 3, y, x + FALL_W - 2, y + FALL_H - 6, P.WATER_D)
     for k, col in enumerate((P.WATER_L, P.WHITE, P.WATER_L, P.CYAN, P.WHITE, P.WATER_L)):
         sx = x + 2 + k * (FALL_W - 4) / 6
@@ -201,31 +202,26 @@ def scene(w: int, h: int, L: dict, seed: int) -> Canvas:
         pine(far, x, band_top + 16, tall, (P.DIST_DD, P.DIST_D, P.DIST_L))
     c.paste(W.haze(far, P.SKY_HAZE, 0.12))
 
-    # the cliff, the castle on top of it, and the waterfall down its face
+    # the cliff (the forest kit's rock: chunky lit faces, ledges, moss), the castle on top of it, and the
+    # waterfall down its face
     cl, cr, ct, cb = L["cliff"]
+    fx, fy = WATERFALL[L["name"]]
     cliff = Canvas(w, h)
-    cliff.poly([(cl - 6, cb), (cl, ct + 6), (cl + 6, ct), (cr, ct), (cr, cb)], P.ROCK)
-    for k in range(int(cl), int(cr), 6):                                # strata and light ledges
-        cliff.line((k, ct + 4), (k - 2 + (k % 3), cb), P.ROCK_D)
-        cliff.line((k + 2, ct + 5), (k + 1, ct + 14 + (k * 7) % 12), P.ROCK_L)
-    for k in range(3):
-        yy = ct + 12 + k * 11
-        cliff.line((cl + 2 + k * 3, yy), (cr, yy - 2), P.ROCK_D)
-    cliff.rect(cl + 4, ct, cr, ct + 3, P.KIT_GREEN)
-    cliff.rect(cl + 4, ct, cr, ct, P.KIT_GREEN_L)
-    for k in range(int(cl + 5), int(cr), 3):
-        cliff.rect(k, ct + 4, k, ct + 4 + (k * 5) % 4, P.KIT_GREEN_D)
-    for k in range(int(cl + 8), int(cr), 9):                       # moss running down the face
-        for j in range(4 + (k * 3) % 7):
-            cliff.px(k + (j % 2), ct + 5 + j, P.KIT_GREEN_D)
+    W.rock_cliff(cliff, cl, cr + 10, ct, seed + 5, notch=(fx, fx + FALL_W - 1), bottom=cb)
+    cliff.rect(fx + 1, ct - 1, fx + FALL_W - 2, fy - 1, P.WATER)          # the stream in the notch
+    cliff.rect(fx + 1, ct - 1, fx + FALL_W - 2, ct - 1, P.WATER_L)
+    c.paste(W.haze(cliff, P.SKY_HAZE, 0.06))
+    foot = Canvas(w, h)
     for k in range(int(cl) - 4, int(cr) + 8, 13):                  # bushes along its foot
-        W.canopy(cliff, k, cb - 4, 16, 10, k + 3, W.LEAVES, (3, 5))
-    c.paste(W.haze(cliff.outline(P.WOOD_OUT), P.SKY_HAZE, 0.06))
-    castle = Canvas(w, h)
-    small_castle(castle, L["castle"], ct + 1)
+        W.canopy(foot, k, cb - 4, 16, 10, k + 3, W.LEAVES, (3, 5))
+    c.paste(W.haze(foot.outline(P.WOOD_OUT), P.SKY_HAZE, 0.06))
+    trees = Canvas(w, h)
     for tx in L["castle_trees"]:
-        W.canopy(castle, tx, ct - 3, 10, 8, int(tx), W.LEAVES, (2, 4))
-    c.paste(W.haze(castle.outline(P.MOUNT_DD), P.SKY_HAZE, 0.08))
+        W.canopy(trees, tx, ct - 4, 12, 9, int(tx), W.LEAVES, (2, 4))
+    castle = Canvas(w, h)
+    castle.paste(trees.outline(P.MOUNT_DD))
+    W.hill_castle(castle, L["castle"], ct + 1, *L["castle_scale"])
+    c.paste(W.haze(castle, P.SKY_HAZE, 0.08))
 
     # the river, from the waterfall's pool across the middle
     rx0, rx1, ry0, ry1 = L["river"]
@@ -235,8 +231,7 @@ def scene(w: int, h: int, L: dict, seed: int) -> Canvas:
     for k in range(int((rx1 - rx0) / 5)):
         x, y = rx0 + rnd() * (rx1 - rx0 - 6), ry0 + 2 + rnd() * (ry1 - ry0 - 5)
         c.line((x, y), (x + 2 + rnd() * 4, y), P.WHITE if k % 3 == 0 else P.WATER_L)
-    fx, fy = WATERFALL[L["name"]]                                    # (identical to menu_waterfall's frame 0)
-    waterfall_frame(c, fx, fy, 0)
+    waterfall_frame(c, fx, fy, 0)                                    # (identical to menu_waterfall's frame 0)
 
     for x, tall in L["pines"]:                                         # green pines in the middle distance
         outlined(c, lambda layer, x=x, tall=tall: pine(layer, x, L["pine_base"], tall))
@@ -297,7 +292,7 @@ PORTRAIT = dict(
     clouds=[(77, 128, 70, 30), (157, 118, 80, 34), (31, 112, 44, 18), (196, 98, 30, 14), (117, 70, 34, 13)],
     mount_base=176, mountains=[(71, 34, 34), (107, 40, 36), (139, 26, 26)], band_top=170,
     far_pines=[(59, 26), (95, 22), (4, 24)],
-    cliff=(111, 210, 160, 204), castle=161, castle_trees=(143, 191),
+    cliff=(111, 210, 160, 204), castle=170, castle_scale=(0.92, 1.6), castle_trees=(118, 205),
     river=(71, 192, 196, 212), pines=[(63, 44), (85, 36), (196, 52)], pine_base=212,
     round_trees=[(183, 176, 26)],
     tree=(33, 40, 50, 46), deck=118, house=33,
@@ -311,7 +306,7 @@ LANDSCAPE = dict(
             (20, 70, 50, 20), (420, 66, 50, 20)],
     mount_base=106, mountains=[(170, 30, 36), (210, 38, 40), (254, 28, 30), (290, 22, 26)], band_top=94,
     far_pines=[(150, 22), (200, 20), (274, 18), (14, 22), (40, 20), (420, 22)],
-    cliff=(276, 440, 76, 122), castle=334, castle_trees=(312, 368),
+    cliff=(276, 440, 76, 122), castle=338, castle_scale=(0.95, 1.6), castle_trees=(304, 376),
     river=(200, 440, 114, 132), pines=[(146, 40), (168, 34), (190, 28), (376, 42), (16, 38), (36, 30), (426, 36)],
     pine_base=132,
     round_trees=[(256, 96, 26), (366, 100, 24), (6, 98, 24), (430, 100, 22)],

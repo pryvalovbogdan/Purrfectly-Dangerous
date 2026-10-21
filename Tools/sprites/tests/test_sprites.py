@@ -68,6 +68,21 @@ SPEC = {
     "snowdrift": ((24, 11), {"still": 1}),
     "ice": ((32, 6), {"still": 1}),
     "ice_ledge": ((48, 14), {"still": 1, "crumble": 4}),
+    # The Frostpaw Mountains critters (characters/frost_critters.py)
+    "ice_slime": ((34, 34), {"idle": 2, "walk": 4, "attack": 3, "hit": 2, "death": 4}),
+    "snow_cat": ((40, 34), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "ice_bat": ((46, 32), {"fly": 4, "attack": 3, "hit": 2, "death": 3}),
+    "ice_golem": ((52, 42), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "penguin_soldier": ((48, 34), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "spear": ((16, 6), {"fly": 2}),
+    "snowy_owl": ((46, 36), {"fly": 4, "attack": 3, "hit": 2, "death": 4}),
+    "icicle_shot": ((8, 14), {"fly": 2}),
+    "ice_hedgehog": ((36, 28), {"walk": 4, "curl": 3, "roll": 4, "hit": 2, "death": 4}),
+    "snowman": ((44, 44), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "snowball_shot": ((10, 10), {"fly": 4}),
+    "icicle_plant": ((38, 36), {"closed": 2, "open": 2, "attack": 3, "hit": 2, "death": 4}),
+    "icicle_bolt": ((14, 7), {"fly": 2}),
+    "mini_yeti": ((60, 46), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
     # The frost world's waterfall pit and terrain (characters/frostpaw.py), the forest contracts
     "ravine_frost": ((8, 16), {"still": 1}),
     "ravine_frost_b": ((8, 16), {"still": 1}),
@@ -186,7 +201,9 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
 
 @pytest.mark.parametrize("name", ["hero", "boss_squirrel", "boss_icedragon", "boss_phantom", "boss_mecha",
                                   "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
-                                  "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat"])
+                                  "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat",
+                                  "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
+                                  "ice_hedgehog", "snowman", "icicle_plant", "mini_yeti"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():

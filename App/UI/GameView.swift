@@ -40,12 +40,12 @@ struct GameView: View {
         .onAppear {
             // A level can open while the app is away: the next-level screen starts it after a countdown.
             // A bot run opens its level at launch, before the app is active, and must not wait on a tap.
-            if scenePhase != .active, !model.autoplay { hud.isPaused = true }
+            if scenePhase != .active, !model.autoplay, !model.jumpTest { hud.isPaused = true }
         }
     }
 
     private func makeScene(viewSize: CGSize) -> GameScene {
-        let level = model.levels[levelIndex]
+        let level = model.playableLevel(levelIndex)
         return GameScene(
             viewSize: viewSize,
             displayScale: displayScale,

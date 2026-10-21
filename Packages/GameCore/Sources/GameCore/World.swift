@@ -103,7 +103,9 @@ public struct Entity: Sendable, Equatable, Identifiable {
     public internal(set) var state = EntityState.idle
     /// Seconds added to the world clock for this thing's cycle.
     public let cycleOffset: Double
-    var timer = 0.6
+    /// Where it was placed: a patrol turns back a set distance either side of it.
+    public let home: Double
+    var timer: Double
     var vy = 0.0
 
     init(id: Int, kind: ItemKind, x: Double, y: Double, hp: Int, cycleOffset: Double = 0) {
@@ -113,6 +115,8 @@ public struct Entity: Sendable, Equatable, Identifiable {
         self.y = y
         self.hp = hp
         self.cycleOffset = cycleOffset
+        home = x
+        timer = kind.spec.throwing?.windup ?? 0.6
     }
 
     public var box: AABB {
@@ -710,7 +714,9 @@ public struct RunnerWorld: Sendable {
         for index in entities.indices {
             var entity = entities[index]
             let spec = entity.kind.spec
-            let velocity = entity.isHanging ? 0 : (entity.reversed ? -spec.velocity : spec.velocity)
+            // A curled roller rolls at its own speed; anything hanging on a thread stays put.
+            let speed = entity.state == .curled ? (spec.rollSpeed ?? spec.velocity) : spec.velocity
+            let velocity = entity.isHanging ? 0 : (entity.reversed ? -speed : speed)
             entity.x += velocity * dt
             if entity.walks {
                 // Stop at a rim or a step (up or down) and head back the other way.
@@ -721,6 +727,10 @@ public struct RunnerWorld: Sendable {
                     entity.reversed.toggle()
                 } else if let edge = ground.step(from: entity.x, to: front, level: entity.y) {
                     entity.x = velocity < 0 ? edge + half : edge - half
+                    entity.reversed.toggle()
+                } else if let patrol = spec.patrol, abs(entity.x - entity.home) > patrol {
+                    // End of its beat: turn back toward its post.
+                    entity.x = velocity < 0 ? entity.home - patrol : entity.home + patrol
                     entity.reversed.toggle()
                 }
             }
@@ -740,26 +750,40 @@ public struct RunnerWorld: Sendable {
                 if spec.cycleRole == .phase, state == .idle { state = .hidden }
                 if spec.cycleRole == .trap, state == .active, entity.state != .active {
                     events.append(.trapFired(id: entity.id))
+                    if let throwing = spec.throwing, throwing.onCycleOpen, gap > 30, gap < throwing.range {
+                        launch(throwing, from: entity, events: &events)
+                    }
                 }
                 entity.state = state
             }
             if let fall = spec.fall {
                 updateFaller(&entity, fall: fall, gap: gap, dt: dt, events: &events)
             }
-            if let throwing = spec.throwing, gap > 30, gap < throwing.range {
-                entity.timer -= dt
-                if entity.timer <= 0 {
-                    entity.timer = throwing.interval
-                    hazards.append(Hazard(id: takeID(), kind: throwing.projectile, x: entity.x - 10,
-                                          y: throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y,
-                                          width: throwing.width, height: throwing.height,
-                                          vx: -throwing.speed, arm: 0,
-                                          gravity: throwing.arc ? tuning.lobGravity : 0))
-                    events.append(entity.kind == .bell ? .bellRang(id: entity.id) : .threw(id: entity.id))
+            if let throwing = spec.throwing, !throwing.onCycleOpen {
+                let inRange = gap > 30 && gap < throwing.range
+                if inRange {
+                    entity.timer -= dt
+                    if entity.timer <= 0 {
+                        entity.timer = throwing.interval
+                        launch(throwing, from: entity, events: &events)
+                    }
+                }
+                // Winding up for the next throw: a warning the player can read.
+                if throwing.warning > 0 {
+                    entity.state = inRange && entity.timer <= throwing.warning ? .warning : .idle
                 }
             }
             entities[index] = entity
         }
+    }
+
+    private mutating func launch(_ throwing: ThrowSpec, from entity: Entity, events: inout [GameEvent]) {
+        hazards.append(Hazard(id: takeID(), kind: throwing.projectile, x: entity.x - 10,
+                              y: throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y,
+                              width: throwing.width, height: throwing.height,
+                              vx: -throwing.speed, arm: 0,
+                              gravity: throwing.arc ? tuning.lobGravity : 0))
+        events.append(entity.kind == .bell ? .bellRang(id: entity.id) : .threw(id: entity.id))
     }
 
     /// Hanging → blinking → dropping → shards on the ground (or, for a creature, walking on).

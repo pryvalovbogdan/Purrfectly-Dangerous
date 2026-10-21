@@ -1777,6 +1777,100 @@
    }
   }
  },
+ "ice_bat": {
+  "width": 46,
+  "height": 32,
+  "anchorX": 0.4891,
+  "anchorY": 0.1875,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "ice_golem": {
+  "width": 52,
+  "height": 42,
+  "anchorX": 0.5673,
+  "anchorY": 0.0476,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "ice_hedgehog": {
+  "width": 36,
+  "height": 28,
+  "anchorX": 0.4861,
+  "anchorY": 0.0357,
+  "animations": {
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "curl": {
+    "frames": 3,
+    "fps": 12,
+    "loop": false
+   },
+   "roll": {
+    "frames": 4,
+    "fps": 14,
+    "loop": true
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "ice_ledge": {
   "width": 48,
   "height": 14,
@@ -1789,6 +1883,39 @@
     "loop": true
    },
    "crumble": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "ice_slime": {
+  "width": 34,
+  "height": 34,
+  "anchorX": 0.4853,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
     "frames": 4,
     "fps": 10,
     "loop": false
@@ -1815,6 +1942,65 @@
     "frames": 4,
     "fps": 14,
     "loop": false
+   }
+  }
+ },
+ "icicle_bolt": {
+  "width": 14,
+  "height": 7,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "icicle_plant": {
+  "width": 38,
+  "height": 36,
+  "anchorX": 0.5658,
+  "anchorY": 0.0556,
+  "animations": {
+   "closed": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "open": {
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "icicle_shot": {
+  "width": 8,
+  "height": 14,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
    }
   }
  },
@@ -2093,6 +2279,39 @@
    }
   }
  },
+ "mini_yeti": {
+  "width": 60,
+  "height": 46,
+  "anchorX": 0.625,
+  "anchorY": 0.0435,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "mushroom_cat": {
   "width": 34,
   "height": 34,
@@ -2139,6 +2358,39 @@
     "frames": 4,
     "fps": 12,
     "loop": true
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "penguin_soldier": {
+  "width": 48,
+  "height": 34,
+  "anchorX": 0.6562,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
    },
    "death": {
     "frames": 4,
@@ -2740,6 +2992,39 @@
    }
   }
  },
+ "snow_cat": {
+  "width": 40,
+  "height": 34,
+  "anchorX": 0.5875,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "snowball": {
   "width": 16,
   "height": 16,
@@ -2758,6 +3043,19 @@
    }
   }
  },
+ "snowball_shot": {
+  "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "snowdrift": {
   "width": 24,
   "height": 11,
@@ -2768,6 +3066,67 @@
     "frames": 1,
     "fps": 1,
     "loop": true
+   }
+  }
+ },
+ "snowman": {
+  "width": 44,
+  "height": 44,
+  "anchorX": 0.5341,
+  "anchorY": 0.0455,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "snowy_owl": {
+  "width": 46,
+  "height": 36,
+  "anchorX": 0.4891,
+  "anchorY": 0.1944,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
    }
   }
  },
@@ -2819,6 +3178,19 @@
    "loop": {
     "frames": 4,
     "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "spear": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 10,
     "loop": true
    }
   }

@@ -1,0 +1,409 @@
+PURRFECTLY DANGEROUS
+A Pixel-Art Cat Runner Adventure
+
+GAME CONCEPT • WORLDS • OBSTACLES • BOSSES • ABILITIES
+
+1. High Concept
+Purrfectly Dangerous is a 2D pixel-art action runner about a brave kitten crossing a fantasy kingdom, dodging traps, battling oversized enemies, and recovering the nine Sacred Fish. The tone combines cute character animation, readable arcade action, memorable boss patterns, and playful cat humor.
+Core gameplay loop
+Run automatically through side-scrolling levels.
+Jump over pits, traps, and enemies; attack with claws or unlocked abilities.
+Collect fish, yarn, and bells as rewards and upgrade currency.
+Reach the end of each world and learn a multi-phase boss fight.
+Replay worlds for medals, then unlock an endless mode with mixed obstacles.
+2. World and Boss Scenarios
+World 1 — The Purrwood Forest
+Difficulty / theme: Easy | Nature
+Story: The forest's magical fish have been stolen by a greedy squirrel army. The kitten must cross the woods and reach their enormous commander.
+Obstacle set: Spilled milk (slippery ground); thorny rose bushes; rolling acorns; squirrels throwing acorns from branches; broken bridges; hedgehogs that curl into spiky balls.
+Mini-boss: The Acorn Knight — a squirrel in a walnut-shell helmet that charges along the ground.
+Final boss: The Great Squirrel King — a crowned giant squirrel.
+Boss fight phases
+Throws three acorns in a predictable arc.
+Rolls across the arena, leaving acorns behind.
+Climbs a tree and drops a giant acorn that creates a shockwave.
+Reward: Yarn Shot — unlocks a ranged yarn projectile.
+World 2 — Frostpaw Mountains
+Difficulty / theme: Medium | Ice
+Story: The mountain cats have been frozen by a mysterious creature inside an ancient ice palace.
+Obstacle set: Slippery ice patches; falling icicles with a warning; rolling snowballs; crumbling ice platforms; sliding penguins; wide frozen gaps.
+Mini-boss: The Snowball Yeti — creates snowballs and charges through them.
+Final boss: Glacipurr, the Ice Dragon — a fluffy white dragon with crystalline whiskers and freezing breath.
+Boss fight phases
+Fires ice shards in a fan pattern.
+Sweeps the arena with freezing breath; jump to avoid the ground-level attack.
+Covers the floor in ice, then dives from above.
+Reward: Double Pounce — a second mid-air jump or short glide.
+World 3 — The Haunted Meowseum
+Difficulty / theme: Hard | Ghosts
+Story: An ancient cat cemetery has awakened. Ghosts are stealing sleeping kittens' souls to power a cursed bell tower.
+Obstacle set: Ghost cats that blink in and out; swooping bats; skeleton mice throwing bones; vanishing platforms; floating skull projectiles; cursed bells with sound-wave attacks.
+Mini-boss: The Bone Mouse Captain — a skeleton mouse riding a tiny skeletal horse.
+Final boss: The Phantom Cat Queen — a translucent royal cat with a floating crown and purple-smoke cloak.
+Boss fight phases
+Summons ghost cats that chase the player.
+Teleports and sends spectral waves along the ground.
+Splits into three copies; only the glowing copy takes damage.
+Reward: Ghost Dash or Nine Lives — a brief dodge through enemies, or one-time revival.
+World 4 — The Cataclysm Citadel
+Difficulty / theme: Expert | Fire and machinery
+Story: The stolen Sacred Fish power a machine designed to turn every cat in the kingdom into a statue.
+Obstacle set: Lava pits; timed flame vents; moving gears and crushing pistons; cannon fireballs; falling ceiling debris; mechanical mice that chase the kitten.
+Mini-boss: The Iron Bulldog — a mechanical guard that charges and fires rockets.
+Final boss: The Mecha-Mouser — a giant robotic mouse with a furnace core and metal tail.
+Boss fight phases
+Fires rockets that leave temporary hazards on the ground.
+Sweeps the arena with its tail and activates flame vents.
+Armor breaks to reveal the core; dodge rapid attacks and strike during short openings.
+Reward: Super Pounce — a forward leap that damages enemies and breaks special walls.
+
+3. Extra Obstacle Encounters
+The Runaway Yarn Ball
+A giant yarn ball rolls toward the kitten and bounces over small obstacles. Jump over it twice; it then unravels into collectible yarn.
+The Suspicious Cardboard Box
+Boxes may contain fish, mice, or a spring-loaded surprise cat that launches into the air.
+The Goose of Doom
+A goose honks before charging. Jump over it while avoiding eggs that hatch into tiny geese.
+The Hungry Vacuum
+A robot vacuum sucks up yarn and fish, and can pull the kitten in at close range. Hide behind furniture or attack its power button.
+The Flying Fish Storm
+Fish rain from the sky. Some are collectibles; others are frozen, electrified, or explosive decoys.
+The Shadow Kitten
+A dark copy follows the player's movements with a short delay. Survive the chase to earn a rare bell.
+4. Special Boss Encounters
+The Ancient Sleepy Cat
+A giant cat blocks a temple entrance. Yawns create wind blasts; stretches sweep its paws across the arena; snores launch projectiles. Attack its dangling toy while it sleeps to expose its weak spot.
+The Cat Wizard
+A rival magician changes arena rules, summons floating platforms, and turns fish into bouncing bombs. The player must adapt to each spell.
+The Rat King
+Three rats share one crown: one bites, one throws cheese, and one digs underground. Each defeated head removes one attack.
+The Void Cat — Secret Final Boss
+An ancient cosmic cat attacks with shadow paws, falling stars, and portals that confuse projectile direction. The final phase tests all unlocked abilities.
+5. Unlockable Cat Abilities
+Ability
+Effect
+Unlock
+Yarn Shot
+Throw a ball of yarn at enemies.
+World 1
+Double Pounce
+Jump a second time in mid-air.
+World 2
+Ghost Dash
+Briefly pass through enemies.
+World 3
+Super Pounce
+Leap forward and damage enemies.
+World 4
+Nine Lives
+Survive one otherwise fatal hit.
+Secret challenge
+Catnip Frenzy
+Temporary speed and attack boost.
+Rare collectible
+6. Endless Mode
+After the main story, combine obstacles from all four worlds into randomized sequences. Gradually increase speed and introduce a mini-boss every few minutes.
+Kitchen Nightmare — flying vegetables, slippery milk, and rolling cans.
+Midnight Chase — ghosts, bats, and shadow kittens in low visibility.
+Laundry Dimension — bouncing socks, rotating washing machines, and view-blocking sheets.
+Fish Apocalypse — collectible fish mixed with explosive decoys.
+Catnip Rush — a temporary high-speed segment with tighter jumps and bigger rewards.
+Score medals by distance travelled, enemies defeated, and fish collected.
+7. Opening Cutscene and Ending
+Opening (15–20 seconds)
+The kitten sleeps beside a pile of fish. The moon turns purple, the ground shakes, and the Sacred Fish vanish into the sky.
+The kitten wakes, sees the empty plate, and picks up a glowing ball of yarn. Title card: “One cat. Nine lives. Zero fish.”
+The kitten runs toward the forest. Music begins, the first obstacle appears, and gameplay starts immediately.
+Ending
+After defeating the Void Cat, the Sacred Fish return. The kitten receives a golden crown and a mountain of fish. After one bite, the kitten walks away; a tiny mouse steals the throne. The kitten's ears twitch. Endless mode unlocks.
+8. Recommended First Release Scope
+Four worlds with 5–8 obstacle patterns each.
+Four major bosses with three readable attack phases apiece.
+Three initial unlockable abilities; add the others as progression rewards.
+Collectible fish, a simple upgrade menu, and replay medals.
+Endless mode that reuses the level-generation and collision systems.
+
+SMALL PAWS • BIG ADVENTURES
+
+9. Complete Enemy Roster & Abilities
+This section expands the combat design for every generated enemy set. Each world introduces enemies that reinforce its movement gimmicks and prepares the player for the boss.
+World 1 — The Purrwood Forest
+
+Generated enemy sprite reference
+Enemy
+Behavior
+Main ability / attack
+Threat
+Forest Slime (Cat Slime)
+Bounces toward the player in short hops.
+Jump lunge
+Low
+Mushroom Cat
+Waits near platforms and releases spores when the player enters range.
+Spore cloud/projectile
+Low
+Forest Bat
+Hovers above the route, then dives diagonally at the player.
+Dive attack
+Low
+Squirrel Thief
+Runs ahead and tries to steal collected fish or block the lane.
+Thrown acorn
+Medium
+Spiky Hedgehog Cat
+Curls into a ball and rolls quickly along the ground.
+Rolling charge
+Medium
+Plant Cat (Piranha Plant)
+Hides in foliage, opens when the player approaches, then snaps forward.
+Bite
+Medium
+Bee Cat
+Patrols in the air and attacks from above.
+Sting / small projectile
+Medium
+Tree Stump Cat (Turret)
+Stationary woodland turret that fires leaves across the lane.
+Leaf projectile
+Medium
+Snail Cat
+Slow armored enemy; hides in its shell when threatened.
+Shell defense / body bump
+Low
+Spider Cat
+Hangs above the path, drops down, walks briefly, then leaps.
+Drop + leap
+Medium
+
+World 2 — Frostpaw Mountains
+
+Generated enemy sprite reference
+Enemy
+Behavior
+Main ability / attack
+Threat
+Ice Slime (Snow Slime)
+Slides and hops unpredictably on frozen ground.
+Jump attack
+Low
+Snow Cat
+Fast melee enemy that runs toward the hero.
+Paw slash
+Medium
+Ice Bat
+Flies over gaps and dives when the player passes underneath.
+Dive attack
+Low
+Ice Golem (Small)
+Slow, durable enemy that controls narrow platforms.
+Heavy ice punch
+High
+Penguin Soldier
+Marches in short patrols and attacks from close range.
+Ice spear thrust
+Medium
+Snowy Owl
+Circles above the player before dropping a frozen projectile.
+Dropped icicle
+Medium
+Ice Hedgehog
+Rolls into a frozen ball and accelerates downhill.
+Rolling charge
+Medium
+Snowman
+Keeps distance and repeatedly throws snowballs.
+Snowball projectile
+Low
+Icicle Plant
+Opens from a crystal bud and fires along a straight line.
+Icicle shot
+Medium
+Mini Yeti
+A tougher bruiser with slow movement and a wide melee arc.
+Heavy swipe
+High
+
+World 3 — The Haunted Meowseum
+
+Generated enemy sprite reference
+Enemy
+Behavior
+Main ability / attack
+Threat
+Ghost Cat (Floating Ghost)
+Floats through parts of the environment and stalks the hero.
+Spirit ball
+Medium
+Haunted Portrait (Flying Frame)
+Detaches from the wall and follows the player at mid-height.
+Magic shot
+Medium
+Cursed Armor Cat (Knight Statue)
+Begins as a statue, awakens nearby, and blocks the route.
+Spectral slash
+High
+Bat Cat (Spectral Bat)
+Erratic flying enemy that attacks in quick arcs.
+Dive slash
+Medium
+Candle Cat (Possessed Candle)
+Small moving hazard that leaves magical flame pressure.
+Fire orb
+Low
+Poltergeist Book (Flying Book)
+Floats above platforms and casts magic from range.
+Magic bolt / pages
+Medium
+Gargoyle Cat (Stone Gargoyle)
+Remains still until triggered, then leaps from its pedestal.
+Leap attack
+High
+Shadow Cat (Teleporting Assassin)
+Teleports ahead of the runner and attacks with little warning.
+Shadow slash
+High
+
+World 4 — The Cataclysm Citadel
+
+Generated enemy sprite reference
+Enemy
+Behavior
+Main ability / attack
+Threat
+Lava Slime (Magma Slime)
+Slow molten enemy that occupies safe ground near lava.
+Spit lava
+Medium
+Fire Imp (Flame Cat)
+Flying attacker that keeps distance from the hero.
+Fireball
+Medium
+Stone Guard Cat (Lava Golem)
+Armored fortress guard with high durability.
+Heavy punch / magma blast
+High
+Hell Hound Cat (Magma Beast)
+Fast ground enemy designed for chase sequences.
+Flaming charge
+High
+Flying Lava Bat (Ember Bat)
+Sweeps across the screen with a fiery trail.
+Dive attack
+Medium
+Flame Archer Cat (Cultist)
+Ranged enemy placed on elevated platforms.
+Flaming arrow
+Medium
+Chainsaw Cat (Executioner)
+Slow elite enemy with a dangerous close-range zone.
+Chainsaw sweep
+Very high
+Fire Wisp (Lava Spirit)
+Small floating spirit that pursues the player and becomes unstable.
+Explosive burst
+Medium
+
+Final Level — The Void Cat
+
+Generated enemy sprite reference
+Enemy
+Behavior
+Main ability / attack
+Threat
+Void Slime (Shadow Slime)
+Corrupted slime that moves in short shadowy bursts.
+Spit void orb
+Medium
+Void Bat (Rift Bat)
+Flies through the arena and attacks from unstable angles.
+Void orb
+Medium
+Void Sentinel (Floating Statue)
+Stationary/floating guardian that controls long sightlines.
+Void laser
+High
+Rift Hound (Void Beast)
+Extremely fast pursuit enemy used to force immediate reactions.
+Void charge
+High
+Void Mage (Cultist Cat)
+Supports other enemies and attacks from range.
+Summon + void bolt
+High
+Rift Turret (Void Crystal)
+Charges visibly before firing across the arena.
+Crystal shot
+High
+Void Wisp (Soul Fragment)
+Tracks the hero through the air and pressures jumps.
+Homing orb
+Medium
+Mini Void Cat (Boss Minion)
+Teleports around the hero and mimics a simplified boss attack.
+Teleport + slash
+Very high
+
+
+10. Boss Roster & Fight Design
+Bosses are designed as readable multi-phase encounters rather than large-health-bar enemies. Each fight tests the mechanics introduced by its world and awards a traversal/combat upgrade.
+
+Generated boss sprite concepts
+The Great Squirrel King
+Encounter: World 1
+A giant crowned squirrel commander who teaches the player to read attack telegraphs.
+Attack phases
+Throws three acorns in an arc.
+Rolls across the arena and leaves acorns behind.
+Drops a giant acorn from a tree, creating a ground shockwave.
+Reward / progression: Yarn Shot
+Glacipurr, the Ice Dragon
+Encounter: World 2
+A fluffy crystalline ice dragon that turns movement itself into the main challenge.
+Attack phases
+Fires a fan of ice shards.
+Sweeps freezing breath across the ground.
+Freezes the arena floor, then dives from above.
+Reward / progression: Double Pounce
+The Phantom Cat Queen
+Encounter: World 3
+A spectral royal cat built around teleportation, summons, and visual deception.
+Attack phases
+Summons pursuing ghost cats.
+Teleports and launches spectral ground waves.
+Splits into three copies; only the glowing real queen can be damaged.
+Reward / progression: Ghost Dash / Nine Lives
+The Mecha-Mouser
+Encounter: World 4
+A giant robotic mouse powered by a furnace core and protected by mechanical armor.
+Attack phases
+Launches rockets that leave temporary hazards.
+Sweeps its metal tail while flame vents activate.
+Armor breaks; the exposed core can be hit only during short openings.
+Reward / progression: Super Pounce
+The Void Cat
+Encounter: Secret Final Level
+An ancient cosmic cat and the ultimate test of every mechanic learned during the game.
+Attack phases
+Creates shadow-paw strikes and falling-star patterns.
+Opens portals that redirect or reverse incoming projectiles.
+Combines arena hazards with minions and forces the player to use all unlocked abilities.
+Reward / progression: Final completion / Endless Mode mastery reward
+11. Enemy-to-Boss Progression
+Stage
+Enemy lesson
+Boss payoff
+Purrwood Forest
+Basic jumps, ground pressure, first projectiles
+Squirrel King combines projectiles, rolling pressure, and shockwave timing.
+Frostpaw Mountains
+Sliding movement, aerial threats, ranged ice attacks
+Glacipurr combines slippery terrain, projectile fans, breath sweeps, and dives.
+Haunted Meowseum
+Teleportation, deceptive enemies, magic projectiles
+Phantom Cat Queen turns those ideas into teleport waves, summons, and clones.
+Cataclysm Citadel
+High-speed charges, ranged fire, elite melee enemies
+Mecha-Mouser combines persistent hazards, arena machinery, and short damage windows.
+Void Realm
+Homing attacks, lasers, teleporting elites, mixed pressure
+Void Cat combines mechanics from the entire game into the final mastery test.
