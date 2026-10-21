@@ -25,8 +25,6 @@ struct LogoTitle: View {
     let lines: [Line]
     /// Device pixels per sub-pixel (a letter is 15 sub-pixels tall).
     let sub: Int
-    /// The last "O" of the last line is the paw icon on a full-size letter.
-    var paw = false
     /// The fish sprite just past the end of the last line, at the bottom.
     var fish = false
     /// Bend each line up towards its middle (logo headings; not numerals).
@@ -36,7 +34,7 @@ struct LogoTitle: View {
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        let layout = LogoLayout(lines: lines, paw: paw && model.sprites.sheet("icon_paw") != nil,
+        let layout = LogoLayout(lines: lines,
                                 fish: fish ? model.sprites.sheet("fish").map { (Int($0.width), Int($0.height)) } : nil,
                                 arch: arch)
         let unit = CGFloat(sub) / max(displayScale, 1)
@@ -44,17 +42,6 @@ struct LogoTitle: View {
             layout.draw(in: context, unit: unit)
         }
         .frame(width: CGFloat(layout.width) * unit, height: CGFloat(layout.height) * unit)
-        .overlay(alignment: .topLeading) {
-            if let center = layout.pawCenter, let sheet = model.sprites.sheet("icon_paw") {
-                // The paw print stamped dark on its gold letter, at a whole-pixel scale.
-                let pawScale = max(1, Int((CGFloat(sub) * LogoLayout.pawWidth / sheet.width).rounded()))
-                let pawUnit = CGFloat(pawScale) / max(displayScale, 1)
-                PixelSprite(sprite: "icon_paw", pixelScale: pawScale)
-                    .colorMultiply(Color(red: 0.3, green: 0.16, blue: 0.08))
-                    .offset(x: (center.x * unit - sheet.width * pawUnit / 2).rounded(),
-                            y: (center.y * unit - sheet.height * pawUnit / 2).rounded())
-            }
-        }
         .overlay(alignment: .topLeading) {
             if let origin = layout.fishOrigin {
                 PixelSprite(sprite: "fish", pixelScale: sub, animated: false)
@@ -77,15 +64,15 @@ struct LogoTitle: View {
         var lettersCenter: CGFloat
     }
 
-    static func metrics(_ lines: [Line], paw: Bool, fish: (Int, Int)?, arch: Bool = true) -> Metrics {
-        let layout = LogoLayout(lines: lines, paw: paw, fish: fish, arch: arch)
+    static func metrics(_ lines: [Line], fish: (Int, Int)?, arch: Bool = true) -> Metrics {
+        let layout = LogoLayout(lines: lines, fish: fish, arch: arch)
         return Metrics(width: layout.width, height: layout.height, firstLineCenter: layout.firstLineCenter,
                        firstLineTop: layout.firstLineTop, lettersWidth: layout.lettersWidth,
                        lettersCenter: CGFloat(layout.lettersWidth) / 2)
     }
 
     /// The logo's lines: one, or two balanced by word count once there are `splitFrom` words.
-    static func lines(_ text: String, splitFrom: Int, allGradient: Bool, tint: Color?) -> [Line] {
+    static func lines(_ text: String, splitFrom: Int, tint: Color?) -> [Line] {
         let words = text.uppercased().split(separator: " ")
         let texts: [String]
         if words.count >= splitFrom, words.count > 1 {
@@ -96,7 +83,7 @@ struct LogoTitle: View {
         }
         return texts.enumerated().map { index, line in
             if let tint { return Line(text: line, fill: .flat(tint)) }
-            let cream = texts.count > 1 && index == 0 && !allGradient
+            let cream = texts.count > 1 && index == 0
             return Line(text: line, fill: cream ? .cream : .gold)
         }
     }
@@ -108,10 +95,6 @@ struct LogoLayout {
     static let glyphHeight = 15
     static let gap = 2
     static let spaceAdvance = 7
-    /// The paw's letter: a solid rounded block the paw print is stamped on.
-    static let pawBlock = [".###.", "#####", "#####", "#####", "#####", "#####", ".###."]
-    /// How wide the paw print is, in sub-pixels (a letter is 11).
-    static let pawWidth: CGFloat = 9
     /// Sub-pixels of near-black backing round every letter.
     static let backing = 2
     static let shadow = 2
@@ -120,18 +103,9 @@ struct LogoLayout {
     /// How far the middle letters rise above the end letters: about a third of a letter's height,
     /// the classic game-logo bend.
     static let rise = 5
-    /// The two outer letters at each end of an arched line can lean outwards, one sub-pixel per three
-    /// rows (a whole-pixel shear, no smoothing). Off: at this size the shear breaks "PU" and "LY" up,
-    /// and straight letters on the curve read cleaner.
-    static let leanOuterLetters = false
-    static let leanCount = 2
-    /// Widest a leaning letter's top moves sideways, in sub-pixels.
-    static let leanReach = (glyphHeight - 1) / 3
 
     private(set) var width = 0
     private(set) var height = 0
-    /// Middle of the paw's letter, in sub-pixels.
-    private(set) var pawCenter: CGPoint?
     private(set) var fishOrigin: (x: Int, y: Int)?
     private(set) var firstLineCenter: CGFloat = 0
     private(set) var firstLineTop = 0
@@ -142,31 +116,24 @@ struct LogoLayout {
     private var backingCells = Set<Int>()
 
     fileprivate enum Slot {
-        case glyph([String]), space, paw
+        case glyph([String]), space
     }
 
-    init(lines: [LogoTitle.Line], paw: Bool, fish: (Int, Int)?, arch: Bool = true) {
+    init(lines: [LogoTitle.Line], fish: (Int, Int)?, arch: Bool = true) {
         let pad = Self.backing
         let rise = arch ? Self.rise : 0
-        let leans = arch && Self.leanOuterLetters
-        // Room at the sides for the outer letters' lean.
-        let side = pad + (leans ? Self.leanReach : 0)
         var rows: [(slots: [Slot], width: Int)] = []
-        for (index, line) in lines.enumerated() {
-            var slots = line.text.map { Self.slot(for: $0) }
-            if paw, index == lines.count - 1,
-               let at = line.text.lastIndex(of: "O"), at != line.text.startIndex {
-                slots[line.text.distance(from: line.text.startIndex, to: at)] = .paw
-            }
+        for line in lines {
+            let slots = line.text.map { Self.slot(for: $0) }
             let advance = slots.map { $0.isSpace ? Self.spaceAdvance : Self.glyphWidth + Self.gap }.reduce(0, +)
             rows.append((slots, max(0, advance - Self.gap)))
         }
         let lettersWidth = rows.map(\.width).max() ?? 0
-        width = lettersWidth + 2 * side
+        width = lettersWidth + 2 * pad
         self.lettersWidth = width
         // One parabola across the whole block, so a shorter line arches in step with the longer one
         // above it and the two lines stay parallel.
-        let blockMiddle = CGFloat(side) + CGFloat(lettersWidth) / 2
+        let blockMiddle = CGFloat(pad) + CGFloat(lettersWidth) / 2
         let half = max(1, CGFloat(lettersWidth - Self.glyphWidth) / 2)
         height = pad + rise + max(0, rows.count - 1) * Self.linePitch + Self.glyphHeight + pad + Self.shadow
         firstLineTop = pad + rise
@@ -175,11 +142,9 @@ struct LogoLayout {
             let fill = lines[index].fill
             // The ends of the line sit on `base`; letters nearer the middle rise along a parabola.
             let base = pad + rise + index * Self.linePitch
-            let left = side + (lettersWidth - row.width) / 2
+            let left = pad + (lettersWidth - row.width) / 2
             if index == 0 { firstLineCenter = CGFloat(left) + CGFloat(row.width) / 2 }
-            let letters = row.slots.filter { !$0.isSpace }.count
             var x = left
-            var letter = 0
             for slot in row.slots {
                 if slot.isSpace {
                     x += Self.spaceAdvance
@@ -189,23 +154,14 @@ struct LogoLayout {
                 let lift = Int((CGFloat(rise) * max(0, 1 - t * t)).rounded())
                 let top = base - lift
                 if index == 0 { firstLineTop = min(firstLineTop, top) }
-                let lean = !leans || letters < 2 * Self.leanCount + 1 ? 0
-                    : letter < Self.leanCount ? -1 : letter >= letters - Self.leanCount ? 1 : 0
-                switch slot {
-                case .paw:
-                    pawCenter = CGPoint(x: CGFloat(x) + CGFloat(Self.glyphWidth) / 2, y: CGFloat(top) + CGFloat(Self.glyphHeight) / 2)
-                    stamp(Self.pawBlock, x: x, top: top, fill: fill, lean: 0)
-                case .glyph(let bitmap):
-                    stamp(bitmap, x: x, top: top, fill: fill, lean: lean)
-                case .space:
-                    break
+                if case .glyph(let bitmap) = slot {
+                    stamp(bitmap, x: x, top: top, fill: fill)
                 }
                 x += Self.glyphWidth + Self.gap
-                letter += 1
             }
             if index == rows.count - 1, let fish {
                 // Just past the end of the line, its bottom on the end letters' bottom.
-                let fishX = x - Self.gap + side + 1
+                let fishX = x - Self.gap + pad + 1
                 let fishY = base + Self.glyphHeight + 1 - fish.1
                 fishOrigin = (fishX, fishY)
                 width = max(width, fishX + fish.0)
@@ -225,16 +181,13 @@ struct LogoLayout {
     }
 
     /// Lights a 5×7 glyph: each font cell 2×2 sub-pixels, thickened one sub-pixel right and down.
-    /// `lean` -1 tilts the letter's top to the left, 1 to the right: each row moves one sub-pixel
-    /// sideways per three rows above the bottom one.
-    private mutating func stamp(_ bitmap: [String], x: Int, top: Int, fill: LogoTitle.Fill, lean: Int) {
+    private mutating func stamp(_ bitmap: [String], x: Int, top: Int, fill: LogoTitle.Fill) {
         for (cy, bits) in bitmap.enumerated() {
             for (cx, bit) in bits.enumerated() where bit == "#" {
                 for dy in 0...2 {
                     let row = 2 * cy + dy
-                    let shift = lean * ((Self.glyphHeight - 1 - row) / 3)
                     for dx in 0...2 {
-                        lit[key(x + 2 * cx + dx + shift, top + row)] = (fill, row)
+                        lit[key(x + 2 * cx + dx, top + row)] = (fill, row)
                     }
                 }
             }

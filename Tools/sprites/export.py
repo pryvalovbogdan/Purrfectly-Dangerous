@@ -141,31 +141,44 @@ def app_icon(sprites: dict[str, Sprite]) -> None:
     (ATLAS.parent / "Contents.json").write_text(json.dumps({"info": {"author": "xcode", "version": 1}}, indent=2) + "\n")
 
 
-GAME_OVER_SOURCE = Path(__file__).parent / "game_over_source.png"
-# Where the stone-and-leaves "GAME OVER" title sits in the user's game-over painting.
-GAME_OVER_BOX = (100, 196, 868, 592)
+# Titles cut from the user's screen paintings rather than drawn in code: (source, box in the
+# painting, rectangles inside the box to clear by hand because they are not sky, asset name).
+TITLES = [
+    ("game_over_source.png", (100, 196, 868, 592), [], "title_game_over"),
+    # The start logo: the peeking cat, the leaf wreath, the lettering and the fish. The sound button
+    # (top right) and a bush (bottom left) poke into the box and are cleared.
+    ("start_source.png", (25, 120, 915, 597), [(770, 0, 890, 60), (0, 400, 70, 477)], "title_start"),
+]
 
 
 def _sky(p: tuple) -> bool:
     r, g, b = p[:3]
     blue = b > r + 35 and b > g + 5
     cloud = b >= r and b >= g - 6 and min(r, g, b) > 150 and max(r, g, b) - min(r, g, b) < 70
-    return blue or cloud
+    # Sunlit cloud tops are a warmer white. Whites inside the art (faces, lettering) are walled in by
+    # dark outlines, so the fill from the sky never reaches them.
+    white = min(r, g, b) > 205 and max(r, g, b) - min(r, g, b) < 50
+    return blue or cloud or white
 
 
-def game_over_title() -> None:
-    """The game-over title, cut from the user's painting like the app icon rather than drawn in code:
-    the stone slab, leaves, flowers, lettering and fish, with the sky behind it flood-filled away
-    from the edges (outlines stop the fill, so the blue fish stays). A regular image, outside the
-    sprite atlas, so it is never packed beside other art."""
-    im = Image.open(GAME_OVER_SOURCE).convert("RGBA").crop(GAME_OVER_BOX)
+def cut_title(source: str, box: tuple, cleared: list, name: str) -> None:
+    """One title from a user painting, like the app icon: cropped to `box`, the sky behind it
+    flood-filled away from the edges (outlines stop the fill, so a blue fish inside stays) and
+    trimmed to what is left. A regular image, outside the sprite atlas, so it is never packed
+    beside other art."""
+    im = Image.open(Path(__file__).parent / source).convert("RGBA").crop(box)
     w, h = im.size
     px = im.load()
+    for x0, y0, x1, y1 in cleared:
+        for y in range(y0, min(y1, h)):
+            for x in range(x0, min(x1, w)):
+                px[x, y] = (0, 0, 0, 0)
     clear = [[False] * h for _ in range(w)]
     todo = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    todo += [(x, y) for x in range(w) for y in range(h) if px[x, y][3] == 0]
     while todo:
         x, y = todo.pop()
-        if clear[x][y] or not _sky(px[x, y]):
+        if clear[x][y] or (px[x, y][3] and not _sky(px[x, y])):
             continue
         clear[x][y] = True
         px[x, y] = (0, 0, 0, 0)
@@ -177,12 +190,17 @@ def game_over_title() -> None:
         for x, y in fringe:
             px[x, y] = (0, 0, 0, 0)
     title = im.crop(im.getbbox())
-    folder = ATLAS.parent / "title_game_over.imageset"
+    folder = ATLAS.parent / f"{name}.imageset"
     folder.mkdir(parents=True, exist_ok=True)
-    write_png(title, folder / "title_game_over.png")
-    contents = {"images": [{"filename": "title_game_over.png", "idiom": "universal"}],
+    write_png(title, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}],
                 "info": {"author": "xcode", "version": 1}}
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+def titles() -> None:
+    for title in TITLES:
+        cut_title(*title)
 
 
 def contact_sheet(sprites: list[Sprite], path: Path, scale: int = 4) -> None:

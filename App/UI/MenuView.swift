@@ -52,8 +52,8 @@ struct MenuView: View {
         let side = max(16, insets.leading)
         let width = min(size.width - 2 * side, 380)
         // The title block (peeking cat, title, tagline) hangs at least `titleClearance` below the safe
-        // area, so the Dynamic Island never hides the cat's ears, and when there is room it comes down
-        // to end just above the tree tops of the scene, leaving no empty band of sky between them.
+        // area, so the Dynamic Island never hides the cat's ears. A short block comes down to end just
+        // above the tree tops; a taller one keeps its top there and its tagline runs over the trees.
         let topLimit = insets.top + Self.titleClearance
         let unit = MenuScene.pointsPerUnit(viewSize: size, displayScale: displayScale)
         let heroTop = size.height - ground - MenuScene.heroHeight(model.sprites) * unit
@@ -63,9 +63,11 @@ struct MenuView: View {
         return ZStack(alignment: .top) {
             VStack(spacing: 0) {
                 Spacer(minLength: topLimit)
-                // About four fifths of an upright screen wide.
-                titleBlock(width: (size.width * Self.tallTitleShare).rounded(), maxHeight: heroTop - topLimit - 40,
-                           wreathMaxWidth: size.width)
+                // About 94% of an upright screen wide, as in the reference, unless that is too tall.
+                // The tagline may run down over the tree tops by up to `sceneryOverlap`, as in the
+                // reference (the pill sits level with the big tree's crown), so the logo keeps its width.
+                titleBlock(width: (size.width * Self.tallTitleShare).rounded(),
+                           maxHeight: scenery + Self.sceneryOverlap - topLimit)
                     .fixedSize(horizontal: false, vertical: true)
             }
             // Bottom-aligned within the band while it fits; a taller block keeps its top and runs on.
@@ -85,9 +87,10 @@ struct MenuView: View {
         let width = min(400, titleWidth, size.width * Self.wideHeroPlace - leading - size.width * 0.16)
         let top = insets.top + Self.titleClearance
         let bottom = max(insets.bottom, 10) + 8
-        let titleHeight = max(90, size.height - top - bottom - Self.actionsHeight - 44)
+        // Title and tagline share what the buttons and the column's spacing leave.
+        let titleHeight = max(90, size.height - top - bottom - Self.actionsHeight - 16)
         return VStack(spacing: 8) {
-            titleBlock(width: titleWidth, maxHeight: titleHeight, wreathMaxWidth: size.width * 0.5)
+            titleBlock(width: titleWidth, maxHeight: titleHeight)
             Spacer(minLength: 0)
             actions(width: width)
         }
@@ -101,18 +104,31 @@ struct MenuView: View {
     private static let actionsHeight: CGFloat = 58 + 10 + 66
     /// Share of the screen width the title spans: upright, and in the left column on its side.
     private static let rowGap: CGFloat = 12
-    private static let tallTitleShare: CGFloat = 0.8
+    private static let tallTitleShare: CGFloat = 0.94
     private static let wideTitleShare: CGFloat = 0.4
     /// Space kept between the safe area's top and the cat's ear tips.
     private static let titleClearance: CGFloat = 24
-    /// Space between the tagline and the scene's tree tops.
+    /// Space between the tagline and the scene's tree tops, when the title block is short enough.
     private static let sceneryGap: CGFloat = 8
+    /// Most the tagline may run down over the tree tops (drawn in front of the scene) upright.
+    private static let sceneryOverlap: CGFloat = 45
 
-    /// The title in its wreath with the hero peeking over it, and the tagline under it.
-    private func titleBlock(width: CGFloat, maxHeight: CGFloat, wreathMaxWidth: CGFloat) -> some View {
+    /// Height the tagline pill takes under the title, with the gap above it.
+    private static let taglineHeight: CGFloat = 30
+
+    /// The title art from the reference (the peeking cat, the leaf wreath, the lettering with the paw
+    /// "O" and the fish, as one image; not pixel-grid art, so scaled smoothly), then the tagline.
+    /// The image is `width` wide unless the block would be taller than `maxHeight`, when it shrinks.
+    /// The words still come from Lore.json for VoiceOver.
+    private func titleBlock(width: CGFloat, maxHeight: CGFloat) -> some View {
         VStack(spacing: 4) {
-            WreathTitle(text: model.text("game.title"), wreath: "title_wreath", width: width, maxHeight: maxHeight,
-                        topper: [.titleCat, .peek, .idle], wreathMaxWidth: wreathMaxWidth, fish: true, paw: true)
+            Image("title_start")
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(maxWidth: width, maxHeight: max(60, maxHeight - Self.taglineHeight))
+                .accessibilityLabel(model.text("game.title"))
+                .accessibilityAddTraits(.isHeader)
             Text(model.text("game.tagline"))
                 .font(.pixel(13))
                 .foregroundStyle(Color.menuPaper)

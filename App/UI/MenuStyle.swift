@@ -263,9 +263,8 @@ struct OutlinedText: View {
 }
 
 /// A heading in the chunky pixel lettering (see `LogoTitle`): the first of two lines cream, the rest
-/// yellow-to-orange (or every line, with `allGradient`), or one flat `tint` for numerals. `size` is
-/// roughly the height of one line in points; a heading too wide for its space steps down whole
-/// pixels until it fits. With `paw` the last "O" of the last line is the paw icon.
+/// yellow-to-orange, or one flat `tint` for numerals. `size` is roughly the height of one line in
+/// points; a heading too wide for its space steps down whole pixels until it fits.
 struct PixelTitle: View {
     let text: String
     let size: CGFloat
@@ -273,18 +272,16 @@ struct PixelTitle: View {
     var tint: Color?
     /// Text with at least this many words is set on two lines.
     var splitFrom = 3
-    var allGradient = false
-    var paw = false
 
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        let lines = LogoTitle.lines(text, splitFrom: splitFrom, allGradient: allGradient, tint: tint)
+        let lines = LogoTitle.lines(text, splitFrom: splitFrom, tint: tint)
         let preferred = max(1, Int((size * displayScale / 16).rounded()))
         ViewThatFits(in: .horizontal) {
             ForEach(Array((1...preferred).reversed()), id: \.self) { sub in
                 // Numerals stay straight; headings bend like the logo.
-                LogoTitle(lines: lines, sub: sub, paw: paw, arch: tint == nil)
+                LogoTitle(lines: lines, sub: sub, arch: tint == nil)
             }
         }
         .accessibilityAddTraits(.isHeader)
@@ -336,11 +333,6 @@ private enum OpaqueBoundsCache {
     static var values: [String: CGRect?] = [:]
 }
 
-/// A logo-style heading in the pixel lettering, with the hero on top of it (resting on the letters,
-/// or standing behind them), optionally a sunburst behind the hero, a fish just past the last line,
-/// leaves drifting round it, and a wreath sprite framing the letters from behind. The letters take
-/// the largest whole-pixel size that fits `width` × `maxHeight` with the hero included; the hero is
-/// scaled (whole pixels) so its head is about one line of lettering tall. Missing sprites are left out.
 /// A figure that can sit on a title: a sprite animation, how much of its drawn height is head, and
 /// how tall that head should be against the title.
 struct TitleFigure {
@@ -351,19 +343,20 @@ struct TitleFigure {
     /// Head height as a share of the title's height.
     var headOfTitle: CGFloat = 0.5
 
-    /// The start screen's close-up cat, its head about half the title (the bottom rows are paws and cape).
-    static let titleCat = TitleFigure(sprite: "title_cat", animation: "blink", headShare: 0.8, headOfTitle: 0.475)
-    /// The hero lying along the top of the title (21 of its 23 drawn rows are head).
-    static let peek = TitleFigure(sprite: "hero", animation: "peek", headShare: 0.91, headOfTitle: 0.5)
     static let cheer = TitleFigure(sprite: "hero", animation: "cheer", headShare: 0.94, headOfTitle: 0.5)
     static let idle = TitleFigure(sprite: "hero", animation: "idle", headShare: 0.94, headOfTitle: 0.5)
 }
 
+/// A logo-style heading in the pixel lettering (the level-complete title): the hero standing behind
+/// it, optionally a sunburst behind the hero and a fish just past the last line, and a wreath sprite
+/// framing the letters from behind. The letters take the whole-pixel size nearest `width` that fits
+/// `maxHeight` with the hero included; the hero is scaled (whole pixels) so its head is its chosen
+/// share of the title. Missing sprites are left out.
 struct WreathTitle: View {
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
     let text: String
-    var wreath = "title_wreath"
+    var wreath = "title_wreath_small"
     let width: CGFloat
     let maxHeight: CGFloat
     /// The figure over the title: the first of these that is drawn; empty for none.
@@ -371,13 +364,8 @@ struct WreathTitle: View {
     /// Share of the figure's drawn height that stands behind the letters. 0: it rests on top of them
     /// (paws on the outline) and never covers a letter.
     var topperSink: CGFloat = 0
-    /// Widest the wreath should be (points), usually the screen; nil for no limit.
-    var wreathMaxWidth: CGFloat?
     var sunburst = false
     var fish = false
-    var leaves = false
-    var paw = false
-    var allGradient = false
     var splitFrom = 2
 
     private var library: SpriteLibrary { model.sprites }
@@ -406,10 +394,9 @@ struct WreathTitle: View {
 
     var body: some View {
         let scale = max(displayScale, 1)
-        let lines = LogoTitle.lines(text, splitFrom: splitFrom, allGradient: allGradient, tint: nil)
+        let lines = LogoTitle.lines(text, splitFrom: splitFrom, tint: nil)
         let fishSize = fish ? library.sheet("fish").map { (Int($0.width), Int($0.height)) } : nil
-        let hasPaw = paw && library.sheet("icon_paw") != nil
-        let metrics = LogoTitle.metrics(lines, paw: hasPaw, fish: fishSize)
+        let metrics = LogoTitle.metrics(lines, fish: fishSize)
         let figure = figure
         // Whole device pixels per sub-pixel make the sizes coarse steps, so take the one nearest the
         // width asked for (never more than 6% over it) whose height, figure included, fits.
@@ -434,16 +421,13 @@ struct WreathTitle: View {
                     .padding(.bottom, -(CGFloat(metrics.firstLineTop) * unit
                         + figure.bounds.height * CGFloat(figureScale(figure, sub: sub, titleHeight: metrics.height)) / scale * topperSink))
             }
-            LogoTitle(lines: lines, sub: sub, paw: hasPaw, fish: fish)
+            LogoTitle(lines: lines, sub: sub, fish: fish)
                 .background {
                     // Centred on the lettering (not the fish, not the shadow under it).
                     wreathView(letters: CGSize(width: metrics.lettersWidth * sub,
                                                height: (metrics.height - LogoLayout.shadow) * sub))
                         .offset(x: (metrics.lettersCenter - CGFloat(metrics.width) / 2) * unit,
                                 y: -CGFloat(LogoLayout.shadow) * unit / 2)
-                }
-                .overlay {
-                    if leaves { DriftingLeaves(pixelScale: sub) }
                 }
                 .zIndex(topperSink > 0 ? 1 : 0)
         }
@@ -471,17 +455,11 @@ struct WreathTitle: View {
     /// The plain box in the middle of each wreath sprite that the lettering goes in, in wreath pixels
     /// (from the artist); the big leaf fans (or the stone's rim) are round it.
     static let titleBoxes: [String: CGSize] = [
-        "title_wreath": CGSize(width: 230, height: 64),
         "title_wreath_small": CGSize(width: 192, height: 54),
-        "title_wreath_stone": CGSize(width: 206, height: 88),
     ]
 
     /// The wreath behind the letters (sizes in device pixels) at the smallest whole-pixel scale whose
-    /// title box holds them, so the leaf fans reach past the title. If that wreath would be much wider
-    /// than `wreathMaxWidth` (the screen), one scale smaller, as long as the letters overhang its box
-    /// by no more than a tenth across (a fifth up and down): they then cover only the inner edge of
-    /// the fans, and the whole wreath
-    /// stays on screen instead of losing its fans off both edges.
+    /// title box holds them, so the leaf fans reach past the title.
     @ViewBuilder
     private func wreathView(letters: CGSize) -> some View {
         if let sheet = library.sheet(wreath) {
@@ -492,12 +470,7 @@ struct WreathTitle: View {
 
     private func wreathScale(sheet: SpriteLibrary.Sheet, letters: CGSize) -> Int {
         let box = Self.titleBoxes[wreath] ?? CGSize(width: sheet.width * 0.86, height: sheet.height * 0.76)
-        let holding = max(Int((letters.width / box.width).rounded(.up)), Int((letters.height / box.height).rounded(.up)), 1)
-        guard let maxWidth = wreathMaxWidth, holding > 1,
-              sheet.width * CGFloat(holding) > maxWidth * max(displayScale, 1) * 1.04 else { return holding }
-        let smaller = holding - 1
-        let fits = letters.width <= box.width * CGFloat(smaller) * 1.1 && letters.height <= box.height * CGFloat(smaller) * 1.2
-        return fits ? smaller : holding
+        return max(Int((letters.width / box.width).rounded(.up)), Int((letters.height / box.height).rounded(.up)), 1)
     }
 }
 
@@ -516,32 +489,6 @@ private struct Sunburst: View {
                 .opacity(0.75 + 0.25 * sin(phase * 2))
         }
         .fixedSize()
-        .allowsHitTesting(false)
-    }
-}
-
-/// A few leaves floating around a wreath, swaying on their own rhythms.
-private struct DriftingLeaves: View {
-    let pixelScale: Int
-    private static let spots: [(x: CGFloat, y: CGFloat, phase: Double, flipped: Bool)] = [
-        (-0.04, 0.12, 0, false), (1.03, 0.2, 1.3, true), (0.02, 0.92, 2.1, true),
-        (0.93, -0.06, 0.7, false), (1.06, 0.96, 2.8, false), (0.12, -0.1, 3.4, true),
-    ]
-
-    var body: some View {
-        GeometryReader { proxy in
-            TimelineView(.animation(minimumInterval: 1 / 20)) { context in
-                let time = context.date.timeIntervalSinceReferenceDate
-                ZStack {
-                    ForEach(Self.spots.indices, id: \.self) { index in
-                        let spot = Self.spots[index]
-                        PixelSprite(sprite: "leaf_drift", pixelScale: pixelScale, flipped: spot.flipped)
-                            .position(x: proxy.size.width * spot.x + 4 * sin(time * 0.9 + spot.phase),
-                                      y: proxy.size.height * spot.y + 5 * sin(time * 1.3 + spot.phase * 2))
-                    }
-                }
-            }
-        }
         .allowsHitTesting(false)
     }
 }
