@@ -19,8 +19,9 @@ from existing books, films or games.
 4. **Art is code.** Never hand-edit PNGs under `Assets.xcassets/Sprites.spriteatlas` or
    `Sprites.json`; change `Tools/sprites/characters/*.py` and run the build. Output must be
    byte-identical between runs (use `draw.noise(seed)`, never `random`). The exceptions are the
-   app icon and the game-over title, cut by the build (`export.py`) from the user's paintings
-   `Tools/sprites/icon_source.png` and `game_over_source.png`.
+   app icon and the start and game-over titles, cut by the build (`export.py`: `icon_scene`,
+   `TITLES`) from the user's paintings `Tools/sprites/icon_source.png`, `start_source.png` and
+   `game_over_source.png`.
 5. **Every level must be beatable without taking a hit.** `swift test` proves it with a bot playing
    on one heart. If a level fails, fix the level or the boss pattern — not the bot or the test.
 6. **Never cut a piece out of a sprite texture in code** (`SKTexture(rect:in:)`). On a real device
