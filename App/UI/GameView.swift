@@ -190,9 +190,10 @@ private struct HUDView: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(.black.opacity(0.45), in: Capsule())
-                .padding(.top, 52)
-                .padding(.trailing, 8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                // Bottom centre: between the corner buttons in both orientations, clear of every
+                // control and of the boss banner at the top.
+                .padding(.bottom, 4)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             #endif

@@ -580,14 +580,17 @@ final class GameScene: SKScene {
     /// Ledges live with the actors (the kitten stands on them); they do not depend on screen size.
     private func buildPlatforms() {
         for (index, platform) in world.platforms.enumerated() {
-            let name = platform.kind ?? "bridge"
+            let kind = platform.kind ?? "bridge"
+            // The level's own look of the piece (`island_citadel`, `bridge_frost`, …) when drawn.
+            let themed = "\(kind)_\(world.level.background)"
+            let name = library.sheet(themed) != nil ? themed : kind
             let sheet = library.sheet(name)
             let tileSize = CGSize(width: sheet?.width ?? 48, height: sheet?.height ?? 8)
             let node = SKNode()
             node.zPosition = 1
             var tiles: [SKSpriteNode] = []
             // A floating island is one drawn piece, centred on the ledge; the rest repeat their tile.
-            let lefts = name == "island" ? [((platform.width - Double(tileSize.width)) / 2).rounded()]
+            let lefts = kind == "island" ? [((platform.width - Double(tileSize.width)) / 2).rounded()]
                 : Self.tileOffsets(span: platform.width, tile: Double(tileSize.width))
             for left in lefts {
                 let tile = SKSpriteNode(texture: nil, color: sheet == nil ? .magenta : .clear, size: tileSize)
@@ -1355,19 +1358,19 @@ final class GameScene: SKScene {
             var texture: SKTexture?
             switch (platform.mode, state) {
             case (_, .solid):
-                texture = (library.textures(view.sprite, "still").first ?? library.textures(view.sprite, "solid").first)
+                texture = (platformFrames(view, "still").first ?? platformFrames(view, "solid").first)
             case (.blinks, .crumbling):
-                let frames = library.textures(view.sprite, "fading")
+                let frames = platformFrames(view, "fading")
                 texture = frames.isEmpty ? nil : frames[Int(world.time * 8) % frames.count]
             case (_, .crumbling):
-                let frames = library.textures(view.sprite, "crumble")
+                let frames = platformFrames(view, "crumble")
                 let elapsed = world.time - (crumbleStart[view.index] ?? world.time)
                 let span = platform.crumbleAfter ?? Platform.defaultCrumbleAfter
                 // All but the last frame while it still holds; the last one as it drops away.
                 let index = Int(elapsed / span * Double(max(frames.count - 1, 1)))
                 texture = frames.isEmpty ? nil : frames[min(index, max(frames.count - 2, 0))]
             case (.crumbles, .gone):
-                let frames = library.textures(view.sprite, "crumble")
+                let frames = platformFrames(view, "crumble")
                 let goneAt = (crumbleStart[view.index] ?? 0) + (platform.crumbleAfter ?? Platform.defaultCrumbleAfter)
                 texture = world.time - goneAt < 0.15 ? frames.last : nil
             case (_, .gone):
@@ -1377,6 +1380,14 @@ final class GameScene: SKScene {
                 || view.node.position.x + CGFloat(platform.width) < 0
             for tile in view.tiles { tile.texture = texture }
         }
+    }
+
+    /// A ledge's frames for `animation`, from its themed sprite, or from the plain one if the themed
+    /// sprite does not have that animation (its crumble frames, say) yet.
+    private func platformFrames(_ view: PlatformView, _ animation: String) -> [SKTexture] {
+        let frames = library.textures(view.sprite, animation)
+        guard frames.isEmpty else { return frames }
+        return library.textures(world.platforms[view.index].kind ?? "bridge", animation)
     }
 
     /// A node for `hazard`: the sprite of what threw it, or of its own kind; lingering ones (a lava

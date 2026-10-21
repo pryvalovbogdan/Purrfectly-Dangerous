@@ -36,6 +36,8 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | milk | 32×6 | still 1 (tiles horizontally; its bottom 3 rows sit on the turf) |
 | bridge | 48×12 | still 1, crumble 4 (walk surface = top row) |
 | island | 48×24 | still 1. Floating island: grassy top (walk surface = top row, placed like `bridge`: frame top on the platform's y), rounded earth-and-rock underside, vines to row 23. One per platform, not tiled |
+| island_frost, island_haunted, island_citadel | 48×24 | still 1. Themed versions of `island` (same size, anchor and walk row): a snow-capped icy rock with icicles; a violet masonry chunk with candles in niches and a purple glow; a charred rock with glowing cracks and lava drips. The renderer uses `<kind>_<theme>` when it exists |
+| bridge_citadel | 48×12 | still 1, crumble 4. The citadel's `bridge`: charred planks on an iron girder, an iron post wrapped in chain, chains hanging in swags (walk surface = top row) |
 | terrain_forest_top | 16×16 | still 1. Raised/sunken ground surface; tiles horizontally; walk surface = top row; opaque |
 | terrain_forest_edge | 8×16 | still 1. Left end cap (mirror for the right); top row level with `terrain_forest_top`'s |
 | terrain_forest_wall | 8×16 | still 1. Left side face below the cap (mirror for the right); tiles vertically |
