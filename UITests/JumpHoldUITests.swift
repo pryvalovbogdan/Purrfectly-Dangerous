@@ -44,8 +44,8 @@ final class JumpHoldUITests: XCTestCase {
         let summary = "\(orientation == .portrait ? "portrait" : "landscape") touch at \(offset): tap apex \(tapped), hold apex \(held)"
         print("JUMP-UITEST \(summary)")
         add(XCTAttachment(string: summary))
-        // A tap is cut early (about 32 units); held, the jump runs its full rise (about 48).
-        XCTAssertGreaterThan(held, tapped + 12, summary)
+        // A tap peaks at about 24 units; held for 0.5 s (past the whole hold boost), about 63.
+        XCTAssertGreaterThan(held, tapped + 25, summary)
     }
 
     /// Does `action`, waits for the jump to land, and returns its apex from the readout.

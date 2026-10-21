@@ -2,25 +2,74 @@ import Testing
 @testable import GameCore
 
 @Suite struct WorldTests {
-    @Test func holdingJumpGoesHigherThanTapping() {
-        func apex(held: Bool) -> Double {
-            var world = RunnerWorld(level: flatLevel(), boss: nil)
-            var top = 0.0
-            var input = Input(jumpPressed: true, jumpHeld: held)
-            for _ in 0..<90 {
-                _ = world.step(input, dt: dt)
-                input.jumpPressed = false
-                top = max(top, world.heroY)
-            }
-            #expect(world.onGround)
-            return top
+    /// Apex of one jump from flat ground: the button held for `hold` seconds after the press (0: a
+    /// tap, released by the first step).
+    func apex(hold: Double, stats: HeroStats = HeroStats()) -> Double {
+        var world = RunnerWorld(level: flatLevel(), boss: nil, stats: stats)
+        _ = world.run(0.3)
+        var top = 0.0
+        var elapsed = 0.0
+        _ = world.step(Input(jumpPressed: true, jumpHeld: hold > 0), dt: dt)
+        while !world.onGround, !world.isOver {
+            elapsed += dt
+            _ = world.step(Input(jumpHeld: elapsed < hold), dt: dt)
+            top = max(top, world.heroY)
         }
-        let tap = apex(held: false)
-        let hold = apex(held: true)
-        // Even a tap rises long enough to hop a low step; holding still goes clearly higher.
-        #expect(tap > 28)
-        #expect(hold > tap + 12)
-        #expect(hold > ItemKind.stump.spec.height)
+        return top
+    }
+
+    @Test func holdingJumpGoesClearlyHigherThanTapping() {
+        let tuning = Tuning()
+        let tap = apex(hold: 0)
+        let hold = apex(hold: 1)
+        let short = apex(hold: 0.1)
+        // A tap still clears a bush with room to spare, and peaks low.
+        #expect(tap <= 30)
+        #expect(tap > ItemKind.bush.spec.height + 8)
+        // A full hold is a big jump, well over a tall stump.
+        #expect(hold >= 60)
+        #expect(hold > tap + 30)
+        // In between, the longer the hold the higher.
+        #expect(short > tap + 5 && short < hold - 5)
+        // The validator's numbers come from the same physics.
+        #expect(abs(tap - tuning.tapApex) < 3)
+        #expect(abs(hold - tuning.jumpApex) < 3)
+    }
+
+    /// Letting go ends the boost; the speed already gained is kept (no cut), so a release mid-rise
+    /// never stalls the kitten in the air.
+    @Test func releasingEndsTheBoostWithoutCuttingTheSpeed() {
+        let tuning = Tuning()
+        var world = RunnerWorld(level: flatLevel(), boss: nil)
+        _ = world.run(0.3)
+        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        _ = world.run(0.08, Input(jumpHeld: true))
+        let held = world.heroVY
+        _ = world.step(Input(), dt: dt)
+        #expect(abs(world.heroVY - (held - tuning.gravity * dt)) < 1e-9)
+        // Pressing again does not bring the boost back.
+        let released = world.heroVY
+        _ = world.step(Input(jumpHeld: true), dt: dt)
+        #expect(abs(world.heroVY - (released - tuning.gravity * dt)) < 1e-9)
+    }
+
+    /// A Double Pounce is always a full one, whether or not the button is held.
+    @Test func aDoublePounceIsAlwaysFullHeight() {
+        let tuning = Tuning()
+        func gain(held: Bool) -> Double {
+            var world = RunnerWorld(level: flatLevel(), boss: nil, stats: HeroStats(xp: Progression.xp(forLevel: 3)))
+            _ = world.run(0.3)
+            _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            while world.heroVY > 0 { _ = world.step(Input(jumpHeld: true), dt: dt) }
+            let start = world.heroY
+            _ = world.step(Input(jumpPressed: true, jumpHeld: held), dt: dt)
+            var top = start
+            while !world.onGround { _ = world.step(Input(jumpHeld: held), dt: dt); top = max(top, world.heroY) }
+            return top - start
+        }
+        let expected = tuning.heldRise(from: tuning.jumpVelocity * tuning.doubleJumpScale).height
+        #expect(abs(gain(held: false) - expected) < 3)
+        #expect(abs(gain(held: true) - expected) < 3)
     }
 
     /// Tapping jump twice in a row: a second tap in the falling half of a hop is kept until the feet
@@ -152,10 +201,11 @@ import Testing
     @Test func theHeroBouncesOffAStompedEnemy() {
         var world = RunnerWorld(level: flatLevel(items: [.init(at: 200, kind: .squirrel)]), boss: nil)
         var bouncedUp = false
-        // Jump late enough to come down on its head: a squirrel closes at 120 u/s, a jump lasts 0.67 s.
+        // Jump late enough to come down on its head: a squirrel closes at 120 u/s, and a held jump is
+        // back down at its head height about 0.75 s later.
         while world.time < 3 {
             let gap = (world.entities.first?.x ?? 1000) - world.distance
-            let jump = world.onGround && gap < 62 && gap > 50
+            let jump = world.onGround && gap < 100 && gap > 84
             let step = world.step(Input(jumpPressed: jump, jumpHeld: true), dt: dt)
             if step.contains(where: { if case .stomped = $0 { true } else { false } }) { bouncedUp = world.heroVY > 0 }
         }

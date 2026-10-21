@@ -14,8 +14,8 @@ The kitten runs automatically; the level scrolls toward it at the level's speed.
 
 | Input | Action |
 | --- | --- |
-| Jump button (bottom right) | Jump. Hold for higher, release early for a short hop. Even a tap rises for 0.12 s first (about 30 units), and a jump taken with a step in reach ahead is always full height. A press on the way down from a jump (or a knock-back hop) is kept for 0.3 s, so tapping twice in a row hops again on landing. Dropping off a ledge or step keeps only the usual 0.1 s, so a press there is saved for the next obstacle instead of firing on touchdown. |
-| Jump again in the air | **Double Pounce** (kitten level 3+): a second, full-height jump. |
+| Jump button (bottom right) | Jump; **how long it is held decides how high** (a Mario-style variable jump). A press takes off at a modest speed: a tap peaks at about 24, enough for a bush or a low step. While the button stays held, gravity is reduced to a quarter for up to 0.28 s after take-off, so a full hold peaks at about 63 (a 0.1 s hold about 42, 0.2 s about 55). Letting go ends that boost at once, with no cut to the speed already gained; pressing again does not bring it back. There is no automatic full jump in front of steps: a tap bumps off a 40-high step, a hold climbs it. A jump from slick ground always gets the whole boost. A press on the way down from a jump (or a knock-back hop) is kept for 0.3 s, so tapping twice in a row hops again on landing. Dropping off a ledge or step keeps only the usual 0.1 s, so a press there is saved for the next obstacle instead of firing on touchdown. |
+| Jump again in the air | **Double Pounce** (kitten level 3+): a second jump that always gets its whole boost, held or not (about 36 more; a full hold plus a Double Pounce at its top reaches about 98). |
 | Throw button (bottom left) | **Yarn Shot** (kitten level 2+): a ball of yarn thrown forward. |
 | Paw button (above throw), tap | **Ghost Dash** (kitten level 4+): ~0.35 s intangible to enemies, projectiles and hazards (not to ravines). Cooldown ~1.5 s. |
 | Paw button, hold then release | **Super Pounce** (kitten level 5): a long forward leap. Every walking/rolling enemy it touches is defeated and a `crate_wall` it touches breaks. Uses the charge timing the old charged shot used. |
@@ -53,10 +53,10 @@ Levels can raise blocks of ground (mossy earth in the forest) or sink dips into 
 the level file). Everything stands on the ground where it is: the kitten, enemies, traps and fish.
 
 - **Bump back.** Running into the face of a step more than 4 above its feet, on the ground or in
-  the air, knocks the kitten back: a squash, dust kicked off the face, and 0.22 s moving backwards at
+  the air, knocks the kitten back: a squash, dust kicked off the face, and 0.26 s moving backwards at
   120 units/s (with a small hop if it was on the ground; a Double Pounce is still there). `distance`
   shrinks meanwhile and the scenery scrolls back. It then holds its place until it lands (or jumps
-  again) and runs on, with a fresh run-up of about 26: enough for a full jump pressed on the way down
+  again) and runs on, with a fresh run-up of about 31: enough for a held jump pressed on the way down
   to climb a 44 step at speed 140. No heart is lost and the immunity timer is untouched. The knockback
   never carries the kitten's middle over a ravine (it stops at the rim) nor its back into the face of
   a higher step behind. A lip of 4 or less is walked onto. A dip's far wall works the same way.
@@ -66,7 +66,8 @@ the level file). Everything stands on the ground where it is: the kitten, enemie
   height above the ground below them. Things that fall land on the local ground.
 - Thrown things and yarn break on the face of a step; a rolling acorn or spore drops off a step
   down and rolls on.
-- Climbable: one jump climbs a step of up to 44; with Double Pounce (kitten level 3) up to 84. The
+- Climbable: one held jump climbs a step of up to 58; with Double Pounce (kitten level 3) any step
+  allowed (blocks are at most 60). The
   validator checks every rise against the level guaranteed there, and fails a level where the bot
   bounces off the same face more than 3 times, is held back by one for more than 4 s (from the first
   bounce until it is past the face), or makes no progress at all for 4 s.

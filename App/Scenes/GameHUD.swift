@@ -48,4 +48,6 @@ final class GameHUD {
     /// where it started, in world units. Read by the jump-height UI test.
     var debugJumpCount = 0
     var debugJumpApex = 0.0
+    /// Seconds the button stayed held from that jump's press (debug readout).
+    var debugJumpHeld = 0.0
 }

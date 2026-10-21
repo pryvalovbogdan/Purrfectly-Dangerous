@@ -625,6 +625,9 @@ final class GameScene: SKScene {
     private var tracingJump = false
     /// The hero's height before the current step, so a jump is measured from where it left.
     private var preStepY = 0.0
+    /// How long the button stayed held from the jump's press, and whether it still is.
+    private var jumpHeldFor = 0.0
+    private var holdingJump = false
     #endif
 
     func setFire(held: Bool) {
@@ -668,6 +671,9 @@ final class GameScene: SKScene {
             handle(world.step(input, dt: Self.step))
             #if DEBUG
             if tracingJump { jumpApex = max(jumpApex, world.heroY) }
+            if holdingJump {
+                if input.jumpHeld { jumpHeldFor += Self.step } else { holdingJump = false }
+            }
             #endif
             if moving { scroll += world.runSpeed * Self.step }
         }
@@ -728,6 +734,9 @@ final class GameScene: SKScene {
                     tracingJump = true
                     jumpBaseY = preStepY
                     jumpApex = world.heroY
+                    // The update loop adds this step and each further one the button stays held.
+                    jumpHeldFor = 0
+                    holdingJump = jumpHeld
                 }
                 trace.notice("jumped double=\(double, privacy: .public) worldTime=\(self.world.time, format: .fixed(precision: 3), privacy: .public) vy=\(self.world.heroVY, format: .fixed(precision: 1), privacy: .public) held=\(self.jumpHeld, privacy: .public)")
                 #endif
@@ -744,6 +753,8 @@ final class GameScene: SKScene {
                     let apex = jumpApex - jumpBaseY
                     hud.debugJumpCount += 1
                     hud.debugJumpApex = apex
+                    hud.debugJumpHeld = jumpHeldFor
+                    holdingJump = false
                     trace.notice("landed apex=\(apex, format: .fixed(precision: 1), privacy: .public) worldTime=\(self.world.time, format: .fixed(precision: 3), privacy: .public)")
                 }
                 #endif

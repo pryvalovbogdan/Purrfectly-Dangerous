@@ -265,7 +265,7 @@ public enum LevelValidator {
     /// to land on from a full jump.
     static func surfaceProblems(in level: LevelDefinition, tuning: Tuning) -> [String] {
         var problems: [String] = []
-        let apex = tuning.jumpVelocity * tuning.jumpVelocity / (2 * tuning.gravity)
+        let apex = tuning.jumpApex
         for zone in level.slick ?? [] {
             let name = "slick zone at \(Int(zone.at))"
             if zone.width <= 0 { problems.append("\(name) has no width") }

@@ -24,6 +24,7 @@ esac
 [ -n "$(value CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName)" ] && pass "app icon present" || fail "app icon missing"
 [ -e App/Resources/PrivacyInfo.xcprivacy ] && pass "privacy manifest present" || fail "PrivacyInfo.xcprivacy missing (required: the app reads UserDefaults)"
 strings "$APP/PurrfectlyDangerous" | grep -q -E -- "-autoplay|-uitest-jump" && fail "a debug launch flag is compiled into the Release binary" || pass "no debug launch flags in Release"
+strings "$APP/PurrfectlyDangerous" | grep -q -F -- "held %.2fs" && fail "the debug jump readout is compiled into the Release binary" || pass "no debug jump readout in Release"
 
 [ $FAILED = 0 ] && echo "Ready to archive." || echo "Not ready."
 exit $FAILED

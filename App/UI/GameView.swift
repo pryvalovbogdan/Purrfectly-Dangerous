@@ -32,6 +32,10 @@ struct GameView: View {
                     paw: { scene?.setPaw(held: $0) },
                     quit: { model.quit() })
         }
+        // The buttons sit near the screen's edges: iOS must not hold their touches back (or take
+        // them) for its own edge swipes, nor show the home indicator over them, during play.
+        .defersSystemGestures(on: .all)
+        .persistentSystemOverlays(.hidden)
         // Leaving the app mid-level pauses it, so the player comes back to the resume screen, not a
         // run that carried on (or a hit taken) while they were away.
         .onChange(of: scenePhase) { _, phase in
@@ -177,6 +181,20 @@ private struct HUDView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     .allowsHitTesting(false)
             }
+            // Always on in debug builds, so a hold can be checked on a real device: the last jump's
+            // apex (world units above where it left) and how long the button was held.
+            Text(hud.debugJumpCount == 0 ? "jump – · held –"
+                 : String(format: "jump %.0f · held %.2fs", hud.debugJumpApex, hud.debugJumpHeld))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.black.opacity(0.45), in: Capsule())
+                .padding(.top, 52)
+                .padding(.trailing, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             #endif
             VStack(spacing: 6) {
                 HStack(alignment: .bottom, spacing: 12) {
@@ -293,7 +311,7 @@ private struct HoldButton<Label: View>: View {
     var size: CGFloat = 88
     /// The face, given whether the button is held.
     @ViewBuilder let label: (_ pressed: Bool) -> Label
-    @GestureState private var isPressed = false
+    @State private var isPressed = false
 
     /// Extra touch area round a button of `size`: generous on the small ones too.
     static func padding(for size: CGFloat) -> CGFloat { size >= 88 ? 14 : 12 }
@@ -304,12 +322,120 @@ private struct HoldButton<Label: View>: View {
             .scaleEffect(isPressed ? (pressEffect == .sprite ? 0.96 : 0.92) : 1)
             .opacity(pressEffect == .sprite ? 1 : (isPressed ? 0.9 : 0.55))
             .padding(Self.padding(for: size))
-            .contentShape(Circle())
-            .gesture(DragGesture(minimumDistance: 0).updating($isPressed) { _, pressed, _ in pressed = true })
-            // GestureState resets on release and on cancel, so a lost touch can never stick held.
-            .onChange(of: isPressed) { _, pressed in onChange(pressed) }
-            .onDisappear { if isPressed { onChange(false) } }
+            // Touches come straight from UIKit (a SwiftUI gesture lost holds on a real device: every
+            // jump came out a tap). The pad covers the whole circle, padding included.
+            .overlay {
+                TouchPad { pressed in
+                    guard pressed != isPressed else { return }
+                    isPressed = pressed
+                    onChange(pressed)
+                }
+                .clipShape(Circle())
+            }
+            .onDisappear {
+                if isPressed {
+                    isPressed = false
+                    onChange(false)
+                }
+            }
+            .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isButton)
+            // VoiceOver's double tap: a short press.
+            .accessibilityAction {
+                onChange(true)
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.15))
+                    onChange(false)
+                }
+            }
+    }
+}
+
+/// A transparent UIKit view that reports a press: held from the moment a finger lands on it until
+/// that same finger lifts or the system cancels it, with nothing in between (moving the finger, other
+/// fingers on other buttons) changing that. Hit-tests as a circle filling its bounds.
+private struct TouchPad: UIViewRepresentable {
+    let onChange: (Bool) -> Void
+
+    func makeUIView(context: Context) -> TouchPadView {
+        let view = TouchPadView()
+        view.onChange = onChange
+        return view
+    }
+
+    func updateUIView(_ view: TouchPadView, context: Context) {
+        view.onChange = onChange
+    }
+
+    static func dismantleUIView(_ view: TouchPadView, coordinator: ()) {
+        view.release()
+    }
+}
+
+final class TouchPadView: UIView {
+    var onChange: ((Bool) -> Void)?
+    /// The finger that pressed this button; others are ignored until it lifts.
+    private var touch: UITouch?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isMultipleTouchEnabled = true
+        isExclusiveTouch = false
+        isAccessibilityElement = false
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not used")
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        // Recognizers up the hierarchy (SwiftUI's, the window's) must neither hold a touch back until
+        // they give up on it nor cancel it when they recognise something.
+        var view: UIView? = superview
+        while let current = view {
+            for recognizer in current.gestureRecognizers ?? [] {
+                recognizer.delaysTouchesBegan = false
+                recognizer.delaysTouchesEnded = false
+                recognizer.cancelsTouchesInView = false
+            }
+            view = current.superview
+        }
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let radius = min(bounds.width, bounds.height) / 2
+        return hypot(point.x - bounds.midX, point.y - bounds.midY) <= radius
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard touch == nil, let first = touches.first else { return }
+        touch = first
+        onChange?(true)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {}
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        lift(touches)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        lift(touches)
+    }
+
+    private func lift(_ touches: Set<UITouch>) {
+        guard let touch, touches.contains(touch) else { return }
+        release()
+    }
+
+    /// Lets go (the finger lifted, or the button is going away).
+    func release() {
+        guard touch != nil else { return }
+        touch = nil
+        onChange?(false)
     }
 }
 

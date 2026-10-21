@@ -377,19 +377,22 @@ import Testing
         events.contains { if case .enemyDefeated(_, kind: kind) = $0 { true } else { false } }
     }
 
-    /// Jumps once when the gap to `kind` falls below each take-off distance in turn; returns the
-    /// events of every attempt that stomped it.
+    /// Jumps once when the gap to `kind` falls below each take-off distance in turn, as a tap, a
+    /// short hold and a full hold; returns the events of every attempt that stomped it.
     func stompAttempts(_ kind: ItemKind, at: Double = 400) -> [[GameEvent]] {
-        stride(from: 20.0, to: 90, by: 2).compactMap { takeOff in
-            var world = RunnerWorld(level: flatLevel(items: [.init(at: at, kind: kind)]), boss: nil)
-            var jumped = false
-            var events: [GameEvent] = []
-            while world.time < 6, !world.isOver {
-                let jump = !jumped && gap(world, kind) < takeOff
-                jumped = jumped || jump
-                events += world.step(Input(jumpPressed: jump, jumpHeld: true), dt: dt)
+        [0.0, 0.12, 1].flatMap { hold in
+            stride(from: 20.0, to: 90, by: 2).compactMap { takeOff -> [GameEvent]? in
+                var world = RunnerWorld(level: flatLevel(items: [.init(at: at, kind: kind)]), boss: nil)
+                var jumpedAt: Double?
+                var events: [GameEvent] = []
+                while world.time < 6, !world.isOver {
+                    let jump = jumpedAt == nil && gap(world, kind) < takeOff
+                    if jump { jumpedAt = world.time }
+                    let held = jumpedAt.map { world.time - $0 < hold } ?? false
+                    events += world.step(Input(jumpPressed: jump, jumpHeld: held), dt: dt)
+                }
+                return events.contains { if case .stomped = $0 { true } else { false } } ? events : nil
             }
-            return events.contains { if case .stomped = $0 { true } else { false } } ? events : nil
         }
     }
 
@@ -533,8 +536,12 @@ import Testing
         #expect(late.contains { if case .yarnBounced = $0 { true } else { false } })
         #expect(!defeated(late, .snailCat))
 
-        // Landing on the hidden shell is a safe bounce: no hit, and the snail stays.
-        let landings = stompAttempts(.snailCat)
+        // Landing on the hidden shell is a safe bounce: no hit, and the snail stays. (A hop too low
+        // to come down on top can clip the shell's face first; that is a hit, not a landing.)
+        let landings = stompAttempts(.snailCat).filter { events in
+            let stomp = events.firstIndex { if case .stomped = $0 { true } else { false } }!
+            return !hit(Array(events[..<stomp]))
+        }
         #expect(!landings.isEmpty)
         for events in landings {
             #expect(!hit(events))
@@ -1145,10 +1152,11 @@ import Testing
         #expect(!LevelValidator.botRun(lower, boss: nil).finished)
     }
 
-    /// A vent that is firing just as the kitten passes is too tall for one jump. With a feeble second
-    /// jump (test tuning) only a Ghost Dash gets through, and the bot must find it.
+    /// A vent that is firing just as the kitten passes. With feeble jumps (test tuning: no hold boost
+    /// and a weak second jump) only a Ghost Dash gets through, and the bot must find it.
     @Test func botDashesThroughWhatNoJumpClears() {
         var tuning = Tuning()
+        tuning.holdBoost = 0
         tuning.doubleJumpScale = 0.3
         var level = flatLevel(items: [.init(at: 300, kind: .vent)], length: 800, entry: 3, reward: 3)
         #expect(!LevelValidator.botRun(level, boss: nil, tuning: tuning).finished)

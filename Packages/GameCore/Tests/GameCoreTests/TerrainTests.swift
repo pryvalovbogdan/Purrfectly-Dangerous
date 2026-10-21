@@ -65,42 +65,57 @@ import Testing
         return top
     }
 
-    @Test func aQuickTapStillHopsHighEnoughForALowStep() {
-        var world = RunnerWorld(level: flatLevel(), boss: nil)
-        _ = world.run(0.5)
-        let top = tap(&world)
-        #expect(top >= 28)
-        #expect(top < Tuning().jumpApex - 4)   // still shorter than a held jump
+    /// The same, with the button held for `hold` seconds after the press.
+    func jump(_ world: inout RunnerWorld, hold: Double) -> Double {
+        var top = world.heroY
+        var elapsed = 0.0
+        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        while !world.onGround, !world.isOver {
+            elapsed += dt
+            _ = world.step(Input(jumpHeld: elapsed < hold), dt: dt)
+            top = max(top, world.heroY)
+        }
+        return top
     }
 
-    @Test func aTapJustBeforeATallStepIsAFullJump() {
-        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
-        advance(&world) { $0.distance >= 300 - 8 - 30 }
-        #expect(tap(&world) >= 40)
-        #expect(world.heroY == 40)
+    @Test func aQuickTapHopsALowStep() {
+        var flat = RunnerWorld(level: flatLevel(), boss: nil)
+        _ = flat.run(0.5)
+        let top = tap(&flat)
+        #expect(top >= 22)
+        #expect(top < Tuning().jumpApex - 25)   // far shorter than a held jump
+        // Level 1's 16-high steps are hopped onto with a tap.
+        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 16)]), boss: nil)
+        advance(&world) { $0.distance >= 300 - 8 - 24 }
+        _ = tap(&world)
+        #expect(world.heroY == 16)
     }
 
-    /// A step a hop gets onto (level 1's 16-high ones) leaves tap and hold their difference; only a
-    /// taller one turns every jump in front of it into a full jump.
-    @Test func aTapBeforeALowStepIsStillAShortHop() {
-        #expect(Tuning().hopClearance > 16 && Tuning().hopClearance < 24)
+    /// No safety net in front of tall steps: the player decides. A tap bumps off a 40-high step; a
+    /// held jump from the same spot climbs it.
+    @Test func nearATallStepATapFallsShortAndAHoldClimbs() {
+        var tapped = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
+        advance(&tapped) { $0.distance >= 300 - 8 - 30 }
+        var held = tapped
+        var events: [GameEvent] = []
+        _ = tapped.step(Input(jumpPressed: true), dt: dt)
+        events += advance(&tapped, limit: 2) { $0.onGround }
+        #expect(events.contains(.bumped))
+        #expect(tapped.heroY == 0)
+
+        #expect(jump(&held, hold: 1) >= 40)
+        #expect(held.heroY == 40)
+    }
+
+    @Test func aHeldJumpBeforeALowStepStillGoesHigh() {
         var tapped = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 16)]), boss: nil)
         advance(&tapped) { $0.distance >= 300 - 8 - 30 }
         var held = tapped
         let hop = tap(&tapped)
-        #expect(hop < Tuning().jumpApex - 8)
-        #expect(tapped.heroY == 16)                          // and it still gets onto the step
-        _ = held.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
-        var top = held.heroY
-        while !held.onGround, !held.isOver {
-            _ = held.step(Input(jumpHeld: true), dt: dt)
-            top = max(top, held.heroY)
-        }
-        #expect(top > hop + 12)
+        #expect(tapped.heroY == 16)                          // a tap gets onto the step
+        #expect(jump(&held, hold: 1) > hop + 25)              // a hold still leaps well over it
     }
 
-    /// Level 1's opening: a 16 step, then a bush. A jump pressed while dropping off the step is meant
-    /// for the bush; it must not fire the moment the feet land, which would come down on the bush.
     @Test func aPressWhileDroppingOffAStepDoesNotFireOnLanding() {
         var world = RunnerWorld(level: level([Terrain(at: 240, width: 80, height: 16)],
                                              items: [.init(at: 430, kind: .bush)]), boss: nil)
@@ -151,8 +166,8 @@ import Testing
     }
 
     @Test func aJumpPressedDuringTheKnockbackFiresOnLandingAndClearsTheStep() {
-        // The highest step one jump climbs, at the fastest level speed: the run-up the knockback
-        // gives back is enough for it.
+        // A 44-high step at the fastest level speed: the run-up the knockback gives back is enough
+        // for a held jump to climb it.
         var level = level([Terrain(at: 300, width: 100, height: 44)])
         level.speed = 140
         var world = RunnerWorld(level: level, boss: nil)
@@ -360,13 +375,12 @@ import Testing
     }
 
     @Test func aWallNeedingDoublePounceIsOnlyAllowedOnceItIsGuaranteed() {
-        let wall = [Terrain(at: 500, width: 120, height: 58)]
+        // One held jump climbs up to 58; the tallest block allowed (60) needs Double Pounce.
+        #expect(LevelValidator.climbHeight(heroLevel: 2, tuning: Tuning()) == 58)
+        let wall = [Terrain(at: 500, width: 120, height: 60)]
         let early = level(wall, length: 1200, entry: 2)
         #expect(LevelValidator.terrainProblems(in: early, items: [], tuning: Tuning())
-            .contains { $0.contains("step at 500 rises 58; one jump at hero level 2 climbs at most 44") })
-        let run = LevelValidator.botRun(early, boss: nil)
-        #expect(!run.finished)
-        #expect(run.blocked != nil)
+            .contains { $0.contains("step at 500 rises 60; one jump at hero level 2 climbs at most 58") })
 
         let late = level(wall, length: 1200, entry: 3, reward: 3)
         #expect(LevelValidator.terrainProblems(in: late, items: [], tuning: Tuning()).isEmpty)

@@ -104,13 +104,15 @@ Pounce (level 5) defeats any walker or roller it touches and breaks a `crate_wal
 | `terrain[]` | Optional steps in the ground: `at` (left end), `width` (at least 16), `height` above the base ground (positive: a raised block, at most 60; negative: a dip, at most 32 deep). Pieces never overlap; touching ones make a staircase. See below |
 | `ravines[]` | Optional gaps in the ground: `at` is the left rim, `width` how far it spans. Needs sprites `ravine_<theme>`, `ravine_<theme>_fill` and `ravine_<theme>_deep` |
 
-Useful numbers: the kitten's hitbox is 16 wide and 24 tall. A full jump is 50 high and lasts
-0.67 s, so it covers `speed × 0.67` units (≈ 74 at speed 110). A tap hop is about 10 high. A full
-jump plus a Double Pounce at its top lasts about 1.08 s. A Super Pounce is 32 high, lasts 0.53 s
-and adds 140 to the speed while in the air. Leave roughly 110+ units between ground threats.
+Useful numbers: the kitten's hitbox is 16 wide and 24 tall. A full (held) jump is about 63 high and
+lasts 0.83 s, so it covers `speed × 0.83` units (≈ 91 at speed 110). A tap is about 24 high and
+lasts about 0.47 s; holds in between land in between. A full jump plus a Double Pounce at its top
+reaches about 98 and lasts about 1.3 s. One held jump climbs a step of up to 58. A Super Pounce is
+32 high, lasts 0.53 s and adds 170 to the speed while in the air. Leave roughly 110+ units between
+ground threats.
 
-Ravines: a fall ends the run, so the validator caps `width` at 65% of a full jump's reach (47 at
-speed 110, 60 at 140), or of a jump plus Double Pounce once `entryHeroLevel` is 3 or more (≈ 84 at
+Ravines: a fall ends the run, so the validator caps `width` at 65% of a full jump's reach (59 at
+speed 110, 75 at 140), or of a jump plus Double Pounce once `entryHeroLevel` is 3 or more (≈ 101 at
 speed 120), plus the length of any platforms over it; it wants at least 16. Keep them out of the start runway and the last 60
 units, leave 40 of ground between two of them, and put nothing that stands on the ground inside
 one (coins above are fine). Walking enemies turn back at a rim, so one placed between two ravines
