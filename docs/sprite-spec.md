@@ -69,9 +69,10 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | fish | 16×12 | spin 6 |
 | yarn_basket | 28×28 | glow 4 |
 | medal | 32×32 | bronze 1, silver 1, gold 1 |
-| title_wreath | 230×90 | still 1. Clusters of big leaves and a few white flowers peeking out round the outside of the start-screen title: bushy at the two ends, some along the bottom, a few on top. No band or ring; the middle is fully transparent (the lettering covers the leaves' stems) |
-| title_wreath_small | 200×78 | still 1. The same for "level complete" |
-| title_wreath_stone | 230×110 | still 1. Mossy grey boulder behind "game over" with leaf clusters and white flowers round its edge; its middle (about 160×60) is plain stone for the text |
+| title_wreath | 280×110 | still 1. Big broad leaves (10-20 px, midrib, two-tone with a light rim) round a centred 230×64 title box: deep rounded fans at the two ends, a row peeking above the top edge (densest in the middle, behind `title_cat`), some along the bottom, small white flowers with yellow centres. Stems root just inside the box so the lettering hides them; the middle is fully transparent |
+| title_wreath_small | 240×96 | still 1. The same round a 192×54 box, for "level complete" |
+| title_wreath_stone | 250×120 | still 1. Mossy grey boulder behind "game over" (about 206×88; plain stone in the middle for the text) with the same big leaves round it |
+| title_cat | 64×40 | blink 4 (open, open, half, closed). The hero up close peeking over the title, drawn at this size: head and shoulders, both front paws resting on the bottom row, the red cape flaring out to the left. Ground = row 39 (the paws' outline), centred (anchorX 0.5); the head's centre is at x 39. In the reference it is about 1.5× the wreath's pixel scale |
 | menu_scene_portrait | 210×230 | still 1. The start screen's backdrop as one opaque picture for an upright screen (landmarks inside the middle 195 columns, x 7-202, so any screen 195-210 wide shows them whole): tree with a red-roofed house and a cat signpost (left), pines, blue mountains and a river (middle), castle on a cliff with a waterfall, wooden bridges, bushes and flowers (right). Sky drawn in full-row bands; its top rows are `menu_sky`'s bottom colour. Bottom row sits directly on `ground_forest` (anchor at the bottom). Nothing tiles or scrolls |
 | menu_scene_landscape | 440×150 | still 1. The same for a wide screen: landmarks inside the middle 333 columns (x 54-386); the extra width at the sides is forest (left) and cliff, river and bridge (right) |
 | menu_sky | 16×64 | still 1. Sky above the scene, four full-row bands ending in the scenes' top colour; stretch it, its bands have no dithering |

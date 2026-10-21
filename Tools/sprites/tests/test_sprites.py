@@ -79,9 +79,10 @@ SPEC = {
     "yarn_basket": ((28, 28), {"glow": 4}),
     "medal": ((32, 32), {"bronze": 1, "silver": 1, "gold": 1}),
     # Start, level-complete and game-over screens (no text baked in)
-    "title_wreath": ((230, 90), {"still": 1}),
-    "title_wreath_small": ((200, 78), {"still": 1}),
-    "title_wreath_stone": ((230, 110), {"still": 1}),
+    "title_wreath": ((280, 110), {"still": 1}),
+    "title_wreath_small": ((240, 96), {"still": 1}),
+    "title_wreath_stone": ((250, 120), {"still": 1}),
+    "title_cat": ((64, 40), {"blink": 4}),
     "menu_scene_portrait": ((210, 230), {"still": 1}),
     "menu_scene_landscape": ((440, 150), {"still": 1}),
     "menu_sky": ((16, 64), {"still": 1}),

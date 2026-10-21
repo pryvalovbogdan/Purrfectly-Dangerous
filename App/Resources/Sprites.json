@@ -2393,9 +2393,22 @@
    }
   }
  },
+ "title_cat": {
+  "width": 64,
+  "height": 40,
+  "anchorX": 0.5,
+  "anchorY": 0.0,
+  "animations": {
+   "blink": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   }
+  }
+ },
  "title_wreath": {
-  "width": 230,
-  "height": 90,
+  "width": 280,
+  "height": 110,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2407,8 +2420,8 @@
   }
  },
  "title_wreath_small": {
-  "width": 200,
-  "height": 78,
+  "width": 240,
+  "height": 96,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2420,8 +2433,8 @@
   }
  },
  "title_wreath_stone": {
-  "width": 230,
-  "height": 110,
+  "width": 250,
+  "height": 120,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {

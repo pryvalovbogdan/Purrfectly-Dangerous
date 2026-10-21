@@ -341,6 +341,24 @@ private enum OpaqueBoundsCache {
 /// leaves drifting round it, and a wreath sprite framing the letters from behind. The letters take
 /// the largest whole-pixel size that fits `width` × `maxHeight` with the hero included; the hero is
 /// scaled (whole pixels) so its head is about one line of lettering tall. Missing sprites are left out.
+/// A figure that can sit on a title: a sprite animation, how much of its drawn height is head, and
+/// how tall that head should be against the title.
+struct TitleFigure {
+    let sprite: String
+    let animation: String
+    /// Share of the drawn (opaque) height that is the head.
+    var headShare: CGFloat = 0.9
+    /// Head height as a share of the title's height.
+    var headOfTitle: CGFloat = 0.5
+
+    /// The start screen's close-up cat, its head about half the title (the bottom rows are paws and cape).
+    static let titleCat = TitleFigure(sprite: "title_cat", animation: "blink", headShare: 0.8, headOfTitle: 0.475)
+    /// The hero lying along the top of the title (21 of its 23 drawn rows are head).
+    static let peek = TitleFigure(sprite: "hero", animation: "peek", headShare: 0.91, headOfTitle: 0.5)
+    static let cheer = TitleFigure(sprite: "hero", animation: "cheer", headShare: 0.94, headOfTitle: 0.5)
+    static let idle = TitleFigure(sprite: "hero", animation: "idle", headShare: 0.94, headOfTitle: 0.5)
+}
+
 struct WreathTitle: View {
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
@@ -348,11 +366,13 @@ struct WreathTitle: View {
     var wreath = "title_wreath"
     let width: CGFloat
     let maxHeight: CGFloat
-    /// Hero animations for the figure over the title, in order of preference; empty for none.
-    var topper: [String] = []
+    /// The figure over the title: the first of these that is drawn; empty for none.
+    var topper: [TitleFigure] = []
     /// Share of the figure's drawn height that stands behind the letters. 0: it rests on top of them
     /// (paws on the outline) and never covers a letter.
     var topperSink: CGFloat = 0
+    /// Widest the wreath should be (points), usually the screen; nil for no limit.
+    var wreathMaxWidth: CGFloat?
     var sunburst = false
     var fish = false
     var leaves = false
@@ -363,25 +383,25 @@ struct WreathTitle: View {
     private var library: SpriteLibrary { model.sprites }
 
     private struct Figure {
+        let choice: TitleFigure
         let animation: String
         let bounds: CGRect
         let sheet: SpriteLibrary.Sheet
     }
 
     private var figure: Figure? {
-        guard let sheet = library.sheet("hero"),
-              let animation = topper.first(where: { library.animation("hero", $0) != nil }),
-              let bounds = library.opaqueBounds("hero", animation) else { return nil }
-        return Figure(animation: animation, bounds: bounds, sheet: sheet)
+        guard let choice = topper.first(where: { library.animation($0.sprite, $0.animation) != nil }),
+              let sheet = library.sheet(choice.sprite),
+              let bounds = library.opaqueBounds(choice.sprite, choice.animation) else { return nil }
+        return Figure(choice: choice, animation: choice.animation, bounds: bounds, sheet: sheet)
     }
 
-    /// Whole-pixel scale of the figure for a title `titleHeight` sub-pixels tall at `sub`: the head
-    /// (the drawn height less the paws) about half the title's height, as in the reference (for a
-    /// two-line title that is about one letter and a third).
+    /// Whole-pixel scale of the figure for a title `titleHeight` sub-pixels tall at `sub`: its head
+    /// the figure's chosen share of the title's height.
     private func figureScale(_ figure: Figure?, sub: Int, titleHeight: Int) -> Int {
         guard let figure else { return 1 }
-        let head = max(8, figure.bounds.height - 2)
-        return max(1, Int((CGFloat(titleHeight * sub) / 2 / head).rounded()))
+        let head = max(8, figure.bounds.height * figure.choice.headShare)
+        return max(1, Int((CGFloat(titleHeight * sub) * figure.choice.headOfTitle / head).rounded()))
     }
 
     var body: some View {
@@ -416,8 +436,11 @@ struct WreathTitle: View {
             }
             LogoTitle(lines: lines, sub: sub, paw: hasPaw, fish: fish)
                 .background {
-                    wreathView(letters: CGSize(width: metrics.width * sub, height: metrics.height * sub))
-                        .offset(x: lettersShift)
+                    // Centred on the lettering (not the fish, not the shadow under it).
+                    wreathView(letters: CGSize(width: metrics.lettersWidth * sub,
+                                               height: (metrics.height - LogoLayout.shadow) * sub))
+                        .offset(x: (metrics.lettersCenter - CGFloat(metrics.width) / 2) * unit,
+                                y: -CGFloat(LogoLayout.shadow) * unit / 2)
                 }
                 .overlay {
                     if leaves { DriftingLeaves(pixelScale: sub) }
@@ -436,7 +459,8 @@ struct WreathTitle: View {
         // row on the bottom of the box.
         let dx = (figure.sheet.width / 2 - figure.bounds.midX) * k + shift
         let dy = (figure.sheet.height - figure.bounds.maxY) * k
-        return PixelSprite(sprite: "hero", animations: [figure.animation], pixelScale: figureScale, anyAnimation: false)
+        return PixelSprite(sprite: figure.choice.sprite, animations: [figure.animation], pixelScale: figureScale,
+                           anyAnimation: false)
             .background {
                 if sunburst { Sunburst(maxWidth: width * 1.1, preferredScale: figureScale) }
             }
@@ -444,17 +468,36 @@ struct WreathTitle: View {
             .frame(height: figure.bounds.height * k, alignment: .bottom)
     }
 
-    /// The wreath behind the letters (sizes in device pixels) at the smallest whole-pixel scale that
-    /// is wider and taller than them, so its leaves (or stone) frame them round the edges.
+    /// The plain box in the middle of each wreath sprite that the lettering goes in, in wreath pixels
+    /// (from the artist); the big leaf fans (or the stone's rim) are round it.
+    static let titleBoxes: [String: CGSize] = [
+        "title_wreath": CGSize(width: 230, height: 64),
+        "title_wreath_small": CGSize(width: 192, height: 54),
+        "title_wreath_stone": CGSize(width: 206, height: 88),
+    ]
+
+    /// The wreath behind the letters (sizes in device pixels) at the smallest whole-pixel scale whose
+    /// title box holds them, so the leaf fans reach past the title. If that wreath would be much wider
+    /// than `wreathMaxWidth` (the screen), one scale smaller, as long as the letters overhang its box
+    /// by no more than a tenth across (a fifth up and down): they then cover only the inner edge of
+    /// the fans, and the whole wreath
+    /// stays on screen instead of losing its fans off both edges.
     @ViewBuilder
     private func wreathView(letters: CGSize) -> some View {
         if let sheet = library.sheet(wreath) {
-            let wide = max(Int((letters.width * 1.06 / sheet.width).rounded(.up)),
-                           Int((letters.height * 1.15 / sheet.height).rounded(.up)))
-            let limit = Int((width * max(displayScale, 1) * 1.15 / sheet.width).rounded(.down))
-            PixelSprite(sprite: wreath, pixelScale: max(1, min(wide, max(limit, 1))))
+            PixelSprite(sprite: wreath, pixelScale: wreathScale(sheet: sheet, letters: letters))
                 .allowsHitTesting(false)
         }
+    }
+
+    private func wreathScale(sheet: SpriteLibrary.Sheet, letters: CGSize) -> Int {
+        let box = Self.titleBoxes[wreath] ?? CGSize(width: sheet.width * 0.86, height: sheet.height * 0.76)
+        let holding = max(Int((letters.width / box.width).rounded(.up)), Int((letters.height / box.height).rounded(.up)), 1)
+        guard let maxWidth = wreathMaxWidth, holding > 1,
+              sheet.width * CGFloat(holding) > maxWidth * max(displayScale, 1) * 1.04 else { return holding }
+        let smaller = holding - 1
+        let fits = letters.width <= box.width * CGFloat(smaller) * 1.1 && letters.height <= box.height * CGFloat(smaller) * 1.2
+        return fits ? smaller : holding
     }
 }
 

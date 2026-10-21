@@ -39,7 +39,8 @@ def leaf(c: Canvas, x: float, y: float, angle: float, length: float, width: floa
     shade = b_side if lit_first else a_side
     layer.line(shade[2], shade[3], dark)
     hi = a_side if lit_first else b_side
-    layer.px(*hi[2], tip_c)
+    for i in range(1, 4):                                 # a light rim along the lit edge
+        layer.line(hi[i], hi[i + 1] if i < 3 else at(0.92, 0), tip_c)
     layer.px(*at(0.92, 0), tip_c)
     if edge:
         c.paste(layer.outline(edge))
@@ -139,14 +140,163 @@ def wreath(name: str, w: int, h: int, seed: int, size: float, flowers: list, vin
     return single(name, c)
 
 
+def fans_around(c: Canvas, w: int, h: int, box: tuple, size: float, seed: int, top: float, bottom: float) -> None:
+    """Big broad leaves (about `size` px long) rooted just inside a centred title box of `box` (w, h), so the
+    lettering hides their stems: deep fans at the two ends, a row peeking above the top edge (behind the cat),
+    `bottom` (0-1) of a row along the bottom. Nothing reaches the middle of the box."""
+    rnd = noise(seed)
+    bw, bh = box
+    x0, x1, y0, y1 = (w - bw) / 2, (w + bw) / 2, (h - bh) / 2, (h + bh) / 2
+    cy = h / 2
+
+    def put(x, y, a, length, cols):
+        leaf(c, x, y, a, length, length * (0.62 + rnd() * 0.1), cols)
+
+    for side in (-1, 1):                                     # the ends: three columns, deepest drawn first
+        for col in (2, 1, 0):
+            step = 6
+            y = y0 - 2 + col * 2
+            while y <= y1 - 1:
+                t = max(-1.1, min(1.1, (y - cy) / (bh / 2)))
+                inset = 4 + col * 5 + abs(t) * 6                 # the root line curves in toward the corners
+                x = x0 + inset if side < 0 else x1 - inset
+                a = (math.pi - t * 1.15) if side < 0 else (t * 1.15)
+                a += (rnd() - 0.5) * 0.45
+                bulge = 1.3 - 0.45 * abs(t)                      # longest at mid-height: a rounded outer edge
+                put(x, y, a, (size * (0.9 + rnd() * 0.25) + col * 4) * bulge, LEAF_BACK if col else LEAF_FRONT)
+                y += step + rnd() * 2
+    for layer, cols in ((0, LEAF_BACK), (1, LEAF_FRONT)):   # along the top, densest behind the cat
+        x = x0 + 18 + layer * 5
+        while x < x1 - 18:
+            near = 1 - min(1.0, abs(x - w / 2) / (bw * 0.3))
+            if rnd() < top * (0.35 + 0.65 * near):
+                tilt = (x - w / 2) / (bw / 2) * 0.6 + (rnd() - 0.5) * 0.8
+                put(x, y0 + 5 + rnd() * 2, -math.pi / 2 + tilt, size * (0.6 + 0.3 * near + rnd() * 0.25), cols)
+            x += 7 + rnd() * 4
+    x = x0 + 20
+    while x < x1 - 20:                                       # along the bottom, denser toward the ends
+        edge = abs(x - w / 2) / (bw / 2)
+        if rnd() < bottom * (0.4 + 0.6 * edge):
+            put(x, y1 - 5, math.pi / 2 + (rnd() - 0.5) * 0.9, size * (0.7 + rnd() * 0.25), LEAF_FRONT)
+        x += 9
+
+
+def big_wreath(name: str, w: int, h: int, box: tuple, size: float, seed: int, flowers: list, top: float = 0.9,
+               bottom: float = 0.7) -> Sprite:
+    """Big broad leaves round the outside of a title box, with small white flowers; the middle is transparent."""
+    c = Canvas(w, h)
+    fans_around(c, w, h, box, size, seed, top, bottom)
+    for x, y in flowers:
+        flower(c, x, y)
+    c.outline()
+    return single(name, c)
+
+
+TITLE_CAT = (64, 40)
+
+
+def title_cat_frame(eyes: str) -> Canvas:
+    """The hero up close, peeking over the title: head and shoulders, both front paws on the bottom edge, the
+    red cape flaring out to the left. Drawn at this size (not scaled up). `eyes`: open | half | closed."""
+    w, h = TITLE_CAT
+    c = Canvas(w, h)
+    hx, hy = 39, 20                                          # head centre
+
+    # cape: a broad red wedge out to the left from behind the shoulders, lit along its top, notched at the end
+    cape = Canvas(w, h)
+    cape.poly([(31, 23), (18, 17), (6, 14), (2, 17), (4, 24), (12, 31), (24, 36), (32, 36)], P.CAPE)
+    cape.poly([(31, 23), (18, 17), (6, 14), (2, 17), (10, 20), (22, 24), (30, 27)], P.CAPE_L)
+    cape.poly([(4, 24), (12, 31), (24, 36), (32, 36), (28, 31), (14, 27)], P.CAPE_D)
+    cape.line((8, 21), (26, 30), P.CAPE_D)                     # a fold
+    cape.poly([(1, 18), (5, 20), (2, 23)], P.CLEAR)           # swallow-tail notch
+    c.paste(cape.outline())
+
+    body = Canvas(w, h)
+    # shoulders and chest under the head
+    body.ellipse(hx, 35, 14, 7, P.GINGER)
+    body.ellipse(hx + 1, 36, 6, 5, P.FUR_WHITE)
+    body.rect(hx + 9, 32, hx + 14, 38, P.GINGER_D)
+    # ears: tall, pink inside, lit on the left
+    for ex, tip, outer in ((27, (26, 1), -1), (51, (53, 2), 1)):
+        if outer < 0:
+            body.poly([(22, 13), tip, (34, 7)], P.GINGER)
+            body.poly([(25, 11), (27, 4), (31, 8)], P.PINK)
+            body.line((23, 11), (26, 3), P.GINGER_L)
+        else:
+            body.poly([(44, 7), tip, (56, 14)], P.GINGER)
+            body.poly([(47, 8), (52, 5), (53, 11)], P.PINK)
+            body.line((54, 5), (55, 12), P.GINGER_D)
+    # head: a wide rounded shape, lit top-left, shaded on the right and under the cheeks
+    body.ellipse(hx, hy, 17, 12.5, P.GINGER)
+    body.ellipse(hx - 1, hy + 4, 17.5, 9, P.GINGER)
+    body.ellipse(hx - 5, hy - 6, 8, 4, P.GINGER_L)
+    body.poly([(hx + 13, hy - 6), (hx + 18, hy + 2), (hx + 16, hy + 10), (hx + 11, hy + 12)], P.GINGER_D)
+    # tabby stripes on the forehead and cheeks
+    for x0, y0, y1 in ((hx - 9, hy - 11, hy - 7), (hx - 5, hy - 12, hy - 8), (hx + 6, hy - 12, hy - 8),
+                       (hx + 10, hy - 11, hy - 7)):
+        body.rect(x0, y0, x0 + 1, y1, P.GINGER_DD)
+    for y in (hy + 1, hy + 4):
+        body.rect(hx - 17, y, hx - 13, y, P.GINGER_DD)
+        body.rect(hx + 15, y, hx + 17, y, P.GINGER_DD)
+    # white blaze down the face into a broad muzzle
+    body.poly([(hx - 1, hy - 12), (hx + 3, hy - 12), (hx + 5, hy - 2), (hx - 3, hy - 2)], P.FUR_WHITE)
+    body.ellipse(hx + 1, hy + 6, 10, 6.5, P.FUR_WHITE)
+    body.rect(hx - 7, hy + 10, hx + 9, hy + 12, P.FUR_WHITE_D)
+    body.ellipse(hx + 1, hy + 5, 9, 5.5, P.FUR_WHITE)
+    # cheeks
+    body.rect(hx - 8, hy + 4, hx - 6, hy + 5, P.PINK)
+    body.rect(hx + 8, hy + 4, hx + 10, hy + 5, P.PINK)
+    # eyes: big and dark with two shines; half shut = lid over the top; shut = a curved line
+    for ex in (hx - 8, hx + 7):
+        if eyes == "closed":
+            body.rect(ex - 2, hy + 1, ex + 2, hy + 1, P.BLACK)
+            body.px(ex - 3, hy, P.BLACK)
+            body.px(ex + 3, hy, P.BLACK)
+            continue
+        body.rect(ex - 2, hy - 4, ex + 2, hy + 2, P.BLACK)
+        body.rect(ex - 3, hy - 3, ex + 3, hy + 1, P.BLACK)
+        if eyes == "half":
+            body.rect(ex - 3, hy - 4, ex + 3, hy - 2, P.GINGER)
+            body.rect(ex - 3, hy - 1, ex + 3, hy - 1, P.GINGER_DD)
+            body.px(ex - 1, hy, P.WHITE)
+        else:
+            body.rect(ex - 2, hy - 3, ex - 1, hy - 2, P.WHITE)
+            body.px(ex + 1, hy + 1, P.WHITE)
+            body.px(ex + 2, hy - 1, P.NAVY)
+    # nose and "w" smile
+    body.rect(hx, hy + 3, hx + 2, hy + 3, P.PINK)
+    body.px(hx + 1, hy + 4, P.PINK_D)
+    for x, y in ((hx - 2, hy + 6), (hx - 1, hy + 7), (hx, hy + 6), (hx + 1, hy + 5), (hx + 2, hy + 6), (hx + 3, hy + 7),
+                 (hx + 4, hy + 6)):
+        body.px(x, y, P.PINK_D)
+    c.paste(body.outline())
+
+    # front paws resting on the edge: round, orange with white toes, toe gaps
+    paws = Canvas(w, h)
+    for px_ in (27, 51):
+        paws.ellipse(px_, 35, 5.5, 3.5, P.GINGER)
+        paws.rect(px_ - 5, 36, px_ + 5, 38, P.FUR_WHITE)
+        paws.rect(px_ - 4, 32, px_ + 2, 32, P.GINGER_L)
+        for tx in (px_ - 2, px_ + 1):
+            paws.rect(tx, 36, tx, 38, P.FUR_WHITE_D)
+    c.paste(paws.outline())
+    return c
+
+
+def title_cat() -> Sprite:
+    sprite = Sprite("title_cat", TITLE_CAT, ground=TITLE_CAT[1] - 1)
+    sprite.add("blink", [title_cat_frame(e) for e in ("open", "open", "half", "closed")], fps=6)
+    return sprite
+
+
 def stone_wreath() -> Sprite:
     """`title_wreath_stone`: a mossy grey boulder with an arched crown behind "game over", with clusters of big
     leaves and small white five-petal flowers round its edge. Its plain middle is left for the text."""
-    w, h = 230, 110
+    w, h = 250, 120
     c = Canvas(w, h)
     rnd = noise(91)
-    size = 15
-    leaves_around(c, w, h, 92, size, 0.6, 0.8)
+    size = 14
+    fans_around(c, w, h, (206, 76), size, 92, 0.8, 0.7)
     slab = Canvas(w, h)
     cx, cy, ax, by = w / 2, h / 2 + 4, w / 2 - 22, h / 2 - 16
     for y in range(h):
@@ -200,7 +350,7 @@ def stone_wreath() -> Sprite:
         if x % 11 == 0:
             c.px(x, top - 1, P.LEAF_Y)
     # fans of leaves over the four corners of the slab and a sprig on its crown
-    for x, y, a in ((30, 26, -2.3), (w - 30, 26, -0.85), (26, h - 22, 2.5), (w - 26, h - 22, 0.65)):
+    for x, y, a in ((30, 26, -2.3), (w - 30, 26, -0.85), (26, h - 32, 2.5), (w - 26, h - 32, 0.65)):
         cluster(c, x, y, a, 1.5, 4, 15, int(x + y))
     cluster(c, w / 2, 14, -math.pi / 2, 1.0, 3, 9, 7)
     for x, y in ((24, 22), (w - 30, 34), (14, 56), (w - 14, 68), (52, 12), (w - 56, 11), (34, h - 14), (w - 34, h - 18),
@@ -480,10 +630,11 @@ def stars_dizzy() -> Sprite:
 
 def build() -> list[Sprite]:
     return [
-        wreath("title_wreath", 230, 90, 11, 17, flowers=[(12, 30), (218, 50), (40, 82), (172, 81), (150, 9)],
-               vines=[(14, 60, 1, 22), (216, 58, -1, 20)], top=0.35, bottom=0.8),
-        wreath("title_wreath_small", 200, 78, 23, 15, flowers=[(10, 28), (190, 46), (48, 70), (150, 8)],
-               vines=[(12, 50, 1, 18), (188, 50, -1, 16)], top=0.35, bottom=0.8),
+        big_wreath("title_wreath", 280, 110, (230, 64), 15, 11,
+                   flowers=[(14, 44), (266, 62), (40, 92), (238, 90), (120, 18), (166, 16), (22, 70), (258, 36)]),
+        big_wreath("title_wreath_small", 240, 96, (192, 54), 13, 23,
+                   flowers=[(12, 40), (228, 56), (36, 80), (204, 78), (104, 16), (140, 15)]),
+        title_cat(),
         stone_wreath(),
         *icons(),
         *confetti(),

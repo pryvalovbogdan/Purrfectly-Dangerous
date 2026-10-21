@@ -72,12 +72,16 @@ struct LogoTitle: View {
         var firstLineCenter: CGFloat
         /// How far below the top the first line's highest letter face starts (the backing above it).
         var firstLineTop: Int
+        /// Width of the lettering alone (without the fish past its end), and its middle.
+        var lettersWidth: Int
+        var lettersCenter: CGFloat
     }
 
     static func metrics(_ lines: [Line], paw: Bool, fish: (Int, Int)?, arch: Bool = true) -> Metrics {
         let layout = LogoLayout(lines: lines, paw: paw, fish: fish, arch: arch)
         return Metrics(width: layout.width, height: layout.height, firstLineCenter: layout.firstLineCenter,
-                       firstLineTop: layout.firstLineTop)
+                       firstLineTop: layout.firstLineTop, lettersWidth: layout.lettersWidth,
+                       lettersCenter: CGFloat(layout.lettersWidth) / 2)
     }
 
     /// The logo's lines: one, or two balanced by word count once there are `splitFrom` words.
@@ -113,8 +117,16 @@ struct LogoLayout {
     static let shadow = 2
     /// Top of one line to the top of the next: the backings of the two lines overlap.
     static let linePitch = 18
-    /// How far a line's middle letters rise above its ends: about a tenth of a letter's height.
-    static let rise = 2
+    /// How far the middle letters rise above the end letters: about a third of a letter's height,
+    /// the classic game-logo bend.
+    static let rise = 5
+    /// The two outer letters at each end of an arched line can lean outwards, one sub-pixel per three
+    /// rows (a whole-pixel shear, no smoothing). Off: at this size the shear breaks "PU" and "LY" up,
+    /// and straight letters on the curve read cleaner.
+    static let leanOuterLetters = false
+    static let leanCount = 2
+    /// Widest a leaning letter's top moves sideways, in sub-pixels.
+    static let leanReach = (glyphHeight - 1) / 3
 
     private(set) var width = 0
     private(set) var height = 0
@@ -123,6 +135,8 @@ struct LogoLayout {
     private(set) var fishOrigin: (x: Int, y: Int)?
     private(set) var firstLineCenter: CGFloat = 0
     private(set) var firstLineTop = 0
+    /// Width of the lettering and its backing, without the fish.
+    private(set) var lettersWidth = 0
     /// Fill of each lit sub-pixel: the line's fill and the row within the letter.
     private var lit: [Int: (fill: LogoTitle.Fill, row: Int)] = [:]
     private var backingCells = Set<Int>()
@@ -134,6 +148,9 @@ struct LogoLayout {
     init(lines: [LogoTitle.Line], paw: Bool, fish: (Int, Int)?, arch: Bool = true) {
         let pad = Self.backing
         let rise = arch ? Self.rise : 0
+        let leans = arch && Self.leanOuterLetters
+        // Room at the sides for the outer letters' lean.
+        let side = pad + (leans ? Self.leanReach : 0)
         var rows: [(slots: [Slot], width: Int)] = []
         for (index, line) in lines.enumerated() {
             var slots = line.text.map { Self.slot(for: $0) }
@@ -145,7 +162,12 @@ struct LogoLayout {
             rows.append((slots, max(0, advance - Self.gap)))
         }
         let lettersWidth = rows.map(\.width).max() ?? 0
-        width = lettersWidth + 2 * pad
+        width = lettersWidth + 2 * side
+        self.lettersWidth = width
+        // One parabola across the whole block, so a shorter line arches in step with the longer one
+        // above it and the two lines stay parallel.
+        let blockMiddle = CGFloat(side) + CGFloat(lettersWidth) / 2
+        let half = max(1, CGFloat(lettersWidth - Self.glyphWidth) / 2)
         height = pad + rise + max(0, rows.count - 1) * Self.linePitch + Self.glyphHeight + pad + Self.shadow
         firstLineTop = pad + rise
 
@@ -153,34 +175,37 @@ struct LogoLayout {
             let fill = lines[index].fill
             // The ends of the line sit on `base`; letters nearer the middle rise along a parabola.
             let base = pad + rise + index * Self.linePitch
-            let left = pad + (lettersWidth - row.width) / 2
-            let middle = CGFloat(left) + CGFloat(row.width) / 2
-            let half = max(1, CGFloat(row.width - Self.glyphWidth) / 2)
-            if index == 0 { firstLineCenter = middle }
+            let left = side + (lettersWidth - row.width) / 2
+            if index == 0 { firstLineCenter = CGFloat(left) + CGFloat(row.width) / 2 }
+            let letters = row.slots.filter { !$0.isSpace }.count
             var x = left
+            var letter = 0
             for slot in row.slots {
                 if slot.isSpace {
                     x += Self.spaceAdvance
                     continue
                 }
-                let t = (CGFloat(x) + CGFloat(Self.glyphWidth) / 2 - middle) / half
+                let t = (CGFloat(x) + CGFloat(Self.glyphWidth) / 2 - blockMiddle) / half
                 let lift = Int((CGFloat(rise) * max(0, 1 - t * t)).rounded())
                 let top = base - lift
                 if index == 0 { firstLineTop = min(firstLineTop, top) }
+                let lean = !leans || letters < 2 * Self.leanCount + 1 ? 0
+                    : letter < Self.leanCount ? -1 : letter >= letters - Self.leanCount ? 1 : 0
                 switch slot {
                 case .paw:
                     pawCenter = CGPoint(x: CGFloat(x) + CGFloat(Self.glyphWidth) / 2, y: CGFloat(top) + CGFloat(Self.glyphHeight) / 2)
-                    stamp(Self.pawBlock, x: x, top: top, fill: fill)
+                    stamp(Self.pawBlock, x: x, top: top, fill: fill, lean: 0)
                 case .glyph(let bitmap):
-                    stamp(bitmap, x: x, top: top, fill: fill)
+                    stamp(bitmap, x: x, top: top, fill: fill, lean: lean)
                 case .space:
                     break
                 }
                 x += Self.glyphWidth + Self.gap
+                letter += 1
             }
             if index == rows.count - 1, let fish {
                 // Just past the end of the line, its bottom on the end letters' bottom.
-                let fishX = x - Self.gap + pad + 1
+                let fishX = x - Self.gap + side + 1
                 let fishY = base + Self.glyphHeight + 1 - fish.1
                 fishOrigin = (fishX, fishY)
                 width = max(width, fishX + fish.0)
@@ -200,12 +225,16 @@ struct LogoLayout {
     }
 
     /// Lights a 5×7 glyph: each font cell 2×2 sub-pixels, thickened one sub-pixel right and down.
-    private mutating func stamp(_ bitmap: [String], x: Int, top: Int, fill: LogoTitle.Fill) {
+    /// `lean` -1 tilts the letter's top to the left, 1 to the right: each row moves one sub-pixel
+    /// sideways per three rows above the bottom one.
+    private mutating func stamp(_ bitmap: [String], x: Int, top: Int, fill: LogoTitle.Fill, lean: Int) {
         for (cy, bits) in bitmap.enumerated() {
             for (cx, bit) in bits.enumerated() where bit == "#" {
                 for dy in 0...2 {
+                    let row = 2 * cy + dy
+                    let shift = lean * ((Self.glyphHeight - 1 - row) / 3)
                     for dx in 0...2 {
-                        lit[key(x + 2 * cx + dx, top + 2 * cy + dy)] = (fill, 2 * cy + dy)
+                        lit[key(x + 2 * cx + dx + shift, top + row)] = (fill, row)
                     }
                 }
             }

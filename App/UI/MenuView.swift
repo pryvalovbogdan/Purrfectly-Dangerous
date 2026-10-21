@@ -12,7 +12,7 @@ struct MenuView: View {
     enum Overlay { case levels, cats }
 
     /// Share of an upright screen below the ground line; the buttons stand on that earth.
-    static let groundShare: CGFloat = 0.25
+    static let groundShare: CGFloat = 0.23
     /// Where the hero stands across a wide screen, clear of the title and buttons on the left.
     static let wideHeroPlace: CGFloat = 0.76
 
@@ -64,7 +64,8 @@ struct MenuView: View {
             VStack(spacing: 0) {
                 Spacer(minLength: topLimit)
                 // About four fifths of an upright screen wide.
-                titleBlock(width: (size.width * Self.tallTitleShare).rounded(), maxHeight: heroTop - topLimit - 40)
+                titleBlock(width: (size.width * Self.tallTitleShare).rounded(), maxHeight: heroTop - topLimit - 40,
+                           wreathMaxWidth: size.width)
                     .fixedSize(horizontal: false, vertical: true)
             }
             // Bottom-aligned within the band while it fits; a taller block keeps its top and runs on.
@@ -86,7 +87,7 @@ struct MenuView: View {
         let bottom = max(insets.bottom, 10) + 8
         let titleHeight = max(90, size.height - top - bottom - Self.actionsHeight - 44)
         return VStack(spacing: 8) {
-            titleBlock(width: titleWidth, maxHeight: titleHeight)
+            titleBlock(width: titleWidth, maxHeight: titleHeight, wreathMaxWidth: size.width * 0.5)
             Spacer(minLength: 0)
             actions(width: width)
         }
@@ -108,10 +109,10 @@ struct MenuView: View {
     private static let sceneryGap: CGFloat = 8
 
     /// The title in its wreath with the hero peeking over it, and the tagline under it.
-    private func titleBlock(width: CGFloat, maxHeight: CGFloat) -> some View {
+    private func titleBlock(width: CGFloat, maxHeight: CGFloat, wreathMaxWidth: CGFloat) -> some View {
         VStack(spacing: 4) {
             WreathTitle(text: model.text("game.title"), wreath: "title_wreath", width: width, maxHeight: maxHeight,
-                        topper: ["peek", "idle"], fish: true, paw: true)
+                        topper: [.titleCat, .peek, .idle], wreathMaxWidth: wreathMaxWidth, fish: true, paw: true)
             Text(model.text("game.tagline"))
                 .font(.pixel(13))
                 .foregroundStyle(Color.menuPaper)
