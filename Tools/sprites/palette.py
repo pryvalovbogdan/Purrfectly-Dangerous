@@ -332,3 +332,14 @@ FR_PINE_D = _hex("143c48")
 FR_PINE_DD = _hex("0c2434")
 LAMP = _hex("ffb84a")
 LAMP_D = _hex("d87a2a")
+
+# Forest sky: a fine ramp from SKY_TOP to SKY_HAZE, drawn as plain row bands (no dither lines).
+SKY_RAMP = [_hex(v) for v in (
+    "1663d0", "186ad5", "1971da", "1b78df",
+    "1d80e4", "1f87e9", "208eee", "2996f1",
+    "349ef3", "3ea6f6", "49aef8", "54b6fa",
+    "63bffb", "7ac9fb", "92d2fb", "a9dcfb",
+)]
+# Castle outline and the cliff's rim moss.
+CASTLE_OUT = _hex("2a3f7a")
+CLIFF_DD = _hex("26445a")

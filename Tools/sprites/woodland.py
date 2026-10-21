@@ -492,3 +492,164 @@ def grass_top(c: Canvas, width: int, seed: int, flowers: bool = True) -> None:
 def under_turf_shadow(c: Canvas, width: int, y0: int, y1: int, colour) -> None:
     """Darkens the transparent band under the turf before the cobbles are drawn into it."""
     c.rect(0, y0, width - 1, y1, colour)
+
+
+# --- the forest's hilltop castle, cliff and waterfall (bg_forest_far) ------------------------------
+
+def _tower(c: Canvas, cx: float, base: float, w: int, body: int, roof, flag=None, windows: bool = True) -> None:
+    """One round tower: light left face, dark right face, a parapet ring, rows of dark windows, a cone
+    roof shaded on the right and a flag. `body` = wall height above `base`; the cone is about 1.4*w tall."""
+    left, right, top = cx - w / 2, cx + w / 2 - 1, base - body
+    c.rect(left, top, right, base, P.CASTLE)
+    c.rect(left, top, left, base, P.CASTLE_L)
+    c.rect(right - max(1, w // 3) + 1, top, right, base, P.CASTLE_D)
+    c.rect(left - 1, top - 2, right + 1, top, P.CASTLE)                 # parapet ring
+    c.rect(left - 1, top - 2, right + 1, top - 2, P.CASTLE_L)
+    c.rect(right, top - 2, right + 1, top, P.CASTLE_D)
+    c.rect(left - 1, top, right + 1, top, P.CASTLE_D)
+    if windows:
+        for wy in range(int(top + 3), int(base - 3), 6):
+            c.rect(cx - 0.5, wy, cx + 0.5 if w >= 6 else cx - 0.5, wy + 1, P.CASTLE_OUT)
+    dark = P.RED_D if roof == P.RED else P.MOUNT_DD
+    tip = top - 3 - round(w * 1.4)
+    c.poly([(left - 1.5, top - 2), (cx - 0.5, tip), (right + 1.5, top - 2)], roof)
+    c.poly([(cx - 0.5, tip), (right + 1.5, top - 2), (cx, top - 2)], dark)
+    c.rect(left - 1, top - 3, right + 1, top - 3, dark)                  # eave
+    if flag:
+        c.line((cx - 0.5, tip - 1), (cx - 0.5, tip - 3), P.CASTLE_D)
+        c.rect(cx + 0.5, tip - 3, cx + 2.5, tip - 2, flag)
+
+
+def _crenels(c: Canvas, x0: float, x1: float, top: float) -> None:
+    for x in range(int(x0), int(x1) + 1, 3):
+        c.rect(x, top - 2, x + 1, top - 1, P.CASTLE)
+        c.px(x, top - 2, P.CASTLE_L)
+
+
+def hill_castle(c: Canvas, x: float, base: float) -> None:
+    """A white castle seen from below the hill, about 58 wide and 38 tall from `base` to its highest flag:
+    a tall central tower behind a keep, towers stepping down to each side, a crenellated curtain wall with
+    a gate arch in front. Three depth layers, each outlined, so the towers read in front of one another."""
+    w, h = c.size
+    # back: the central tower and the two outermost towers
+    back = Canvas(w, h)
+    _tower(back, x - 0.5, base - 10, 8, 12, P.RED, P.GOLD)
+    _tower(back, x - 25, base - 4, 5, 12, P.MOUNT_D, P.RED)
+    _tower(back, x + 24, base - 4, 5, 11, P.RED, P.GOLD)
+    outline_wrapped(back, P.CASTLE_OUT, wrap=False)
+    c.paste(back)
+    # middle: the keep, with a tower at each shoulder
+    mid = Canvas(w, h)
+    mid.rect(x - 11, base - 14, x + 10, base, P.CASTLE)
+    mid.rect(x - 11, base - 14, x - 11, base, P.CASTLE_L)
+    mid.rect(x + 4, base - 14, x + 10, base, P.CASTLE_D)
+    _crenels(mid, x - 11, x + 9, base - 14)
+    for wx in (x - 7, x - 2, x + 3):                                     # a row of tall windows
+        mid.rect(wx, base - 12, wx + 1, base - 10, P.CASTLE_OUT)
+    _tower(mid, x - 16, base - 2, 7, 17, P.MOUNT_D, P.RED)
+    _tower(mid, x + 15, base - 2, 7, 16, P.RED, P.GOLD)
+    outline_wrapped(mid, P.CASTLE_OUT, wrap=False)
+    c.paste(mid)
+    # front: the curtain wall, gate arch and two little corner turrets
+    front = Canvas(w, h)
+    front.rect(x - 26, base - 8, x + 25, base, P.CASTLE)
+    front.rect(x + 10, base - 8, x + 25, base, P.CASTLE_D)
+    front.rect(x - 26, base - 8, x + 25, base - 8, P.CASTLE_L)
+    _crenels(front, x - 26, x + 24, base - 8)
+    front.ellipse(x - 0.5, base - 4, 3, 3, P.CASTLE_OUT)                # gate arch
+    front.rect(x - 3.5, base - 4, x + 2.5, base, P.CASTLE_OUT)
+    front.rect(x - 2.5, base - 3, x + 1.5, base, P.BARK_D)
+    front.line((x - 0.5, base - 3), (x - 0.5, base), P.BARK_DD)
+    front.rect(x - 4.5, base - 7, x + 3.5, base - 7, P.CASTLE_D)          # arch stones
+    for tx, roof in ((x - 28, P.RED), (x + 27, P.MOUNT_D)):
+        _tower(front, tx, base, 4, 11, roof, None, windows=False)
+    outline_wrapped(front, P.CASTLE_OUT, wrap=False)
+    c.paste(front)
+
+
+def rock_cliff(c: Canvas, left: float, right: float, top: float, seed: int, notch: tuple | None = None) -> None:
+    """A rocky cliff from `top` to the bottom of the layer: a grass cap with a bright rim, chunky rock
+    faces lit on the left and shaded on the right, ledges with moss, and grass tufts over the edge."""
+    w, h = c.size
+    rnd = noise(seed)
+    face = Canvas(w, h)
+    face.poly([(left, h), (left + 3, top + 10), (left + 8, top + 2), (right - 8, top + 2), (right - 2, top + 12),
+               (right + 2, h)], P.CLIFF_D)
+    x = left + 2
+    while x < right - 2:                                     # columns of rock, each a chunky block
+        cw = 6 + int(rnd() * 9)
+        y0 = top + 3 + int(rnd() * 9)
+        lean = (rnd() - 0.5) * 4
+        recessed = rnd() > 0.65                              # set back: darker, no lit face
+        body, lit = (P.CLIFF_D, P.CLIFF) if recessed else (P.CLIFF, P.CLIFF_L)
+        face.poly([(x, y0 + 1), (x + 1, y0), (x + cw - 2, y0), (x + cw - 1, y0 + 2), (x + cw - 1 + lean, h),
+                   (x + lean, h)], body)
+        face.poly([(x, y0 + 1), (x + 2, y0), (x + 2 + lean, h), (x + lean, h)], lit)
+        face.poly([(x + cw - 3, y0 + 1), (x + cw - 1, y0 + 2), (x + cw - 1 + lean, h), (x + cw - 3 + lean, h)],
+                  P.CLIFF_DD if recessed else P.CLIFF_D)
+        if not recessed:                                     # grass on the column's top step
+            face.rect(x + 1, y0 - 1, x + cw - 3, y0, P.FAR_GRASS)
+            face.px(x + 1, y0 - 1, P.KIT_GREEN_L)
+        y = y0 + 9 + int(rnd() * 10)
+        while y < h - 6:                                     # a few ledges, staggered column to column
+            t = (y - y0) / max(1, h - y0)
+            x1, x2 = x + 1 + lean * t, x + cw - 3 + lean * t
+            face.line((x1, y), (x2, y + 1), P.CLIFF_DD)
+            face.line((x1, y - 1), (x2 - 1, y), lit)
+            if rnd() > 0.5:
+                face.rect(x1 + 1, y - 2, x1 + 2 + int(rnd() * 3), y - 2, P.FAR_GRASS)
+                face.px(x1 + 1, y - 1, P.KIT_GREEN_D)
+            y += 12 + int(rnd() * 12)
+        x += cw
+    for _ in range(4):                                       # boulders jutting out of the face
+        bx = left + 10 + rnd() * (right - left - 20)
+        by = top + 16 + rnd() * (h - top - 30)
+        r = 3 + rnd() * 2
+        face.ellipse(bx, by, r + 1, r * 0.8, P.CLIFF_DD)
+        face.ellipse(bx - 0.5, by - 0.5, r, r * 0.7, P.CLIFF)
+        face.ellipse(bx - r * 0.35, by - r * 0.35, r * 0.5, r * 0.3, P.CLIFF_L)
+        face.rect(bx - r + 1, by - r * 0.8, bx + r - 2, by - r * 0.8, P.FAR_GRASS)
+    for _ in range(9):                                       # moss trailing down from the rim
+        mx = left + 8 + rnd() * (right - left - 16)
+        length = 3 + int(rnd() * 7)
+        face.line((mx, top + 3), (mx, top + 3 + length), P.KIT_GREEN_D)
+        face.px(mx + 1, top + 3 + length // 2, P.FAR_GRASS)
+    # grass cap
+    face.rect(left + 6, top - 1, right - 6, top + 3, P.FAR_GRASS)
+    face.rect(left + 6, top - 1, right - 6, top - 1, P.KIT_GREEN_L)
+    face.rect(left + 6, top + 3, right - 6, top + 3, P.KIT_GREEN_D)
+    for k in range(int(left + 7), int(right - 7), 3):          # tufts over the edge
+        face.rect(k, top + 4, k + 1, top + 4 + (k * 7) % 3, P.FAR_GRASS)
+        face.px(k + 1, top + 5 + (k * 7) % 3, P.KIT_GREEN_D)
+    if notch:                                                # where the stream cuts the rim
+        face.rect(notch[0] - 1, top - 1, notch[1] + 1, top + 3, P.CLIFF_D)
+    outline_wrapped(face, P.CLIFF_DD, wrap=False)
+    c.paste(face)
+
+
+def rim_bushes(c: Canvas, xs: list, top: float, seed: int) -> None:
+    """Small round bushes and trees standing on the cliff's rim, in the distant greens."""
+    layer = Canvas(*c.size)
+    for k, (bx, size) in enumerate(xs):
+        canopy(layer, bx, top - size * 0.45, size * 1.6, size, seed + k, DISTANT, (2, 4))
+    outline_wrapped(layer, P.CLIFF_DD, wrap=False)
+    c.paste(layer)
+
+
+def cascade(c: Canvas, x: float, top: float, bottom: float, w: int, seed: int) -> None:
+    """A waterfall several px wide: a white lip, streaks of light water running down, a pale left edge and a
+    darker right edge, and a foam cloud with spray at its foot (on `bottom`)."""
+    c.rect(x, top, x + w - 1, bottom, P.WATER)
+    c.rect(x, top, x, bottom, P.WATER_L)
+    c.rect(x + w - 1, top, x + w - 1, bottom, P.WATER_D)
+    for k in range(1, w - 1):                                # streaks, offset per column
+        for y in range(int(top), int(bottom)):
+            v = (y + k * 5 + seed) % 9
+            if v < 4:
+                c.px(x + k, y, P.WHITE if (k + seed) % 3 == 0 and v < 2 else P.WATER_L)
+    c.rect(x - 1, top - 1, x + w, top, P.WHITE)               # the lip
+    c.rect(x, top + 1, x + w - 1, top + 1, P.WATER_L)
+    c.ellipse(x + w / 2 - 0.5, bottom, w / 2 + 3, 2.5, P.CLOUD_S)  # foam at the foot
+    c.ellipse(x + w / 2 - 0.5, bottom - 1, w / 2 + 2, 2, P.WHITE)
+    for dx, dy in ((-4, -3), (w + 2, -4), (-2, -5), (w, -2)):
+        c.px(x + dx, bottom + dy, P.WHITE)

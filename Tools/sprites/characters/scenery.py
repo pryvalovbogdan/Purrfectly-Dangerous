@@ -390,29 +390,38 @@ def forest_clouds(name: str, height: int, clouds: list) -> Sprite:
     return single(name, c)
 
 
+def ramp_sky(theme: str, ramp: list) -> list[Sprite]:
+    """A 200-row sky in plain full-row bands of a fine colour ramp, top to bottom. Neighbouring bands differ
+    by only a few levels, so the blend reads as smooth: no dithered rows, which show up as hard stripes
+    once the 16-wide texture is stretched across the screen. The top colour continues as `_sky_top`."""
+    c = Canvas(16, 200)
+    for y in range(200):
+        c.rect(0, y, 15, y, ramp[min(len(ramp) - 1, y * len(ramp) // 200)])
+    return [single(f"bg_{theme}_sky", c), flat(f"bg_{theme}_sky_top", ramp[0])]
+
+
 def forest_far() -> Canvas:
-    """Blue mountains, and a white castle on a green cliff with a waterfall pouring off it."""
+    """Blue mountains, and the white hilltop castle on a rocky cliff with a waterfall in two drops. The
+    castle (flags included) stays inside rows 2-41; the cliff runs to the bottom of the layer."""
     h = 110
     c = Canvas(LAYER_W, h)
     W.mountains(c, h, 4, 6, (70, 104), (P.MOUNT_L, P.MOUNT_L, P.MOUNT), tips=P.SKY_HAZE)
     W.mountains(c, h, 5, 5, (40, 72), (P.MOUNT_L, P.MOUNT, P.MOUNT_D), tips=P.MOUNT_L)
-    # the castle's cliff: a flat grassy top and a striped rock face
-    top, left, right = 40, 192, 304
-    c.poly([(left, h), (left + 4, top + 6), (left + 10, top), (right - 6, top), (right, top + 8), (right + 4, h)],
-           P.CLIFF)
-    for k in range(left + 6, right, 7):
-        c.line((k, top + 4), (k - 2 + (k % 3), h), P.CLIFF_D)
-        c.line((k + 2, top + 5), (k + 1, top + 22 + (k * 7) % 14), P.CLIFF_L)
-    c.rect(left + 8, top, right - 4, top + 3, P.FAR_GRASS)
-    c.rect(left + 8, top, right - 4, top, P.KIT_GREEN_L)
-    for k in range(left + 9, right - 5, 4):                  # grass hanging over the cliff edge
-        c.rect(k, top + 4, k + 1, top + 4 + (k * 5) % 4, P.FAR_GRASS)
-    W.castle(c, 246, top + 1)
-    for tx in (204, 214, 286):                               # little trees by the walls
-        W.canopy(c, tx, top - 4, 12, 10, tx, W.DISTANT, (3, 5))
-    W.waterfall(c, 288, top + 2, h - 2, 6)
-    W.waterfall(c, 204, top + 14, h - 2, 4)
-    return W.haze(c, P.SKY_HAZE, 0.12)
+    top, left, right = 40, 188, 310
+    falls = (282, 289)
+    W.rock_cliff(c, left, right, top, 17, notch=falls)
+    W.rim_bushes(c, [(198, 7), (207, 5), (274, 5), (300, 7)], top - 1, 140)
+    W.hill_castle(c, 240, top + 1)
+    W.cascade(c, falls[0], top, 64, falls[1] - falls[0] + 1, 1)
+    ledge = Canvas(LAYER_W, h)                               # the ledge the first drop lands on
+    ledge.rect(274, 65, 298, 68, P.CLIFF)
+    ledge.rect(274, 65, 298, 65, P.FAR_GRASS)
+    ledge.rect(274, 68, 298, 68, P.CLIFF_D)
+    W.outline_wrapped(ledge, P.CLIFF_DD, wrap=False)
+    c.paste(ledge)
+    W.cascade(c, falls[0] + 2, 69, h - 3, 8, 4)
+    W.cascade(c, falls[0], top, 64, falls[1] - falls[0] + 1, 1)  # redrawn so its foam sits over the ledge
+    return W.haze(c, P.SKY_HAZE, 0.1)
 
 
 def forest_near() -> Canvas:
@@ -422,7 +431,7 @@ def forest_near() -> Canvas:
     c = Canvas(LAYER_W, h)
     band = Canvas(LAYER_W, h)                               # distant forest
     rnd = noise(40)
-    band.rect(0, h - 20, LAYER_W - 1, h - 1, P.DIST_D)
+    band.rect(0, h - 30, LAYER_W - 1, h - 1, P.DIST_D)       # solid below the crowns: no far-layer flecks
     for i in range(16):
         x = i * LAYER_W / 16 + rnd() * 10
         top = h - 36 - rnd() * 16
@@ -501,7 +510,7 @@ def forest_ravine() -> list[Sprite]:
 
 def forest() -> list[Sprite]:
     return [
-        *smooth_sky("forest", [P.SKY_TOP, P.SKY, P.SKY, P.SKY_L, P.SKY_HAZE]),
+        *ramp_sky("forest", P.SKY_RAMP),
         forest_clouds("bg_forest_puffs", 120, [(30, 50, 34, 16), (110, 90, 26, 12), (176, 40, 40, 18),
                                                (250, 80, 30, 14), (300, 30, 22, 10)]),
         forest_clouds("bg_forest_clouds", 150, [(20, 70, 62, 30), (92, 40, 40, 20), (150, 84, 74, 34),
