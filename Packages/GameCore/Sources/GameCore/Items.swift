@@ -107,6 +107,8 @@ public struct ItemSpec: Sendable {
     public var throwing: ThrowSpec?
     /// Curls up into an unstompable, yarn-proof ball once the hero is this close.
     public var curlsAt: Double?
+    /// Once curled it is a hard shell rather than spikes: landing on it is a safe bounce (no kill).
+    public var shellBounce = false
     public var cycle: CycleSpec?
     public var cycleRole: CycleRole = .trap
     public var fall: FallSpec?
@@ -160,9 +162,10 @@ extension ItemKind {
             ItemSpec(width: 20, height: 28, hp: 2, xp: 25, yarnable: true, solid: true,
                      throwing: ThrowSpec(projectile: "leaf", interval: 2.0, range: 300, speed: 80, y: 2,
                                          width: 8, height: 5))
-        // Hides in its shell once close (the curler behaviour): no stomp, yarn bounces off; jump it.
+        // Hides in its shell once close (the curler behaviour): yarn bounces off, and so does a kitten
+        // landing on it, unhurt; jump or bounce over it.
         case .snailCat: ItemSpec(width: 24, height: 16, xp: 15, velocity: -8, stompable: true, stompKills: true,
-                                 yarnable: true, curlsAt: 80)
+                                 yarnable: true, curlsAt: 80, shellBounce: true)
         case .spiderCat:
             ItemSpec(width: 18, height: 16, baseY: 60, xp: 20, velocity: -20, stompable: true, stompKills: true,
                      yarnable: true,

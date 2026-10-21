@@ -60,7 +60,7 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | forest | `plant_cat` | Trap on the world clock: bites (30 high) for 0.6 s of every 2 s, open as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); no stomp; yarn hits it any time, 2 HP |
 | forest | `bee_cat` | Hovers 40 up, drifting in at 10/s; every 1.8 s in range fires a `sting` along the ground at 4 |
 | forest | `stump_cat` | Terrain, 28 tall; every 2 s in range sends a `leaf` along the ground at 2; 2 HP |
-| forest | `snail_cat` | Very slow walker (8/s); within 80 of the hero it hides in its shell: then no stomp, and yarn bounces off |
+| forest | `snail_cat` | Very slow walker (8/s); within 80 of the hero it hides in its shell: then yarn bounces off, and landing on it is a safe bounce with no kill (`shellBounce`) |
 | forest | `spider_cat` | Hangs 60 up, harmless and out of yarn's reach; 130 from the hero it blinks 0.4 s, drops, and walks in (20/s) as a walker; a stomp kills |
 | frost | `icicle` | Hangs 70 up; 130 from the hero it blinks 0.35 s, drops, and lies as low shards (14×6) |
 | frost | `snowball` | Fast roller, 2 HP |

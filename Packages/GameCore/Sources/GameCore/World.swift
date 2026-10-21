@@ -865,10 +865,14 @@ public struct RunnerWorld: Sendable {
                 // A Ghost Dash slips through creatures and traps, not through terrain.
                 if ghost, !spec.solid { continue }
                 let fromAbove = heroVY < 0 && previousBottom >= entity.box.maxY - 4
-                if spec.stompable, entity.state != .curled, fromAbove {
+                let shell = entity.state == .curled && spec.shellBounce
+                if spec.stompable, entity.state != .curled || shell, fromAbove {
                     events.append(.stomped(id: entity.id))
-                    // For most it is only a bounce; the ones it kills pay out like yarn.
-                    if spec.stompKills { damage(entityAt: index, by: entity.hp, events: &events) }
+                    // For most it is only a bounce; the ones it kills pay out like yarn. A hard shell
+                    // is only ever a bounce.
+                    if spec.stompKills, !shell { damage(entityAt: index, by: entity.hp, events: &events) }
+                    // Bounce from its top, so a landing on a corner never leaves the hero inside it.
+                    heroY = max(heroY, entity.box.maxY)
                     heroVY = tuning.stompBounce
                     jumpsUsed = 1
                     jumpCutDone = true

@@ -510,7 +510,7 @@ import Testing
         #expect(hit(dasher.step(Input(pawPressed: true), dt: dt) + dasher.run(0.4)))
     }
 
-    @Test func snailCatHidesInItsShellWhenCloseAndThenShrugsOffYarnAndStomps() {
+    @Test func snailCatHidesInItsShellWhenCloseAndThenShrugsOffYarnButBouncesTheKitten() {
         var early = RunnerWorld(level: flatLevel(items: [.init(at: 500, kind: .snailCat)]), boss: nil, stats: hero(2))
         advance(&early) { gap($0, .snailCat) < 220 }
         #expect(defeated(early.run(0.05, Input(fireHeld: true)) + early.run(1), .snailCat))
@@ -522,7 +522,16 @@ import Testing
         let late = world.run(0.05, Input(fireHeld: true)) + world.run(0.3)
         #expect(late.contains { if case .yarnBounced = $0 { true } else { false } })
         #expect(!defeated(late, .snailCat))
-        #expect(stompAttempts(.snailCat).isEmpty)
+
+        // Landing on the hidden shell is a safe bounce: no hit, and the snail stays.
+        let landings = stompAttempts(.snailCat)
+        #expect(!landings.isEmpty)
+        for events in landings {
+            #expect(!hit(events))
+            #expect(!defeated(events, .snailCat))
+        }
+        // The hedgehog's spikes still hurt once it has curled.
+        #expect(stompAttempts(.hedgehog).isEmpty)
     }
 
     @Test func spiderCatHangsHarmlesslyThenDropsAndWalksIn() throws {
