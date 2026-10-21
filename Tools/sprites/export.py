@@ -141,6 +141,50 @@ def app_icon(sprites: dict[str, Sprite]) -> None:
     (ATLAS.parent / "Contents.json").write_text(json.dumps({"info": {"author": "xcode", "version": 1}}, indent=2) + "\n")
 
 
+GAME_OVER_SOURCE = Path(__file__).parent / "game_over_source.png"
+# Where the stone-and-leaves "GAME OVER" title sits in the user's game-over painting.
+GAME_OVER_BOX = (100, 196, 868, 592)
+
+
+def _sky(p: tuple) -> bool:
+    r, g, b = p[:3]
+    blue = b > r + 35 and b > g + 5
+    cloud = b >= r and b >= g - 6 and min(r, g, b) > 150 and max(r, g, b) - min(r, g, b) < 70
+    return blue or cloud
+
+
+def game_over_title() -> None:
+    """The game-over title, cut from the user's painting like the app icon rather than drawn in code:
+    the stone slab, leaves, flowers, lettering and fish, with the sky behind it flood-filled away
+    from the edges (outlines stop the fill, so the blue fish stays). A regular image, outside the
+    sprite atlas, so it is never packed beside other art."""
+    im = Image.open(GAME_OVER_SOURCE).convert("RGBA").crop(GAME_OVER_BOX)
+    w, h = im.size
+    px = im.load()
+    clear = [[False] * h for _ in range(w)]
+    todo = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    while todo:
+        x, y = todo.pop()
+        if clear[x][y] or not _sky(px[x, y]):
+            continue
+        clear[x][y] = True
+        px[x, y] = (0, 0, 0, 0)
+        todo += [(nx, ny) for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
+                 if 0 <= nx < w and 0 <= ny < h and not clear[nx][ny]]
+    for _ in range(2):                                   # sky-tinted fringe pixels left at the edge
+        fringe = [(x, y) for x in range(1, w - 1) for y in range(1, h - 1) if px[x, y][3] and _sky(px[x, y])
+                  and any(px[x + dx, y + dy][3] == 0 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
+        for x, y in fringe:
+            px[x, y] = (0, 0, 0, 0)
+    title = im.crop(im.getbbox())
+    folder = ATLAS.parent / "title_game_over.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(title, folder / "title_game_over.png")
+    contents = {"images": [{"filename": "title_game_over.png", "idiom": "universal"}],
+                "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
 def contact_sheet(sprites: list[Sprite], path: Path, scale: int = 4) -> None:
     """One PNG with every animation of the given sprites as labelled rows, for quick review."""
     rows = [(s, name) for s in sprites for name in s.anims]

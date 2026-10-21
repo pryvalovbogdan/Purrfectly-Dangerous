@@ -789,6 +789,84 @@
    }
   }
  },
+ "button_double": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "sparkle": {
+    "frames": 6,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "button_double_disabled": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_double_pressed": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "sparkle": {
+    "frames": 6,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "button_jump": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_jump_disabled": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_jump_pressed": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "cannon": {
   "width": 30,
   "height": 20,
@@ -1795,6 +1873,19 @@
    "death": {
     "frames": 4,
     "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "paw_trail": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "burst": {
+    "frames": 5,
+    "fps": 12,
     "loop": false
    }
   }

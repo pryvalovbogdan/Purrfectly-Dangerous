@@ -20,6 +20,16 @@ final class GameHUD {
     var dashReady = true
     var canPounce = false
     var canDoubleJump = false
+    /// What the jump button offers right now.
+    enum JumpButton: Equatable {
+        /// On the ground: a jump.
+        case ready
+        /// In the air with a Double Pounce still to use.
+        case double
+        /// In the air with no jump left.
+        case spent
+    }
+    var jumpButton = JumpButton.ready
     /// How far the paw is charged toward a Super Pounce, 0...1.
     var pounceCharge = 0.0
     var bossName: String?

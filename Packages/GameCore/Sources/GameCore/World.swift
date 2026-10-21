@@ -352,6 +352,8 @@ public struct RunnerWorld: Sendable {
     public var isDashing: Bool { dashTime > 0 }
     public var canDash: Bool { stats.has(.ghostDash) && dashCooldownLeft <= 0 }
     public var isOver: Bool { phase == .won || phase == .dead }
+    /// In the air with a Double Pounce still to use (what the jump button shows).
+    public var canDoubleJump: Bool { !onGround && stats.has(.doublePounce) && jumpsUsed < 2 }
     /// On the base ground (not a ledge or a step) over a slick zone.
     public var onSlick: Bool {
         onGround && standingOn == nil && heroY == 0 && slick.contains { $0.contains(distance) }

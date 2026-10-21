@@ -155,7 +155,7 @@ private struct HUDView: View {
                 HStack(alignment: .bottom) {
                     VStack(spacing: upright ? 0 : -14) {
                         if hud.canDash {
-                            HoldButton(onChange: paw) {
+                            HoldButton(onChange: paw) { _ in
                                 ZStack {
                                     Circle().fill(.black.opacity(0.15))
                                     if hud.canPounce {
@@ -174,7 +174,7 @@ private struct HUDView: View {
                             .accessibilityHint(hud.canPounce ? model.text("ability.superPounce") : "")
                         }
                         if hud.canFire {
-                            HoldButton(onChange: fire) {
+                            HoldButton(onChange: fire) { _ in
                                 ZStack {
                                     Circle().fill(.black.opacity(0.15))
                                     SpriteImage(sprite: "ability_yarnShot", animation: "still")
@@ -185,15 +185,23 @@ private struct HUDView: View {
                         }
                     }
                     Spacer()
-                    HoldButton(onChange: jump) {
-                        ZStack {
-                            Circle().fill(.black.opacity(0.15))
-                            if hud.canDoubleJump { PounceRing() }
-                            // A plain arrow reads as "jump" at a glance; a second one once it can pounce again in the air.
-                            Image(systemName: hud.canDoubleJump ? "chevron.up.2" : "chevron.up")
-                                .font(.system(size: 38, weight: .black))
-                                .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: 2)
+                    // The cat-paw jump button, in the state the world is in; the old arrow if the
+                    // paw sprites are not drawn yet.
+                    let face = JumpFace.sprite(for: hud.jumpButton, unlocked: hud.canDoubleJump)
+                    let drawn = model.sprites.sheet(face.idle) != nil && model.sprites.sheet(face.pressed) != nil
+                    HoldButton(onChange: jump, pressEffect: drawn ? .sprite : .fade) { pressed in
+                        if drawn {
+                            JumpFace(sprite: pressed ? face.pressed : face.idle, animation: face.animation)
+                        } else {
+                            ZStack {
+                                Circle().fill(.black.opacity(0.15))
+                                if hud.canDoubleJump { PounceRing() }
+                                // A plain arrow reads as "jump" at a glance; a second one once it can pounce again in the air.
+                                Image(systemName: hud.canDoubleJump ? "chevron.up.2" : "chevron.up")
+                                    .font(.system(size: 38, weight: .black))
+                                    .foregroundStyle(.white)
+                                    .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: 2)
+                            }
                         }
                     }
                     .accessibilityLabel("Jump")
@@ -235,15 +243,24 @@ private struct FishCount: View {
 /// A round on-screen button that reports when a finger goes down on it and when it lifts. The
 /// touch area reaches a little past the drawn circle so a thumb that lands just off it still counts.
 private struct HoldButton<Label: View>: View {
+    enum PressEffect {
+        /// Translucent, brighter and smaller while held (the drawn-in-code buttons).
+        case fade
+        /// The sprite has its own pressed frame; only a slight squash.
+        case sprite
+    }
+
     let onChange: (Bool) -> Void
-    @ViewBuilder let label: () -> Label
+    var pressEffect = PressEffect.fade
+    /// The face, given whether the button is held.
+    @ViewBuilder let label: (_ pressed: Bool) -> Label
     @GestureState private var isPressed = false
 
     var body: some View {
-        label()
+        label(isPressed)
             .frame(width: 88, height: 88)
-            .scaleEffect(isPressed ? 0.92 : 1)
-            .opacity(isPressed ? 0.9 : 0.55)
+            .scaleEffect(isPressed ? (pressEffect == .sprite ? 0.96 : 0.92) : 1)
+            .opacity(pressEffect == .sprite ? 1 : (isPressed ? 0.9 : 0.55))
             .padding(14)
             .contentShape(Circle())
             .gesture(DragGesture(minimumDistance: 0).updating($isPressed) { _, pressed, _ in pressed = true })
@@ -254,7 +271,36 @@ private struct HoldButton<Label: View>: View {
     }
 }
 
-/// A soft ring of yarn colours that turns around the jump button once Double Pounce is won.
+/// The cat-paw jump button sprite, at the whole-pixel scale nearest 88 pt.
+private struct JumpFace: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.displayScale) private var displayScale
+    let sprite: String
+    let animation: String
+
+    /// Sprites for each state: a gold, sparkling paw only while a Double Pounce is there to use, so
+    /// the button is never gold before the ability is won.
+    static func sprite(for state: GameHUD.JumpButton, unlocked: Bool) -> (idle: String, pressed: String, animation: String) {
+        switch state {
+        case .ready: ("button_jump", "button_jump_pressed", "still")
+        case .double: ("button_double", "button_double_pressed", "sparkle")
+        case .spent:
+            unlocked ? ("button_double_disabled", "button_double_disabled", "still")
+                : ("button_jump_disabled", "button_jump_disabled", "still")
+        }
+    }
+
+    var body: some View {
+        let width = model.sprites.sheet(sprite)?.width ?? 48
+        // Nearest 88 pt in whole device pixels per sprite pixel; a tie takes the smaller.
+        let exact = 88 * max(displayScale, 1) / width
+        let scale = max(1, Int(exact.rounded(.down)) + (exact - exact.rounded(.down) > 0.5 ? 1 : 0))
+        PixelSprite(sprite: sprite, animations: [animation], pixelScale: scale)
+    }
+}
+
+/// A soft ring of yarn colours that turns around the jump button once Double Pounce is won (shown
+/// only with the old arrow button, when the paw sprites are missing).
 private struct PounceRing: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let colors: [Color] = [.pink, .purple, .cyan, .pink, .yellow, .pink]

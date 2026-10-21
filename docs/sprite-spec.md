@@ -13,7 +13,7 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 
 | Sprite | Size | Animations (frames) |
 | --- | --- | --- |
-| hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades); for the screens: peek 4 (lying on its belly on a ledge, paws flopped over the edge, cape draped over its back, blinks; the ledge is row 34), cheer 4 (one paw thrust up, "^ ^" eyes, open smile, cape flapping), sit_happy 4 (sitting, "^ ^" eyes, smile, tail swishing), ko 2 (flat on its side, "x x" eyes, tongue out, cape spread; 1 px twitch), ghost 4 (see-through pale blue spirit, gold halo, white wings, sad face, bobs 0-2 px; floats about 3-5 px above row 34). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
+| hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades); for the screens: peek 4 (lying on its belly on a ledge, paws flopped over the edge, cape draped over its back, blinks; the ledge is row 34), cheer 4 (one paw thrust up, "^ ^" eyes, open smile, cape flapping), sit_happy 4 (sitting, "^ ^" eyes, smile, tail swishing), ko 2 (stretched out on its belly about 40 px long, head resting at the right with its ears up, "x x" eyes, tongue out; tail out to the left, cape draped over its back only; each part outlined; 1 px twitch of tail tip and hind paw), ghost 4 (see-through pale blue spirit with a round front-facing head and two upright ears, big sad eyes and a frown, gold halo, white wings; bobs 0-2 px; floats about 3-5 px above row 34). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
 | yarn | 12×12 | fly 4, impact 5 |
 | squirrel | 36×36 | walk 6, death 4. The Squirrel Thief: orange, cat-faced, teal scarf, huge curled tail, striding jointed legs; feet on row 34, x 18; covers its 18×24 hitbox |
 | acorn | 14×14 | roll 4, death 4 (12×11 hitbox) |
@@ -87,6 +87,13 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | title_wreath_small | 240×96 | still 1. The same round a 192×54 box, for "level complete" |
 | title_wreath_stone | 250×120 | still 1. Mossy grey boulder behind "game over" (about 206×88; plain stone in the middle for the text) with the same big leaves round it |
 | title_cat | 64×40 | blink 4 (open, open, half, closed). The hero up close peeking over the title, drawn at this size: head and shoulders, both front paws resting on the bottom row, the red cape flaring out to the left. Ground = row 39 (the paws' outline), centred (anchorX 0.5); the head's centre is at x 39. In the reference it is about 1.5× the wreath's pixel scale |
+| button_jump | 48×48 | still 1. Jump button: deep navy disc, royal-blue ring lit top-left, dark outline; a cream paw print (main pad + four toe beans, coral pads with a light rim, soft shadow) centred. Round, transparent outside; the circles are centred between pixels 23 and 24 |
+| button_jump_pressed | 48×48 | still 1. Purple disc, hot-pink ring, a 1-2 px pink-violet glow outside it (semi-transparent, reaching the frame edge); the paw 1 px lower |
+| button_jump_disabled | 48×48 | still 1. Slate disc, dark grey ring, grey paw with muted grey pads |
+| button_double | 48×48 | sparkle 6 @8fps. Amber-brown disc, gold ring, the same paw, five gold/white four-point sparkles twinkling in turn (grow, flash, fade); a white glint runs over the ring on frame 3 |
+| button_double_pressed | 48×48 | sparkle 6 @8fps. Magenta disc, gold ring with a pink glow outside, brighter white sparkles, the paw 1 px lower |
+| button_double_disabled | 48×48 | still 1. Slate disc, grey paw, three faint white sparkles |
+| paw_trail | 16×16 | burst 5 @12fps, not looping. Gold sparkles flying out and up with three motion streaks below, for the cat's feet on a double jump; the streaks reach the bottom row |
 | menu_scene_portrait | 210×230 | still 1. The start screen's backdrop as one opaque picture for an upright screen (landmarks inside the middle 195 columns, x 7-202, so any screen 195-210 wide shows them whole): tree with a red-roofed house and a cat signpost (left), pines, blue mountains and a river (middle), castle on a cliff with a waterfall, wooden bridges, bushes and flowers (right). Sky drawn in full-row bands; its top rows are `menu_sky`'s bottom colour. Bottom row sits directly on `ground_forest` (anchor at the bottom). Nothing tiles or scrolls |
 | menu_scene_landscape | 440×150 | still 1. The same for a wide screen: landmarks inside the middle 333 columns (x 54-386); the extra width at the sides is forest (left) and cliff, river and bridge (right) |
 | menu_sky | 16×64 | still 1. Sky above the scene, four full-row bands ending in the scenes' top colour; stretch it, its bands have no dithering |
@@ -151,7 +158,7 @@ The rim, walls and edges are opaque, so they cover whatever is under the pit. Pi
 
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 
-The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
+The jump buttons (`characters/buttons.py`) follow `docs/concept/Pixel Art Jump Button UI Sheet.png` (top row); the paw is pixel-identical in every button (the pressed ones shift it down 1 px), so swapping states never jumps. The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
 `menu_sky`, `menu_clouds` and `menu_waterfall`. The older scrolling strips `bg_menu_sky`, `bg_menu_clouds`,
 `bg_menu_puffs`, `bg_menu_horizon` and `bg_menu_bushes` (still used by `MenuScene` and `Tools/store/header.py`) stand on the forest ground, in the Purrwood look
 (`docs/concept/Purrfectly Dangerous Pixel Game Screens.png`): the treehouse at x 0-50 and the castle on its cliff with

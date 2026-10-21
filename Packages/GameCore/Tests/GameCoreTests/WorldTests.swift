@@ -55,6 +55,29 @@ import Testing
         #expect(jumps(level: 3) == 2)
     }
 
+    /// What the jump button shows in the air: whether a Double Pounce is still there to use.
+    @Test func canDoubleJumpTracksTheSecondJump() {
+        let pouncer = HeroStats(xp: Progression.xp(forLevel: 3))
+        var world = RunnerWorld(level: flatLevel(), boss: nil, stats: pouncer)
+        _ = world.run(0.3)
+        #expect(!world.canDoubleJump)                       // on the ground
+        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        #expect(world.canDoubleJump)                        // first jump used, second left
+        _ = world.run(0.1, Input(jumpHeld: true))
+        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        #expect(!world.canDoubleJump)                       // both used
+
+        var novice = RunnerWorld(level: flatLevel(), boss: nil)
+        _ = novice.run(0.3)
+        _ = novice.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        #expect(!novice.canDoubleJump)                      // ability not won
+
+        // Running off a ravine's rim leaves nothing to push off from.
+        var faller = RunnerWorld(level: flatLevel(ravines: [Ravine(at: 200, width: 120)]), boss: nil, stats: pouncer)
+        while faller.onGround, !faller.isOver { _ = faller.step(Input(), dt: dt) }
+        #expect(!faller.canDoubleJump)
+    }
+
     /// Players tap: each press is held about a tenth of a second. Two quick taps must still carry
     /// the kitten over the widest ravine the validator allows once Double Pounce is guaranteed.
     @Test func twoQuickTapsClearAWideRavine() {

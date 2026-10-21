@@ -39,6 +39,7 @@ def main(argv: list[str]) -> int:
     if not wanted:
         by_name = {s.name: s for s in sprites}
         export.app_icon(by_name)
+        export.game_over_title()
     frames = sum(len(a.frames) for s in built for a in s.anims.values())
     print(f"built {len(built)} sprite(s), {frames} frames; manifest has {len(manifest)} sprites")
     print(f"previews: {export.OUT / 'preview'}")

@@ -148,7 +148,11 @@ private struct ResultLayout<Header: View, Card: View, Buttons: View>: View {
     let figureHeight: CGFloat
     /// Estimated card heights (upright, compact), so the header gets the rest.
     let cardHeight: (tall: CGFloat, wide: CGFloat)
-    @ViewBuilder let header: (_ width: CGFloat, _ maxHeight: CGFloat) -> Header
+    /// On its side too, the card goes straight under the header in one column (so it can cover the
+    /// game-over title's cut edge), with the buttons in a column beside it.
+    var titleOverCard = false
+    /// The header gets its column width, the height it may use, and the screen width.
+    @ViewBuilder let header: (_ width: CGFloat, _ maxHeight: CGFloat, _ screenWidth: CGFloat) -> Header
     @ViewBuilder let card: (_ compact: Bool) -> Card
     @ViewBuilder let buttons: (_ compact: Bool) -> Buttons
 
@@ -170,7 +174,7 @@ private struct ResultLayout<Header: View, Card: View, Buttons: View>: View {
         let top = insets.top + 8
         let headerHeight = max(120, size.height - figureTop - top - cardHeight.tall - 16)
         return VStack(spacing: 0) {
-            header(width, headerHeight).padding(.top, top)
+            header(width, headerHeight, size.width).padding(.top, top)
             card(false).frame(width: width).padding(.top, 6)
             Spacer(minLength: 0)
             buttons(false)
@@ -190,14 +194,26 @@ private struct ResultLayout<Header: View, Card: View, Buttons: View>: View {
         let top = insets.top + 10
         let bottom = max(insets.bottom, 10) + 6
         let headerHeight = size.height - top - bottom
+        let stackWidth = min(360, (available - 20) * 0.6)
         return HStack(alignment: .center, spacing: 20) {
-            header(headerWidth, headerHeight)
-                .frame(width: headerWidth)
-            VStack(spacing: 12) {
-                card(true)
+            if titleOverCard {
+                // Header over the card, as upright; the header shrinks to leave the card its height.
+                VStack(spacing: 6) {
+                    header(stackWidth, headerHeight - cardHeight.wide - 6, size.width)
+                    card(true)
+                }
+                .frame(width: stackWidth)
                 buttons(true)
+                    .frame(width: min(280, available - 20 - stackWidth))
+            } else {
+                header(headerWidth, headerHeight, size.width)
+                    .frame(width: headerWidth)
+                VStack(spacing: 12) {
+                    card(true)
+                    buttons(true)
+                }
+                .frame(width: columnWidth)
             }
-            .frame(width: columnWidth)
         }
         .padding(.top, top)
         .padding(.bottom, bottom)
@@ -220,7 +236,7 @@ struct LevelCompleteView: View {
         let summary = ResultSummary(model: model, levelIndex: levelIndex, result: result)
         ZStack {
             MenuBackground(pose: .happy, celebrate: true, groundShare: MenuView.groundShare, wideHeroPlace: 0.12)
-            ResultLayout(figureHeight: 0.85, cardHeight: (230, 200)) { width, maxHeight in
+            ResultLayout(figureHeight: 0.85, cardHeight: (230, 200)) { width, maxHeight, _ in
                 WreathTitle(text: model.ui("level_complete"), wreath: "title_wreath_small", width: width,
                             maxHeight: maxHeight, topper: [.cheer, .idle], topperSink: 0.3,
                             sunburst: true, fish: true)
@@ -277,18 +293,41 @@ struct GameOverView: View {
         let summary = ResultSummary(model: model, levelIndex: levelIndex, result: result)
         ZStack {
             MenuBackground(pose: .knockedOut, groundShare: MenuView.groundShare, wideHeroPlace: 0.12)
-            ResultLayout(figureHeight: 1.3, cardHeight: (200, 180)) { width, maxHeight in
-                VStack(spacing: 6) {
-                    livesRow
-                    WreathTitle(text: model.ui("game_over"), wreath: "title_wreath_stone", width: width,
-                                maxHeight: max(80, maxHeight - 44), fish: true, leaves: true, allGradient: true)
-                }
+            ResultLayout(figureHeight: 1.3, cardHeight: (200, 180), titleOverCard: true) { width, maxHeight, screenWidth in
+                title(width: width, maxHeight: maxHeight, screenWidth: screenWidth)
             } card: { compact in
                 card(summary, compact: compact)
             } buttons: { compact in
                 ResultButtons(summary: summary, gameOver: true, compact: compact)
             }
         }
+    }
+
+    /// Upright the title is about four fifths of the screen wide, as in the reference; on its side it
+    /// fills the column it shares with the card, shrunk to the height left above the card.
+    private static let titleShare: CGFloat = 0.82
+    /// How far the card covers the title image's straight bottom edge (the card follows it 6 pt down).
+    private static let cardOverlap: CGFloat = 6
+    /// How far the heads sit down over the top of the title's leaves.
+    private static let headsOverlap: CGFloat = 10
+
+    /// The heads lost over the reference title art: the stone slab with GAME OVER, its leaves and the
+    /// fish, as one image (`title_game_over`, cut from the reference, not pixel-grid art, so it is
+    /// scaled smoothly). The words still come from Lore.json for VoiceOver.
+    private func title(width: CGFloat, maxHeight: CGFloat, screenWidth: CGFloat) -> some View {
+        let titleWidth = min(width, (screenWidth * Self.titleShare).rounded())
+        return VStack(spacing: -Self.headsOverlap) {
+            livesRow.zIndex(1)
+            Image("title_game_over")
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(maxWidth: titleWidth, maxHeight: max(80, maxHeight - 32 + Self.headsOverlap))
+                .accessibilityLabel(model.ui("game_over"))
+                .accessibilityAddTraits(.isHeader)
+        }
+        // The card follows straight under the title (both orientations): tuck the cut edge behind it.
+        .padding(.bottom, -(6 + Self.cardOverlap))
     }
 
     private var livesRow: some View {

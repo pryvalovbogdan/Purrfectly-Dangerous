@@ -671,6 +671,7 @@ final class GameScene: SKScene {
                 if double {
                     doubleJumping = true
                     hero.play("double", restart: true)
+                    pawTrail()
                 }
             case .landed:
                 doubleJumping = false
@@ -873,6 +874,19 @@ final class GameScene: SKScene {
             node.run(.sequence([.group([fly, .sequence([.wait(forDuration: 0.2), .fadeOut(withDuration: 0.15)])]),
                                 .removeFromParent()]))
         }
+    }
+
+    /// Paw prints flashing at the hero's feet as it pushes off the air for a Double Pounce, left
+    /// behind as the world scrolls on.
+    private func pawTrail() {
+        guard let animation = library.animation("paw_trail", "burst") else { return }
+        let node = ActorNode(sprite: "paw_trail", library: library)
+        node.position = CGPoint(x: framing.heroScreenX.rounded(), y: screenY(world.heroY).rounded())
+        node.zPosition = 6
+        actors.addChild(node)
+        let duration = Double(animation.frames) / max(animation.fps, 1)
+        node.run(.moveBy(x: -CGFloat(world.runSpeed * duration), y: 0, duration: duration))
+        node.play("burst") { [weak node] in node?.removeFromParent() }
     }
 
     /// A few earth-coloured pixels kicked up and fading.
@@ -1282,6 +1296,15 @@ final class GameScene: SKScene {
         show(\.canPounce, stats.has(.superPounce))
         show(\.dashReady, world.canDash)
         show(\.canDoubleJump, stats.has(.doublePounce))
+        let jump: GameHUD.JumpButton
+        if world.onGround {
+            jump = .ready
+        } else if world.canDoubleJump {
+            jump = .double
+        } else {
+            jump = .spent
+        }
+        show(\.jumpButton, jump)
         // Quantised so the ring does not redraw the SwiftUI overlay on every frame of a hold.
         let charge = stats.has(.superPounce) ? min(1, world.pawCharge / world.tuning.chargeTime) : 0
         show(\.pounceCharge, (charge * 20).rounded() / 20)

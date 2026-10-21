@@ -29,6 +29,8 @@ final class MenuScene: SKScene {
 
     private let library: SpriteLibrary
     private let upright: Bool
+    /// Device pixels per scene unit (a whole number).
+    private let pixelsPerUnit: CGFloat
     private let pose: Pose
     /// A level's background theme to show instead of the menu's own morning.
     private let theme: String?
@@ -56,7 +58,9 @@ final class MenuScene: SKScene {
         self.groundShare = groundShare
         self.wideHeroPlace = wideHeroPlace
         upright = viewSize.height > viewSize.width
-        super.init(size: Self.sceneSize(viewSize: viewSize, displayScale: max(displayScale, 1)))
+        let sceneSize = Self.sceneSize(viewSize: viewSize, displayScale: max(displayScale, 1))
+        pixelsPerUnit = sceneSize.width > 0 ? viewSize.width * max(displayScale, 1) / sceneSize.width : 1
+        super.init(size: sceneSize)
         scaleMode = .fill
         anchorPoint = .zero
     }
@@ -267,8 +271,16 @@ final class MenuScene: SKScene {
 
     // MARK: - Poses
 
-    /// Out cold on the grass with stars circling its head, and its ghost bobbing above.
+    /// Share of the screen width the knocked-out hero spans (as in the game-over reference).
+    static let knockedOutWidthShare: CGFloat = 0.36
+    /// The ghost and the dizzy stars are drawn at this share of the knocked-out hero's scale.
+    static let ghostShare: CGFloat = 0.6
+
+    /// Out cold on the grass, in front of everything in the scene (the picture's foreground bushes
+    /// included), with stars over its head and a smaller ghost of it bobbing above. Scaled so the
+    /// drawn cat spans about a third of the screen, at a whole number of device pixels per sprite pixel.
     private func knockOut(_ hero: ActorNode) {
+        let animation = hero.has("ko") ? "ko" : "death"
         if hero.has("ko") {
             hero.play("ko")
         } else {
@@ -276,28 +288,48 @@ final class MenuScene: SKScene {
             let frames = library.textures("hero", "death")
             if !frames.isEmpty { hero.texture = frames[min(3, frames.count - 1)] }
         }
-        let scale = Self.heroScale
-        let heroHeight = (library.sheet("hero")?.height ?? 36) * scale
+        let sheet = library.sheet("hero")
+        let sheetHeight = sheet?.height ?? 36
+        let sheetWidth = sheet?.width ?? 44
+        let drawn = MainActor.assumeIsolated { library.opaqueBounds("hero", animation) }
+            ?? CGRect(x: 5, y: 15, width: 34, height: 21)
+        let devicePixels = max(1, (size.width * pixelsPerUnit * Self.knockedOutWidthShare / drawn.width).rounded())
+        let scale = devicePixels / pixelsPerUnit
+        hero.setScale(scale)
+        hero.zPosition = 5
+        // Top of the drawn cat, above the hero's position, in scene units.
+        let drawnTop = (sheetHeight - drawn.minY) * scale
+        let smallScale = max(1, (devicePixels * Self.ghostShare).rounded()) / pixelsPerUnit
+
         if let stars = actor("stars_dizzy") {
-            // Over the head, which is at the front (right) of a cat lying on its side.
-            stars.setScale(scale)
-            // `ko` lies in the bottom ~21 rows with the head at the right, around column 33 of 44.
-            stars.position = CGPoint(x: hero.position.x + 10 * scale, y: hero.position.y + (heroHeight * 0.58).rounded())
-            stars.zPosition = 1
+            // Over the head, at the front (right) of a cat lying on its side.
+            stars.setScale(smallScale)
+            let headX = (drawn.maxX - drawn.width * 0.25 - sheetWidth * (sheet?.anchorX ?? 0.5)) * scale
+            stars.position = CGPoint(x: snap(hero.position.x + headX), y: snap(hero.position.y + drawnTop + 1))
+            stars.zPosition = 6
             addChild(stars)
         }
         if hero.has("ghost") {
             let ghost = ActorNode(sprite: "hero", library: library)
-            ghost.setScale(scale)
+            ghost.setScale(smallScale)
             ghost.play("ghost")
             ghost.alpha = 0.85
-            ghost.position = CGPoint(x: hero.position.x, y: hero.position.y + (heroHeight * 0.72).rounded())
-            ghost.zPosition = 2
+            let ghostDrawn = MainActor.assumeIsolated { library.opaqueBounds("hero", "ghost") }
+                ?? CGRect(x: 6, y: 2, width: 31, height: 30)
+            // Its lowest drawn row a little above the cat (and above the stars).
+            let lift = drawnTop + 8 * smallScale + 4 - (sheetHeight - ghostDrawn.maxY) * smallScale
+            ghost.position = CGPoint(x: hero.position.x, y: snap(hero.position.y + lift))
+            ghost.zPosition = 7
             let bob = SKAction.moveBy(x: 0, y: 6, duration: 1.1)
             bob.timingMode = .easeInEaseOut
             ghost.run(.repeatForever(.sequence([bob, bob.reversed()])))
             addChild(ghost)
         }
+    }
+
+    /// A scene position on a whole device pixel, so scaled pixel art stays crisp.
+    private func snap(_ value: CGFloat) -> CGFloat {
+        (value * pixelsPerUnit).rounded() / pixelsPerUnit
     }
 
     // MARK: - Celebration

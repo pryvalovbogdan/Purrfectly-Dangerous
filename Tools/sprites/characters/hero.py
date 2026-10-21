@@ -756,17 +756,91 @@ def screen_poses(hero: Sprite) -> None:
         sit.append(hero_frame(pose))
     hero.add("sit_happy", sit, fps=6)
 
-    # Knocked out: flat on its side, "x x" eyes, tongue out, cape spread over its back; a 1 px twitch of the
-    # hind paw and tail between the two frames.
-    ko = []
-    for k in range(2):
-        pose = HeroPose(near_leg=(-88, -92 + k * 8), far_leg=(-80, -86), near_arm=(88, 92), far_arm=(80, 86),
-                        arm_behind=True, lean=90, length=1, head_dx=1, head_dy=4, cape=60, cape_len=6, ripple=0,
-                        tail=-4 + k * 5, curl=6, eye="x", tongue=True, ears_back=True)
-        ko.append(hero_frame(pose, extras=[draped_cape(104, 14, 0.4 + k * 0.3, 6)], dx=-4))
+    # Knocked out: stretched out on its belly, head resting on the ground at the right with its ears up,
+    # "x x" eyes and tongue out; tail lying out to the left, cape draped over its back. Frame 2: a 1 px twitch.
+    ko = [ko_frame(k) for k in range(2)]
     hero.add("ko", ko, fps=3)
 
     hero.add("ghost", [ghost_frame(k) for k in range(4)], fps=5)
+
+
+# A front-facing head for the ghost: round, two upright ears with pink insides (same shape as HEAD's ears),
+# white muzzle; sad eyes and a frown are drawn on it in `ghost_frame`.
+FRONT_HEAD = (
+    "..F............F..",
+    "..FF..........FF..",
+    "..FPF........FPF..",
+    ".FPPF........FPPF.",
+    ".FPPPF......FPPPF.",
+    ".FLLLFSFFFFSFFFFF.",
+    "FLLLFFSFFFFSFFFFFF",
+    "FLLFFFFFFFFFFFFFFF",
+    "FFFFFFFFFFFFFFFFFF",
+    "FFFFFFFFFFFFFFFFFF",
+    "FFFFFFFFWWFFFFFFFF",
+    "FFFFFFFWWWWFFFFFFF",
+    "DFFFFFWWPPWWFFFFFD",
+    "DFFFFWWWWWWWWFFFFD",
+    ".DFFFWWWWWWWWFFFD.",
+    "..DDDwwWWWWwwDDD..",
+    "....DDDDDDDDDD....",
+)
+assert all(len(row) == 18 for row in FRONT_HEAD)
+
+
+def ko_frame(k: int) -> Image.Image:
+    """The knocked-out cat, about 40 px long, built from separately outlined parts so each one reads: tail,
+    hind leg, body, cape, head (the HEAD grid with its ears up)."""
+    fur, fur_l, fur_d, stripe = P.GINGER, P.GINGER_L, P.GINGER_D, P.GINGER_DD
+    white, white_d = P.FUR_WHITE, P.FUR_WHITE_D
+    g = GROUND
+    out = Canvas(*SIZE)
+
+    def layer(draw, clean=True):
+        part = Canvas(*SIZE)
+        draw(part)
+        out.paste((despeckle(part) if clean else part).outline())
+
+    def tail(c):                                             # lying out to the left, tip curling up (twitches)
+        pts = [(9, g - 6), (6, g - 6), (4, g - 7), (3, g - 9 - k)]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            c.line((x0, y0), (x1, y1), fur, 3)
+        c.rect(5, g - 8, 5, g - 5, stripe)
+        c.rect(3, g - 10 - k, 4, g - 9 - k, fur_d)
+
+    def hind(c):                                             # hind leg stretched back, paw sole showing
+        c.line((12, g - 2), (7, g - 1), fur, 3)
+        c.rect(4, g - 2 + k, 7, g, white)
+        c.px(5, g - 1 + k, P.PINK)
+
+    def body(c):                                             # a long round body flat on the ground
+        c.ellipse(17, g - 4.5, 11, 5, fur_d)
+        c.ellipse(17, g - 5.2, 10.4, 4.3, fur)
+        c.rect(10, g - 9, 24, g - 9, fur_l)                  # light along the top of the back
+        for x in (12, 16, 20):                               # tabby bands across the back
+            c.rect(x, g - 8, x, g - 5, stripe)
+        c.ellipse(23, g - 2, 5, 2.2, white)                  # white chest against the ground
+        c.rect(19, g - 1, 26, g, white)
+        c.rect(19, g, 26, g, white_d)
+
+    def cape(c):                                             # draped over the shoulders and back, not the belly
+        c.poly([(26, g - 11), (19, g - 13), (12, g - 12), (8, g - 9), (10, g - 5), (13, g - 7), (19, g - 8),
+                (25, g - 7)], P.CAPE)
+        c.poly([(10, g - 5), (13, g - 7), (19, g - 8), (25, g - 7), (25, g - 8), (14, g - 9), (9, g - 8)], P.CAPE_D)
+        c.line((13, g - 12), (24, g - 11), P.CAPE_L)
+        c.line((16, g - 11), (15, g - 8), P.CAPE_D)          # a fold
+
+    def front_paw(c):                                        # a white forepaw flopped out under the chin
+        c.rect(21, g - 1, 25, g, white)
+        c.px(22, g, white_d)
+
+    def head(c):
+        _stamp(c, _face(HeroPose(eye="x", tongue=True)), 24, g - 17)
+
+    for draw in (tail, hind, body, cape, front_paw):
+        layer(draw)
+    layer(head, clean=False)                                 # the face is exact pixels: keep the "x" eyes
+    return out.img
 
 
 def ghost_frame(k: int) -> Image.Image:
@@ -786,7 +860,13 @@ def ghost_frame(k: int) -> Image.Image:
         c.ellipse(point[0], point[1], size, size, P.GINGER)
         angle -= 22
     c.rect(hx + 1, hy + 10, hx + 3, hy + 11, P.FUR_WHITE)            # tiny paws held in front
-    _stamp(c, _face(HeroPose(eye="sad", frown=True)), x0, y0)
+    rows = [list(row) for row in FRONT_HEAD]
+    for x, y in ((5, 9), (6, 9), (4, 10), (5, 10), (6, 10), (4, 11), (5, 11), (6, 11),      # big droopy eyes
+                 (11, 9), (12, 9), (11, 10), (12, 10), (13, 10), (11, 11), (12, 11), (13, 11),
+                 (8, 14), (9, 14), (7, 15), (10, 15)):                                      # a little frown
+        rows[y][x] = "K"
+    rows[9][5] = rows[9][12] = "H"
+    _stamp(c, rows, x0, y0)
     c.outline()
     out = Canvas(*SIZE)
     wings = Canvas(*SIZE)
