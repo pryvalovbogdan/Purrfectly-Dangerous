@@ -243,100 +243,60 @@ final class GameScene: SKScene {
     /// Screen height of a walk surface `height` above the base ground.
     private func surfaceY(_ height: Double) -> CGFloat { (groundY + CGFloat(height)).rounded() }
 
-    /// z of terrain: a raised block sits just behind the ground strip (-4) so the base turf passes in
+    /// z of terrain: a raised run sits just behind the ground strip (-4) so the base turf passes in
     /// front of its foot; a dip and the faces around it sit in front of the strip.
     private static let raisedZ: CGFloat = -4.5
     private static let dipZ: CGFloat = -3.9
 
-    /// Raised blocks and dips. Each piece: top tiles with their frame top on the surface S, and fill
-    /// behind them on the 16-unit grid from G - 48 up to the tile holding S - 16. Each seam where the
-    /// height changes: an end cap on the higher side (top on its S), mirrored on a right-hand end,
-    /// over walls tiled upward from the lower side's surface.
+    /// Raised blocks and dips, one node per run of touching pieces, laid out by `TerrainLayout`: the
+    /// run's fill through a crop shaped like its outline, then its walls, caps and top tiles.
     private func buildTerrain(theme: String) {
         let ground = world.ground
         guard !ground.isFlat, let art = terrainArt(theme: theme) else { return }
-        let capWidth = Double(art.edge?.size.width ?? 0)
-
-        for piece in ground.pieces {
-            let left = ground.height(leftOf: piece.at), right = ground.height(at: piece.end)
-            let leftCapped = left < piece.height && art.edge != nil
-            let rightCapped = right < piece.height && art.edge != nil
-            // A block exactly two caps wide is only its caps and walls.
-            if leftCapped, rightCapped, piece.width <= capWidth * 2 { continue }
-            // Inset under a cap, 8 under a taller neighbour (1 for a dip below the base ground), flush otherwise.
-            func reach(capped: Bool, neighbour: Double, seamIsBase: Bool) -> Double {
-                if capped { return -capWidth }
-                guard neighbour > piece.height else { return 0 }
-                return piece.height < 0 && seamIsBase ? 1 : 8
+        func size(_ piece: (texture: SKTexture, size: CGSize)?) -> (width: Double, height: Double)? {
+            piece.map { (Double($0.size.width), Double($0.size.height)) }
+        }
+        let sizes = TerrainLayout.Sizes(top: size(art.top)!, fill: size(art.fill), edge: size(art.edge),
+                                        wall: size(art.wall))
+        func piece(_ role: TerrainLayout.Role) -> (texture: SKTexture, size: CGSize)? {
+            switch role {
+            case .top: art.top
+            case .fill: art.fill
+            case .edge: art.edge
+            case .wall: art.wall
             }
-            let x0 = reach(capped: leftCapped, neighbour: left,
-                           seamIsBase: !ground.pieces.contains { $0.end == piece.at })
-            let x1 = reach(capped: rightCapped, neighbour: right,
-                           seamIsBase: !ground.pieces.contains { $0.at == piece.end })
-            let spanLeft = -x0, span = piece.width + x0 + x1
-            guard span > 0 else { continue }
-
-            let node = SKNode()
-            node.zPosition = piece.height < 0 ? Self.dipZ : Self.raisedZ
-            let surface = surfaceY(piece.height)
-            let topSize = art.top.size
-            if let fill = art.fill {
-                // Tile bottoms on the grid G - 48 + 16k, from the lowest up to the one holding S - 16.
-                let base = groundY - 48
-                let rows = Int(((surface - topSize.height - base) / fill.size.height).rounded(.down))
-                for row in 0...max(rows, 0) {
-                    for column in Self.tileOffsets(span: span, tile: Double(fill.size.width)) {
-                        let tile = SKSpriteNode(texture: fill.texture, size: fill.size)
-                        tile.anchorPoint = .zero
-                        tile.position = CGPoint(x: CGFloat(spanLeft + column).rounded(),
-                                                y: base + CGFloat(row) * fill.size.height)
-                        tile.zPosition = -0.02
-                        node.addChild(tile)
-                    }
-                }
-            }
-            for column in Self.tileOffsets(span: span, tile: Double(topSize.width)) {
-                let tile = SKSpriteNode(texture: art.top.texture, size: topSize)
-                tile.anchorPoint = .zero
-                tile.position = CGPoint(x: CGFloat(spanLeft + column).rounded(), y: surface - topSize.height)
-                node.addChild(tile)
-            }
-            scenery.addChild(node)
-            groundNodes.append((piece.at + spanLeft, span, node))
+        }
+        func sprite(_ placed: TerrainLayout.Sprite) -> SKSpriteNode? {
+            guard let piece = piece(placed.role) else { return nil }
+            let node = SKSpriteNode(texture: piece.texture, size: piece.size)
+            node.anchorPoint = .zero
+            // A mirrored sprite (anchored at its left edge) flips onto the span left of its position.
+            node.position = CGPoint(x: CGFloat(placed.mirrored ? placed.x + Double(piece.size.width) : placed.x).rounded(),
+                                    y: (groundY + CGFloat(placed.y)).rounded())
+            node.xScale = placed.mirrored ? -1 : 1
+            node.zPosition = CGFloat(placed.z) * 0.01
+            return node
         }
 
-        guard let edge = art.edge else { return }
-        for seam in ground.edges {
-            let left = ground.height(leftOf: seam), right = ground.height(at: seam)
-            guard left != right else { continue }
-            // The higher side gets the cap; a right-hand end is the left cap mirrored.
-            let facesLeft = right > left
-            let high = surfaceY(max(left, right)), low = surfaceY(min(left, right))
+        for run in TerrainLayout.runs(ground, sizes: sizes) {
             let node = SKNode()
-            node.zPosition = min(left, right) < 0 ? Self.dipZ : Self.raisedZ
-            // The node starts at the left of the cap's column. A mirrored sprite (anchored at its
-            // left edge) flips onto the span left of its position, so it is placed at the right.
-            func place(_ sprite: SKSpriteNode, y: CGFloat) {
-                sprite.anchorPoint = .zero
-                sprite.position = CGPoint(x: facesLeft ? 0 : edge.size.width, y: y)
-                if !facesLeft { sprite.xScale = -1 }
-                node.addChild(sprite)
-            }
-            let cap = SKSpriteNode(texture: edge.texture, size: edge.size)
-            cap.zPosition = 0.02
-            place(cap, y: high - edge.size.height)
-            if let wall = art.wall {
-                // Upward from the lower side's surface until a tile reaches S - 16; behind the cap.
-                var bottom = low
-                while bottom < high - edge.size.height {
-                    let sprite = SKSpriteNode(texture: wall.texture, size: wall.size)
-                    sprite.zPosition = 0.01
-                    place(sprite, y: bottom)
-                    bottom += wall.size.height
+            node.zPosition = run.isDip ? Self.dipZ : Self.raisedZ
+            if !run.fills.isEmpty {
+                let crop = SKCropNode()
+                let mask = SKNode()
+                for rect in run.mask {
+                    let shape = SKSpriteNode(color: .white, size: CGSize(width: rect.width, height: rect.height))
+                    shape.anchorPoint = .zero
+                    shape.position = CGPoint(x: CGFloat(rect.x).rounded(), y: (groundY + CGFloat(rect.y)).rounded())
+                    mask.addChild(shape)
                 }
+                crop.maskNode = mask
+                for placed in run.fills { if let tile = sprite(placed) { crop.addChild(tile) } }
+                node.addChild(crop)
             }
+            for placed in run.sprites { if let tile = sprite(placed) { node.addChild(tile) } }
             scenery.addChild(node)
-            groundNodes.append((facesLeft ? seam : seam - Double(edge.size.width), Double(edge.size.width), node))
+            groundNodes.append((run.origin, run.width, node))
         }
     }
 
