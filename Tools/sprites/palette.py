@@ -233,13 +233,3 @@ SKY_S1 = _hex("2f9bf3")
 SKY_S2 = _hex("4db1f8")
 SKY_S3 = _hex("6fc4fa")
 SKY_S4 = _hex("96d4fb")
-
-# App icon: a bright cartoon sky, pale distant cliffs, and the soft glow around the leaping kitten.
-ICON_SKY_TOP = _hex("2a86e0")
-ICON_SKY = _hex("4aa8f0")
-ICON_SKY_L = _hex("8cd0f8")
-ICON_HAZE = _hex("b8e4fa")
-ICON_CLIFF = _hex("7cb4e0")
-ICON_CLIFF_L = _hex("a2cdee")
-ICON_GLOW = _hex("fff6d8")
-ICON_MOUTH = _hex("8a1e3a")

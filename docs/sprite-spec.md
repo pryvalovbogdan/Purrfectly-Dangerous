@@ -158,8 +158,10 @@ The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`
 the waterfall at x 116-194 of the 110-tall `bg_menu_clouds` strip, so an upright screen (which shows about the first
 195 units) frames them as the reference does; `bg_menu_horizon` holds the forest band, the lake, a red-roofed cottage
 and the wooden bridges; `bg_menu_bushes` the flowering bushes. The screen pieces in the table above
-(`characters/screens.py`) carry no text: the game sets titles and labels over them from Lore.json. The app icon (the kitten's face
-and a ball of yarn) is drawn in `Tools/sprites/icon.py`. The table above is enforced by
+(`characters/screens.py`) carry no text: the game sets titles and labels over them from Lore.json. The app icon is the
+one piece not drawn in code: the build crops the user's painting `Tools/sprites/icon_source.png` to a full-bleed
+1024 square (`export.icon_scene`). To change the icon, replace that PNG and adjust `ICON_FRAME`/`ICON_RADIUS` in
+`export.py` if its frame differs. The table above is enforced by
 `Tools/sprites/tests/test_sprites.py` — change both.
 
 ## How characters are drawn

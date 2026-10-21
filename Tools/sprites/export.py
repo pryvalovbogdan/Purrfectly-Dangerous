@@ -97,17 +97,44 @@ def export(sprites: list[Sprite], only: set[str] | None = None) -> dict:
     return manifest
 
 
-def app_icon(sprites: dict[str, Sprite]) -> None:
-    """1024px App Store icon: the kitten's face and a ball of yarn (`icon.py`), drawn at 64px and
-    scaled up by whole pixels. Opaque, as Apple requires."""
-    import icon
+ICON_SOURCE = Path(__file__).parent / "icon_source.png"
+# The painting's rounded frame (x0, y0, x1, y1) and corner radius, in its own pixels.
+ICON_FRAME, ICON_RADIUS = (39, 32, 1216, 1216), 266
+ICON_INSET, ICON_GLOW = 16, 14
 
-    art = icon.draw_icon()
-    scene = art.resize((1024, 1024), Image.NEAREST)
+
+def icon_scene() -> Image.Image:
+    """The one piece of art that is not drawn in code: the user's icon painting, cropped just inside
+    its rounded frame to a full-bleed square. Its black corners are refilled by reflecting the
+    picture inward through the corner circle; iOS masks that area anyway."""
+    im = Image.open(ICON_SOURCE).convert("RGB")
+    x0, y0, x1, y1 = ICON_FRAME
+    size = min(x1 - x0, y1 - y0) - 2 * ICON_INSET
+    left, top = round((x0 + x1 - size) / 2), round((y0 + y1 - size) / 2)
+    art = im.crop((left, top, left + size, top + size))
+    px, r = art.load(), ICON_RADIUS - ICON_INSET
+    keep = (r - ICON_GLOW) ** 2
+    far = size - 1 - r
+    for ox, oy in ((r, r), (far, r), (r, far), (far, far)):
+        xs = range(r) if ox == r else range(size - r, size)
+        ys = range(r) if oy == r else range(size - r, size)
+        for y in ys:
+            for x in xs:
+                dx, dy = x - ox, y - oy
+                d2 = dx * dx + dy * dy
+                if d2 > keep:
+                    k = keep / d2 * 0.97
+                    px[x, y] = px[int(ox + dx * k), int(oy + dy * k)]
+    return art.resize((1024, 1024), Image.LANCZOS)
+
+
+def app_icon(sprites: dict[str, Sprite]) -> None:
+    """1024px App Store icon from `icon_source.png`. Opaque, as Apple requires."""
+    scene = icon_scene()
     folder = ATLAS.parent / "AppIcon.appiconset"
     folder.mkdir(parents=True, exist_ok=True)
-    write_png(scene.convert("RGB"), folder / "icon.png")
-    write_png(art.resize((art.width * 4, art.height * 4), Image.NEAREST), OUT / "contact" / "app_icon.png")
+    write_png(scene, folder / "icon.png")
+    write_png(scene.resize((256, 256), Image.LANCZOS), OUT / "contact" / "app_icon.png")
     contents = {"images": [{"filename": "icon.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"}],
                 "info": {"author": "xcode", "version": 1}}
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
