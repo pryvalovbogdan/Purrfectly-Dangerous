@@ -79,6 +79,25 @@ final class MenuScene: SKScene {
         return scene.width > 0 ? viewSize.width / scene.width : 1
     }
 
+    /// First row of each composed picture (from its top) where scenery starts below the open sky,
+    /// measured from the art: the tops of the trees.
+    static let sceneryTopRows: [String: CGFloat] = ["menu_scene_portrait": 38, "menu_scene_landscape": 2]
+
+    /// Where the top of the scenery (tree tops) of the start screen's picture is, in points from the
+    /// top of a menu scene filling `viewSize`; nil without the picture. Matches `addMenuBackdrop`.
+    static func sceneryTop(viewSize: CGSize, displayScale: CGFloat, library: SpriteLibrary,
+                           groundShare: CGFloat = narrowGroundShare) -> CGFloat? {
+        let upright = viewSize.height > viewSize.width
+        let name = upright ? "menu_scene_portrait" : "menu_scene_landscape"
+        guard let sheet = library.sheet(name) else { return nil }
+        let scene = sceneSize(viewSize: viewSize, displayScale: max(displayScale, 1))
+        let unit = scene.width > 0 ? viewSize.width / scene.width : 1
+        let groundY = upright ? (scene.height * groundShare).rounded() : 40
+        let scale = max(1, (scene.width / sheet.width).rounded(.down))
+        let pictureTop = scene.height - (groundY + sheet.height * scale)
+        return (pictureTop + (sceneryTopRows[name] ?? 0) * scale) * unit
+    }
+
     /// Height of the standing hero above the ground line, in world units.
     static func heroHeight(_ library: SpriteLibrary) -> CGFloat {
         (library.sheet("hero")?.height ?? 36) * heroScale

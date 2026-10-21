@@ -60,16 +60,23 @@ struct MenuBackground: View {
     }
 }
 
-/// Screen-filling layout helper: the whole screen's size and safe-area insets, measured once.
+/// Screen-filling layout helper: hands its content the whole screen's size and the safe-area insets,
+/// and lays the content out over the whole screen (origin at the screen's top left).
+///
+/// The reader itself stays inside the safe area: a GeometryReader that ignores the safe area reports
+/// zero insets, which put the start screen's title under the Dynamic Island.
 struct ScreenFrame<Content: View>: View {
     @ViewBuilder let content: (CGSize, EdgeInsets) -> Content
 
     var body: some View {
         GeometryReader { proxy in
-            content(proxy.size, proxy.safeAreaInsets)
-                .frame(width: proxy.size.width, height: proxy.size.height)
+            let insets = proxy.safeAreaInsets
+            let full = CGSize(width: proxy.size.width + insets.leading + insets.trailing,
+                              height: proxy.size.height + insets.top + insets.bottom)
+            content(full, insets)
+                .frame(width: full.width, height: full.height)
+                .offset(x: -insets.leading, y: -insets.top)
         }
-        .ignoresSafeArea()
     }
 }
 
@@ -276,7 +283,8 @@ struct PixelTitle: View {
         let preferred = max(1, Int((size * displayScale / 16).rounded()))
         ViewThatFits(in: .horizontal) {
             ForEach(Array((1...preferred).reversed()), id: \.self) { sub in
-                LogoTitle(lines: lines, sub: sub, paw: paw)
+                // Numerals stay straight; headings bend like the logo.
+                LogoTitle(lines: lines, sub: sub, paw: paw, arch: tint == nil)
             }
         }
         .accessibilityAddTraits(.isHeader)
@@ -367,12 +375,13 @@ struct WreathTitle: View {
         return Figure(animation: animation, bounds: bounds, sheet: sheet)
     }
 
-    /// Whole-pixel scale of the figure for letters at `sub`: the head (the drawn height less the paws)
-    /// about as tall as one 16-sub-pixel line.
-    private func figureScale(_ figure: Figure?, sub: Int) -> Int {
+    /// Whole-pixel scale of the figure for a title `titleHeight` sub-pixels tall at `sub`: the head
+    /// (the drawn height less the paws) about half the title's height, as in the reference (for a
+    /// two-line title that is about one letter and a third).
+    private func figureScale(_ figure: Figure?, sub: Int, titleHeight: Int) -> Int {
         guard let figure else { return 1 }
         let head = max(8, figure.bounds.height - 2)
-        return max(1, Int((CGFloat(16 * sub) / head).rounded(.up)))
+        return max(1, Int((CGFloat(titleHeight * sub) / 2 / head).rounded()))
     }
 
     var body: some View {
@@ -382,27 +391,28 @@ struct WreathTitle: View {
         let hasPaw = paw && library.sheet("icon_paw") != nil
         let metrics = LogoTitle.metrics(lines, paw: hasPaw, fish: fishSize)
         let figure = figure
-        // The largest letters that fit, or one size up when that lands nearer the width asked for
-        // (whole device pixels per sub-pixel make the steps coarse: 82% or 94% of a phone, say).
+        // Whole device pixels per sub-pixel make the sizes coarse steps, so take the one nearest the
+        // width asked for (never more than 6% over it) whose height, figure included, fits.
         let fits: (Int) -> Bool = { sub in
-            let raised = (figure?.bounds.height ?? 0) * CGFloat(figureScale(figure, sub: sub)) * (1 - topperSink)
+            let raised = (figure?.bounds.height ?? 0) * CGFloat(figureScale(figure, sub: sub, titleHeight: metrics.height)) * (1 - topperSink)
             return CGFloat(metrics.height * sub) + raised <= maxHeight * scale
         }
         let target = width * scale
-        let fitting = (1...16).reversed().first { CGFloat(metrics.width * $0) <= target && fits($0) } ?? 1
-        let larger = fitting + 1
-        let sub = fits(larger) && CGFloat(metrics.width * larger) <= target * 1.05
-            && CGFloat(metrics.width * larger) - target < target - CGFloat(metrics.width * fitting) ? larger : fitting
+        let sub = (1...16)
+            .filter { fits($0) && CGFloat(metrics.width * $0) <= target * 1.06 }
+            .min { abs(CGFloat(metrics.width * $0) - target) < abs(CGFloat(metrics.width * $1) - target) } ?? 1
         let unit = CGFloat(sub) / scale
         // The letters' middle, which the fish can push off the middle of the whole block.
         let lettersShift = (metrics.firstLineCenter - CGFloat(metrics.width) / 2) * unit
 
         VStack(spacing: 0) {
             if let figure {
-                figureView(figure, figureScale: figureScale(figure, sub: sub), shift: lettersShift)
+                figureView(figure, figureScale: figureScale(figure, sub: sub, titleHeight: metrics.height), shift: lettersShift)
                     .zIndex(topperSink > 0 ? 0 : 1)
-                    // Resting: the paws overlap only the one-sub-pixel outline. Standing behind: sunk.
-                    .padding(.bottom, -(unit + figure.bounds.height * CGFloat(figureScale(figure, sub: sub)) / scale * topperSink))
+                    // Resting: the paws cover only the dark backing above the highest letters, never a
+                    // letter face. Standing behind: sunk that much further.
+                    .padding(.bottom, -(CGFloat(metrics.firstLineTop) * unit
+                        + figure.bounds.height * CGFloat(figureScale(figure, sub: sub, titleHeight: metrics.height)) / scale * topperSink))
             }
             LogoTitle(lines: lines, sub: sub, paw: hasPaw, fish: fish)
                 .background {

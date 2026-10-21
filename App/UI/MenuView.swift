@@ -12,7 +12,7 @@ struct MenuView: View {
     enum Overlay { case levels, cats }
 
     /// Share of an upright screen below the ground line; the buttons stand on that earth.
-    static let groundShare: CGFloat = 0.28
+    static let groundShare: CGFloat = 0.25
     /// Where the hero stands across a wide screen, clear of the title and buttons on the left.
     static let wideHeroPlace: CGFloat = 0.76
 
@@ -27,8 +27,9 @@ struct MenuView: View {
                 }
             }
             ScreenFrame { _, insets in
+                // Beside the Dynamic Island or notch (the status bar is hidden), else under the safe area.
                 SoundButton()
-                    .padding(.top, insets.top + 10)
+                    .padding(.top, max(14, insets.top - 44))
                     .padding(.trailing, max(insets.trailing, 14))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
@@ -47,23 +48,33 @@ struct MenuView: View {
 
     /// Upright: title at the top, the hero in the middle of the scene, buttons on the earth.
     private func tall(size: CGSize, insets: EdgeInsets) -> some View {
-        let unit = MenuScene.pointsPerUnit(viewSize: size, displayScale: displayScale)
         let ground = (size.height * Self.groundShare).rounded()
-        let heroTop = ground + MenuScene.heroHeight(model.sprites) * unit
         let side = max(16, insets.leading)
         let width = min(size.width - 2 * side, 380)
-        let titleTop = insets.top + 12
-        let titleHeight = max(130, size.height - heroTop - titleTop - 52)
-        return VStack(spacing: 0) {
-            // The title spans about nine tenths of an upright screen.
-            titleBlock(width: (size.width * Self.tallTitleShare).rounded(), maxHeight: titleHeight)
-                .padding(.top, titleTop)
-            Spacer(minLength: 0)
+        // The title block (peeking cat, title, tagline) hangs at least `titleClearance` below the safe
+        // area, so the Dynamic Island never hides the cat's ears, and when there is room it comes down
+        // to end just above the tree tops of the scene, leaving no empty band of sky between them.
+        let topLimit = insets.top + Self.titleClearance
+        let unit = MenuScene.pointsPerUnit(viewSize: size, displayScale: displayScale)
+        let heroTop = size.height - ground - MenuScene.heroHeight(model.sprites) * unit
+        let scenery = MenuScene.sceneryTop(viewSize: size, displayScale: displayScale, library: model.sprites,
+                                           groundShare: Self.groundShare) ?? heroTop
+        let bottomLimit = max(topLimit + 1, scenery - Self.sceneryGap)
+        return ZStack(alignment: .top) {
+            VStack(spacing: 0) {
+                Spacer(minLength: topLimit)
+                // About four fifths of an upright screen wide.
+                titleBlock(width: (size.width * Self.tallTitleShare).rounded(), maxHeight: heroTop - topLimit - 40)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            // Bottom-aligned within the band while it fits; a taller block keeps its top and runs on.
+            .frame(height: bottomLimit, alignment: .top)
+            .frame(maxWidth: .infinity)
             actions(width: width)
                 .padding(.top, 14)
                 .frame(height: ground, alignment: .top)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
-        .frame(maxWidth: .infinity)
     }
 
     /// On its side: title over the buttons in a left column; the hero stands on the right.
@@ -71,7 +82,7 @@ struct MenuView: View {
         let leading = max(insets.leading, 20)
         let titleWidth = (size.width * Self.wideTitleShare).rounded()
         let width = min(400, titleWidth, size.width * Self.wideHeroPlace - leading - size.width * 0.16)
-        let top = insets.top + 10
+        let top = insets.top + Self.titleClearance
         let bottom = max(insets.bottom, 10) + 8
         let titleHeight = max(90, size.height - top - bottom - Self.actionsHeight - 44)
         return VStack(spacing: 8) {
@@ -89,12 +100,16 @@ struct MenuView: View {
     private static let actionsHeight: CGFloat = 58 + 10 + 66
     /// Share of the screen width the title spans: upright, and in the left column on its side.
     private static let rowGap: CGFloat = 12
-    private static let tallTitleShare: CGFloat = 0.9
-    private static let wideTitleShare: CGFloat = 0.45
+    private static let tallTitleShare: CGFloat = 0.8
+    private static let wideTitleShare: CGFloat = 0.4
+    /// Space kept between the safe area's top and the cat's ear tips.
+    private static let titleClearance: CGFloat = 24
+    /// Space between the tagline and the scene's tree tops.
+    private static let sceneryGap: CGFloat = 8
 
     /// The title in its wreath with the hero peeking over it, and the tagline under it.
     private func titleBlock(width: CGFloat, maxHeight: CGFloat) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 4) {
             WreathTitle(text: model.text("game.title"), wreath: "title_wreath", width: width, maxHeight: maxHeight,
                         topper: ["peek", "idle"], fish: true, paw: true)
             Text(model.text("game.tagline"))
@@ -104,7 +119,7 @@ struct MenuView: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
                 .padding(.horizontal, 14)
-                .padding(.vertical, 6)
+                .padding(.vertical, 5)
                 .background(Color(red: 0.12, green: 0.22, blue: 0.27).opacity(0.85), in: Capsule())
                 .overlay(Capsule().stroke(Color.menuInk.opacity(0.5), lineWidth: 1.5))
         }
