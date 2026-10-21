@@ -173,7 +173,8 @@ extension ItemKind {
         switch self {
         // MARK: forest
         case .bush: ItemSpec(width: 22, height: 14, solid: true)
-        case .stump: ItemSpec(width: 12, height: 24, solid: true)
+        // Props with a flat top: landing on it is a safe bounce; running into a side still hurts.
+        case .stump: ItemSpec(width: 12, height: 24, stompable: true, solid: true)
         case .squirrel: ItemSpec(width: 18, height: 24, xp: 10, velocity: -20, stompable: true, stompKills: true,
                                  yarnable: true)
         case .acorn: ItemSpec(width: 12, height: 11, xp: 10, velocity: -60, yarnable: true)
@@ -205,8 +206,9 @@ extension ItemKind {
                      throwing: ThrowSpec(projectile: "sting", interval: 1.8, range: 300, speed: 90, y: 4,
                                          width: 8, height: 4))
         // A stump that is a turret: terrain (no Ghost Dash through it) that sends leaves along the ground.
+        // Its flat top is a safe bounce (no kill); its sides and leaves hurt.
         case .stumpCat:
-            ItemSpec(width: 20, height: 28, hp: 2, xp: 25, yarnable: true, solid: true,
+            ItemSpec(width: 20, height: 28, hp: 2, xp: 25, stompable: true, yarnable: true, solid: true,
                      throwing: ThrowSpec(projectile: "leaf", interval: 2.0, range: 300, speed: 80, y: 2,
                                          width: 8, height: 5))
         // Hides in its shell once close (the curler behaviour): yarn bounces off, and so does a kitten
@@ -221,7 +223,7 @@ extension ItemKind {
         case .icicle: ItemSpec(width: 8, height: 18, baseY: 70, fall: FallSpec(trigger: 130, warning: 0.35))
         case .snowball: ItemSpec(width: 14, height: 14, hp: 2, xp: 20, velocity: -60, yarnable: true)
         case .penguin: ItemSpec(width: 18, height: 12, xp: 20, velocity: -90, stompable: true, yarnable: true)
-        case .snowdrift: ItemSpec(width: 20, height: 8, solid: true)
+        case .snowdrift: ItemSpec(width: 20, height: 8, stompable: true, solid: true)
         // Hops along (the hop is drawn only; the hitbox stays on the ground).
         case .iceSlime: ItemSpec(width: 20, height: 14, xp: 12, velocity: -22, stompable: true, stompKills: true,
                                  yarnable: true)
@@ -288,7 +290,7 @@ extension ItemKind {
             ItemSpec(width: 12, height: 14, baseY: 56, hurtsOnTouch: false,
                      throwing: ThrowSpec(projectile: "soundwave", interval: 2.0, range: 300, speed: 80, y: 0,
                                          width: 8, height: 8))
-        case .tombstone: ItemSpec(width: 14, height: 24, solid: true)
+        case .tombstone: ItemSpec(width: 14, height: 24, stompable: true, solid: true)
         // A flying frame: hovers over a standing kitten's head, drifting in, firing low magic shots.
         case .hauntedPortrait:
             ItemSpec(width: 18, height: 20, baseY: 32, hp: 2, xp: 25, velocity: -12, yarnable: true,

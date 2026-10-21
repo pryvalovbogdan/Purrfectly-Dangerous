@@ -379,10 +379,12 @@ import Testing
 
     /// Jumps once when the gap to `kind` falls below each take-off distance in turn, as a tap, a
     /// short hold and a full hold; returns the events of every attempt that stomped it.
-    func stompAttempts(_ kind: ItemKind, at: Double = 400) -> [[GameEvent]] {
-        [0.0, 0.12, 1].flatMap { hold in
+    func stompAttempts(_ kind: ItemKind, at: Double = 400, terrain: [Terrain]? = nil) -> [[GameEvent]] {
+        var level = flatLevel(items: [.init(at: at, kind: kind)])
+        level.terrain = terrain
+        return [0.0, 0.12, 1].flatMap { hold in
             stride(from: 20.0, to: 90, by: 2).compactMap { takeOff -> [GameEvent]? in
-                var world = RunnerWorld(level: flatLevel(items: [.init(at: at, kind: kind)]), boss: nil)
+                var world = RunnerWorld(level: level, boss: nil)
                 var jumpedAt: Double?
                 var events: [GameEvent] = []
                 while world.time < 6, !world.isOver {
@@ -1139,6 +1141,89 @@ import Testing
     @Test func botClearsAHauntedRunOfEveryCreature() {
         let items = Self.hauntedCreatures.enumerated().map { PlacedItem(at: 400 + Double($0.offset) * 320, kind: $0.element) }
         #expect(LevelValidator.botRun(hauntedLevel(items, length: 3200, entry: 4), boss: nil).finished)
+    }
+
+    // MARK: - Solid tops
+
+    /// Landings that came down on top: attempts where nothing hurt before the first stomp. (A hop too
+    /// low to clear the top can clip a face first; that is running into it, not landing on it.)
+    func cleanLandings(_ attempts: [[GameEvent]]) -> [[GameEvent]] {
+        attempts.filter { events in
+            guard let stomp = events.firstIndex(where: { if case .stomped = $0 { true } else { false } }) else { return false }
+            return !hit(Array(events[..<stomp]))
+        }
+    }
+
+    /// Stumps, gravestones, snow mounds and the stump cat read as something to stand on: landing on
+    /// top bounces off safely (and does not break the stump cat), but running into a side hurts.
+    @Test(arguments: [ItemKind.stump, .tombstone, .snowdrift, .stumpCat])
+    func landingOnASolidTopIsASafeBounceButItsSideHurts(kind: ItemKind) {
+        // The stump cat is met close to the start, so its first leaf comes while the kitten is
+        // already in the air on its way onto the top (otherwise the leaf hits first).
+        let landings = cleanLandings(stompAttempts(kind, at: kind == .stumpCat ? 180 : 400))
+        #expect(!landings.isEmpty, "\(kind.rawValue): no landing on top")
+        for events in landings {
+            #expect(!hit(events), "\(kind.rawValue): hurt by a landing on top")
+            #expect(!defeated(events, kind))
+        }
+        #expect(kind.spec.solid)                                  // still terrain for Ghost Dash
+        var runner = RunnerWorld(level: flatLevel(items: [.init(at: 400, kind: kind)]), boss: nil)
+        #expect(hit(runner.run(6)), "\(kind.rawValue): running into its side is a hit")
+    }
+
+    @Test func aBushsThornsStillHurtFromAbove() {
+        #expect(stompAttempts(.bush).isEmpty)
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 400, kind: .bush)]), boss: nil)
+        #expect(hit(world.run(6)))
+    }
+
+    /// The device report: a stump cat standing on a 40-high ledge, landed on from a jump along the
+    /// ledge (the kitten starts up on it). Every landing on its top is safe.
+    @Test func aStumpCatOnALedgeIsSafeToLandOn() {
+        let landings = cleanLandings(stompAttempts(.stumpCat, at: 180, terrain: [Terrain(at: 0, width: 600, height: 40)]))
+        #expect(!landings.isEmpty)
+        for events in landings {
+            #expect(!hit(events))
+            #expect(!defeated(events, .stumpCat))
+        }
+    }
+
+    /// Who touches what, kind by kind and state by state.
+    @Test func touchingSolidTopsDormantStatuesAndAwakeEnemies() {
+        func touch(_ kind: ItemKind, _ state: EntityState? = nil, above: Bool) -> Entity.Touch {
+            var entity = Entity(id: 1, kind: kind, x: 0, y: 0, hp: kind.spec.hp)
+            if let state { entity.state = state }
+            return entity.touch(fromAbove: above)
+        }
+        // Props: a bounce on top, a hit from the side. Thorns, gears and crate walls hurt either way.
+        for kind in [ItemKind.stump, .tombstone, .snowdrift, .stumpCat] {
+            #expect(touch(kind, above: true) == .bounce, "\(kind.rawValue)")
+            #expect(touch(kind, above: false) == .hurt, "\(kind.rawValue)")
+        }
+        for kind in [ItemKind.bush, .gear, .crateWall] {
+            #expect(touch(kind, above: true) == .hurt, "\(kind.rawValue)")
+        }
+        // Dormant statue and perched gargoyle (also while blinking awake): a safe bounce on top,
+        // nothing from the side.
+        for kind in [ItemKind.cursedArmor, .gargoyleCat] {
+            for state in [EntityState.idle, .warning] {
+                #expect(touch(kind, state, above: true) == .bounce, "\(kind.rawValue) \(state)")
+                #expect(touch(kind, state, above: false) == .none, "\(kind.rawValue) \(state)")
+            }
+        }
+        // Awake, they keep their rules: the armor's slash hurts even from above; the gargoyle is a
+        // safe bounce on top, a hit from the side, in the air too.
+        #expect(touch(.cursedArmor, .active, above: true) == .hurt)
+        #expect(touch(.gargoyleCat, .active, above: true) == .bounce)
+        #expect(touch(.gargoyleCat, .leaping, above: false) == .hurt)
+        // An unseen shadow is not there at all; dashing, a stomp kills it.
+        #expect(touch(.shadowCat, .hidden, above: true) == .none)
+        #expect(touch(.shadowCat, .warning, above: true) == .none)
+        #expect(touch(.shadowCat, .active, above: true) == .stompKill)
+        // Unchanged elsewhere: a squirrel is stomped, a curled hedgehog's spikes hurt.
+        #expect(touch(.squirrel, above: true) == .stompKill)
+        #expect(touch(.hedgehog, .curled, above: true) == .hurt)
+        #expect(touch(.snailCat, .curled, above: true) == .bounce)
     }
 
     // MARK: - Bot

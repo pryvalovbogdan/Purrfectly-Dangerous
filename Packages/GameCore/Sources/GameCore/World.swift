@@ -166,6 +166,31 @@ public struct Entity: Sendable, Equatable, Identifiable {
         kind.spec.wake != nil && (state == .idle || state == .warning || state == .hidden)
     }
 
+    /// What the hero touching it does (before a Ghost Dash or a Super Pounce is taken into account).
+    public enum Touch: Sendable, Equatable {
+        /// Nothing: it is not there, or it is harmless.
+        case none
+        /// A safe bounce off its top.
+        case bounce
+        /// A bounce that also defeats it.
+        case stompKill
+        case hurt
+    }
+
+    /// Landing on a stompable top is a bounce (a kill if it `stompKills`, except a hard shell); a
+    /// dormant statue or perched gargoyle is a bounce on top and harmless at the side; anything else
+    /// that is there hurts if it `hurtsOnTouch`. A curled-up spiky ball is never safe.
+    public func touch(fromAbove: Bool) -> Touch {
+        let spec = kind.spec
+        if isDormant { return fromAbove && spec.teleport == nil ? .bounce : .none }
+        guard isTangible else { return .none }
+        let shell = state == .curled && spec.shellBounce
+        if spec.stompable, state != .curled || shell, fromAbove {
+            return spec.stompKills && !shell ? .stompKill : .bounce
+        }
+        return spec.hurtsOnTouch ? .hurt : .none
+    }
+
     /// Moving along the ground now (turns at a rim, a Super Pounce defeats it). A creature that drops
     /// from a thread only walks once it has landed.
     public var walks: Bool {
@@ -1036,7 +1061,12 @@ public struct RunnerWorld: Sendable {
                 events.append(.yarnBasket)
                 if let target = level.shrineLevel { announce(stats.raise(toLevel: target), events: &events) }
             default:
-                guard entity.isTangible else { continue }
+                let fromAbove = heroVY < 0 && previousBottom >= entity.box.maxY - 4
+                guard entity.isTangible else {
+                    // A dormant statue or perched gargoyle: its top holds the hero up for a bounce.
+                    if entity.touch(fromAbove: fromAbove) == .bounce { bounce(off: index, events: &events) }
+                    continue
+                }
                 if pouncing, spec.breakable {
                     entities[index].hp = 0
                     events.append(.wallBroken(id: entity.id))
@@ -1048,20 +1078,17 @@ public struct RunnerWorld: Sendable {
                 }
                 // A Ghost Dash slips through creatures and traps, not through terrain.
                 if ghost, !spec.solid { continue }
-                let fromAbove = heroVY < 0 && previousBottom >= entity.box.maxY - 4
-                let shell = entity.state == .curled && spec.shellBounce
-                if spec.stompable, entity.state != .curled || shell, fromAbove {
-                    events.append(.stomped(id: entity.id))
-                    // For most it is only a bounce; the ones it kills pay out like yarn. A hard shell
-                    // is only ever a bounce.
-                    if spec.stompKills, !shell { damage(entityAt: index, by: entity.hp, events: &events) }
-                    // Bounce from its top, so a landing on a corner never leaves the hero inside it.
-                    heroY = max(heroY, entity.box.maxY)
-                    heroVY = tuning.stompBounce
-                    jumpsUsed = 1
-                    holdBoostLeft = 0
-                } else if spec.hurtsOnTouch {
+                switch entity.touch(fromAbove: fromAbove) {
+                case .bounce:
+                    bounce(off: index, events: &events)
+                case .stompKill:
+                    // The ones a stomp kills pay out like yarn.
+                    damage(entityAt: index, by: entity.hp, events: &events)
+                    bounce(off: index, events: &events)
+                case .hurt:
                     hurt(events: &events)
+                case .none:
+                    break
                 }
             }
         }
@@ -1069,6 +1096,17 @@ public struct RunnerWorld: Sendable {
         for hazard in hazards where hazard.isArmed && hazard.box.intersects(hero) {
             hurt(events: &events)
         }
+    }
+
+    /// Bounces the hero up off the top of entity `index`.
+    private mutating func bounce(off index: Int, events: inout [GameEvent]) {
+        let entity = entities[index]
+        events.append(.stomped(id: entity.id))
+        // From its top, so a landing on a corner never leaves the hero inside it.
+        heroY = max(heroY, entity.box.maxY)
+        heroVY = tuning.stompBounce
+        jumpsUsed = 1
+        holdBoostLeft = 0
     }
 
     private mutating func hurt(events: inout [GameEvent]) {

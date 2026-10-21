@@ -49,7 +49,7 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 
 | World | Kind | Behaviour |
 | --- | --- | --- |
-| forest | `bush`, `stump` | Static terrain (low-wide / tall) |
+| forest | `bush`, `stump` | Static terrain (low-wide / tall). Landing on a stump's top is a safe bounce; the bush's thorns hurt from above too |
 | forest | `squirrel` | Walker; a stomp kills |
 | forest | `acorn` | Fast low roller |
 | forest | `branch_squirrel` | Sits 44 up, lobs `acorn` hazards that land and roll on along the ground |
@@ -59,13 +59,13 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | forest | `forest_bat` | Like `bat`: flies at 42, swoops to 28 (just over a standing kitten) as it nears |
 | forest | `plant_cat` | Trap on the world clock: bites (30 high) for 0.6 s of every 2 s, open as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); no stomp; yarn hits it any time, 2 HP |
 | forest | `bee_cat` | Hovers 40 up, drifting in at 10/s; every 1.8 s in range fires a `sting` along the ground at 4 |
-| forest | `stump_cat` | Terrain, 28 tall; every 2 s in range sends a `leaf` along the ground at 2; 2 HP |
+| forest | `stump_cat` | Terrain, 28 tall; every 2 s in range sends a `leaf` along the ground at 2; its top is a safe bounce (no kill), its sides hurt; 2 HP |
 | forest | `snail_cat` | Very slow walker (8/s); within 80 of the hero it hides in its shell: then yarn bounces off, and landing on it is a safe bounce with no kill (`shellBounce`) |
 | forest | `spider_cat` | Hangs 60 up, harmless and out of yarn's reach; 130 from the hero it blinks 0.4 s, drops, and walks in (20/s) as a walker; a stomp kills |
 | frost | `icicle` | Hangs 70 up; 130 from the hero it blinks 0.35 s, drops, and lies as low shards (14×6) |
 | frost | `snowball` | Fast roller, 2 HP |
 | frost | `penguin` | Very fast slider; stomp is a safe bounce |
-| frost | `snowdrift` | Static, low |
+| frost | `snowdrift` | Static, low; its top is a safe bounce |
 | frost | `ice_slime` | Walker (22/s); a stomp kills |
 | frost | `snow_cat` | Fast walker (55/s), 20 tall; a stomp kills; 2 HP |
 | frost | `ice_bat` | Like `forest_bat`: flies at 42, swoops to 28 (just over a standing kitten) as it nears |
@@ -81,12 +81,12 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | haunted | `skeleton_mouse` | Stands and throws low `bone` hazards; stomp kills; 2 HP |
 | haunted | `skull` | Flies straight in at 26, just over a standing kitten |
 | haunted | `bell` | Hangs 56 up, harmless; every 2 s in range it sends a low `soundwave` hazard along the ground |
-| haunted | `tombstone` | Static, tall |
+| haunted | `tombstone` | Static, tall; its top is a safe bounce |
 | haunted | `haunted_portrait` | Hovers 32 up (just over a standing kitten), drifting in at 12/s; every 2.2 s in range fires a `magic_shot` along the ground at 4; no stomp; 2 HP |
-| haunted | `cursed_armor` | 20×28 statue: harmless and still, yarn bounces off, until the hero is within 140; flashes 0.5 s, then walks in at 12/s; awake it hurts to touch (no stomp); 3 HP; needs hero level 3 |
+| haunted | `cursed_armor` | 20×28 statue: harmless and still, yarn bounces off, landing on it is a safe bounce, until the hero is within 140; flashes 0.5 s, then walks in at 12/s; awake it hurts to touch (no stomp); 3 HP; needs hero level 3 |
 | haunted | `candle_cat` | Slow walker (15/s); every 2.5 s in range sends a `fire_orb` along the ground at 2; no stomp (its flame burns) |
 | haunted | `poltergeist_book` | Floats 48 up, drifting in at 8/s; every 2.4 s within 220 lobs a `magic_bolt` that lands ahead of the hero and fizzles out (no rolling) |
-| haunted | `gargoyle_cat` | Perched (harmless, still, yarn bounces off) until the hero is within 240; flashes 0.5 s, leaps 70 toward the hero (28 high, ~0.5 s), lands ahead of it on the local ground and walks in at 25/s; stomp is a safe bounce; 2 HP. Leave flat ground in front of it: a leap that comes down over a ravine is lost |
+| haunted | `gargoyle_cat` | Perched (harmless, still, yarn bounces off, landing on it is a safe bounce) until the hero is within 240; flashes 0.5 s, leaps 70 toward the hero (28 high, ~0.5 s), lands ahead of it on the local ground and walks in at 25/s; stomp is a safe bounce; 2 HP. Leave flat ground in front of it: a leap that comes down over a ravine is lost |
 | haunted | `shadow_cat` | Unseen and intangible (yarn passes) until the hero is within 180; then appears 80 ahead of the hero, flashes 0.4 s keeping that distance, and dashes in at 120/s as a walker; a stomp kills. Where it appears is wherever the hero is plus 80, so leave ground there (no ravine or step) |
 | citadel | `vent` | Flame column (60 high) for 0.8 s of every 2.4 s, blinking 0.5 s before; harmless otherwise |
 | citadel | `piston` | Slams (70 high) for 0.6 s of every 2 s, blinking 0.4 s before; harmless otherwise |

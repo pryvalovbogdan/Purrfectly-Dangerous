@@ -24,7 +24,10 @@ The paw button only appears once Ghost Dash is unlocked.
 
 Three hearts. A hit costs one and gives 1.2 s of immunity (the kitten blinks). Zero hearts ends the
 run. Falling into a ravine (pit, chasm, lava) ends the run whatever hearts are left. Landing on top
-of a stompable enemy bounces the kitten; enemies marked *stomp kills* are defeated by it.
+of a stompable enemy bounces the kitten; enemies marked *stomp kills* are defeated by it. Props with a
+flat top (`stump`, `stump_cat`, `tombstone`, `snowdrift`) and dormant statues (`cursed_armor` asleep,
+`gargoyle_cat` perched) are the same: landing on top is a safe bounce, and running into a prop's side
+still hurts. Thorns (`bush`), gears and crate walls hurt from any side.
 
 ## Progression
 
@@ -78,7 +81,7 @@ the level file). Everything stands on the ground where it is: the kitten, enemie
 | Id | Role | Behaviour | Beat it by |
 | --- | --- | --- | --- |
 | `bush` | thorny rose bush | static, low and wide | full jump |
-| `stump` | tree stump | static, tall | jump |
+| `stump` | tree stump | static, tall; its top is a safe bounce | jump (or bounce off its top) |
 | `squirrel` | squirrel soldier | walks toward the kitten | stomp (kills) or yarn, or jump |
 | `acorn` | rolling acorn | small fast roller | hop |
 | `branch_squirrel` | squirrel on a branch | stands up high, throws acorns that arc to the ground ahead | jump the acorn, or yarn it from a jump |
@@ -88,7 +91,7 @@ the level file). Everything stands on the ground where it is: the kitten, enemie
 | `forest_bat` | forest bat | flies in at head height and swoops, but never lower than just over a standing kitten (28) | stay down or jump late; yarn |
 | `plant_cat` | biting plant | trap on a fixed cycle (world clock): shut and harmless, opens (warning), then bites; can't be stomped. Yarn hits it in any state, 2 HP | pass while shut, jump it, or 2 yarn |
 | `bee_cat` | bee cat | hovers above head height (~40), drifting slowly in, firing stings low along the ground | jump the stings; yarn it from a jump |
-| `stump_cat` | stump cat | terrain like `stump` (no Ghost Dash through it), a turret sending leaves along the ground, 2 HP | jump the leaves and the stump; 2 yarn |
+| `stump_cat` | stump cat | terrain like `stump` (no Ghost Dash through it), a turret sending leaves along the ground, 2 HP. Its top is a safe bounce (no kill); its sides and leaves hurt | jump the leaves and the stump (or bounce off its top); 2 yarn |
 | `snail_cat` | snail cat | crawls very slowly; hides in its shell when close (~80 units): hidden, yarn bounces off and so does the kitten: landing on the shell is a safe bounce that doesn't defeat it | jump or bounce over it, or yarn/stomp before it hides |
 | `spider_cat` | spider cat | hangs on a thread (~60 up), out of reach: harmless and yarn passes. When the kitten is ~130 away it blinks, drops ahead and walks in | stomp (kills) or yarn once down, or jump |
 | `milk` | spilled milk (zone) | slick ground: run speed ×1.3 and no short hop while on it | timing |
@@ -109,7 +112,7 @@ The creature roster follows the expanded concept, `docs/concept/Purrfectly_Dange
 | `icicle` | falling icicle | hangs from above; when the kitten is ~130 units away it blinks, then drops and shatters | pass before it falls, or wait |
 | `snowball` | rolling snowball | fast roller, 2 HP | jump, or 2 yarn |
 | `penguin` | sliding penguin | very fast belly-slider | jump/stomp (safe bounce, no kill) or yarn |
-| `snowdrift` | snow mound | static, low | hop |
+| `snowdrift` | snow mound | static, low; its top is a safe bounce | hop |
 | `ice_slime` | ice slime | hops along toward the kitten (the hop is only drawn; it stays on the ground) | stomp (kills), yarn, or hop |
 | `snow_cat` | snow cat | fast runner; its paw slash is its body, so touching it from the side hurts. 2 HP | stomp (kills), 2 yarn, or jump |
 | `ice_bat` | ice bat | swoops as it nears, never lower than just over a standing kitten (28) | stay down; yarn |
@@ -141,15 +144,15 @@ Captain, is future work (no mini-bosses yet).
 | `ghost_cat` | ghost cat | drifts toward the kitten, blinking in and out on a fixed cycle; only hurts while visible; yarn passes through. While visible it throws a spirit ball every ~2.4 s, straight at head height (26), just over a standing kitten | time it, or Ghost Dash; stay down for the spirit balls |
 | `bat` | bat cat | flies at head height, swoops as it nears (unchanged; restyled) | stay down or jump late; yarn |
 | `haunted_portrait` | haunted portrait | a flying frame hovering just over a standing kitten (32), drifting in, firing low magic shots; 2 HP | jump the shots; 2 yarn from a hop |
-| `cursed_armor` | cursed armor cat | a harmless knight statue (yarn bounces off) until the kitten is within ~140; it flashes 0.5 s, wakes and walks in; awake, touching it hurts (no stomp), 3 HP. Needs kitten level 3 | Double Pounce over it, or 3 yarn once awake |
+| `cursed_armor` | cursed armor cat | a harmless knight statue (yarn bounces off) until the kitten is within ~140; it flashes 0.5 s, wakes and walks in; asleep, landing on it is a safe bounce; awake, touching it hurts (no stomp), 3 HP. Needs kitten level 3 | Double Pounce over it, or 3 yarn once awake |
 | `candle_cat` | candle cat | slow walker sending fire orbs along the ground; the flame on its head burns a stomper | jump the orbs and it; yarn |
 | `poltergeist_book` | poltergeist book | floats high (48), drifting in, lobbing magic bolts that land ahead of the kitten and fizzle out | don't jump into a falling bolt; yarn from a full jump |
-| `gargoyle_cat` | gargoyle cat | perched stone, harmless (yarn bounces off) until the kitten is ~240 away; it flashes 0.5 s, leaps ~70 toward the kitten, lands ahead of it and walks in. In the air and after, touching it hurts; landing on it is a safe bounce, 2 HP | jump or bounce over it; 2 yarn once down |
+| `gargoyle_cat` | gargoyle cat | perched stone, harmless (yarn bounces off, landing on it is a safe bounce) until the kitten is ~240 away; it flashes 0.5 s, leaps ~70 toward the kitten, lands ahead of it and walks in. In the air and after, touching it hurts; landing on it is a safe bounce, 2 HP | jump or bounce over it; 2 yarn once down |
 | `shadow_cat` | shadow cat | unseen and intangible until the kitten is within ~180; then it appears 80 ahead of the kitten, flashes 0.4 s (keeping that distance) and dashes in fast | jump it as it dashes (a stomp kills), or yarn it once it is visible |
 | `skeleton_mouse` | skeleton mouse | stands and throws bones low | jump the bones; stomp (kills) or 2 yarn |
 | `skull` | floating skull | projectile flying straight at head height | stay down, or Ghost Dash |
 | `bell` | cursed bell | hangs; every ~2 s rings a low sound wave along the ground | jump the waves |
-| `tombstone` | gravestone | static, tall | jump |
+| `tombstone` | gravestone | static, tall; its top is a safe bounce | jump (or bounce off its top) |
 | `vanish` | vanishing platform (platform) | solid/absent on a fixed cycle (world clock), blinking before it vanishes | time it |
 
 Boss `boss_phantom` — **The Phantom Cat Queen**, always vulnerable, 26 HP, summons soak yarn.
