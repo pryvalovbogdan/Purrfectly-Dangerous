@@ -78,6 +78,9 @@ final class GameScene: SKScene {
     private var groundCrops: [SKCropNode] = []
     /// White rectangles of each crop's mask: one per stretch of ground on screen.
     private var groundMaskRects: [[SKSpriteNode]] = []
+    /// The backdrop seen down in a dip: per floor height, a copy of the sky band and parallax layers
+    /// seated on that floor, cropped to the holes above floors of that height (see `updateGroundMask`).
+    private var holeScenery: [(height: Double, crop: SKCropNode, rects: [SKSpriteNode])] = []
     /// Looping scenery tiles (waterfall curtains, pool surface, splashes). Their frame is picked from
     /// the world clock in `render()`, so every tile of a kind shows the same frame and none drift.
     private var clockAnimated: [(node: SKSpriteNode, owner: SKNode, frames: [SKTexture], fps: Double)] = []
@@ -145,6 +148,14 @@ final class GameScene: SKScene {
                       height: viewSize.height * displayScale / pixelsPerUnit)
     }
 
+    /// How far the ground line is above the bottom of a game view of `viewSize`, in points (for the
+    /// HUD to keep its buttons on the earth below it).
+    static func groundHeight(viewSize: CGSize, displayScale: CGFloat) -> CGFloat {
+        let scene = sceneSize(viewSize: viewSize, displayScale: max(displayScale, 1))
+        guard scene.height > 0 else { return 0 }
+        return groundLine(for: scene, framing: Framing.for(viewSize)) * viewSize.height / scene.height
+    }
+
     /// In portrait the ground line sits part-way up the screen, leaving earth below for thumbs.
     private static func groundLine(for size: CGSize, framing: Framing) -> CGFloat {
         framing.groundShare.map { (size.height * $0).rounded() } ?? 40
@@ -194,6 +205,7 @@ final class GameScene: SKScene {
         groundNodes.removeAll()
         groundCrops.removeAll()
         groundMaskRects.removeAll()
+        holeScenery.removeAll()
         clockAnimated.removeAll()
         pitWaterY = nil
         let theme = world.level.background
@@ -213,6 +225,20 @@ final class GameScene: SKScene {
         }
         parallax = LevelBackdrop.build(theme: theme, size: size, groundY: groundY, library: library, into: scenery,
                                        groundLayers: layers)
+        // Above a dip's floor the ground is gone, and the backdrop (standing on the ground line) has
+        // nothing below it. Seat a copy of it on each floor height, so the hole shows the foot of the
+        // same scenery, scrolling with it. Behind the ground and the dip pieces, in front of the sky.
+        for height in Set(world.ground.pieces.filter { $0.height < 0 }.map(\.height)).sorted() {
+            let crop = SKCropNode()
+            crop.maskNode = SKNode()
+            crop.zPosition = -5.2
+            parallax += LevelBackdrop.standingLayers(theme: theme, size: size, standingOn: surfaceY(height),
+                                                     library: library, into: crop, withSky: true)
+            // Keep their order inside the crop, but within its own z.
+            for child in crop.children { child.zPosition = (child.zPosition + 10) * 0.01 }
+            scenery.addChild(crop)
+            holeScenery.append((height, crop, []))
+        }
         buildRavines(theme: theme)
         buildSlickZones()
         buildTerrain(theme: theme)
@@ -325,6 +351,30 @@ final class GameScene: SKScene {
                 rects[rects.count - 1].size.width += b - a
             } else {
                 rects.append(CGRect(x: a, y: 0, width: b - a, height: height))
+            }
+        }
+        // The hole above each dip's floor (the same span), for the backdrop seated on that floor.
+        for index in holeScenery.indices {
+            let height = holeScenery[index].height
+            var holeRects: [CGRect] = []
+            for dip in world.ground.pieces where dip.height == height {
+                let x0 = groundScreenX(dip.at) - margin, x1 = x0 + CGFloat(dip.width) + 2 * margin
+                let floor = surfaceY(dip.height)
+                if x1 > 0, x0 < size.width { holeRects.append(CGRect(x: x0, y: floor, width: x1 - x0, height: groundY - floor)) }
+            }
+            holeScenery[index].crop.isHidden = holeRects.isEmpty
+            guard let mask = holeScenery[index].crop.maskNode else { continue }
+            while holeScenery[index].rects.count < holeRects.count {
+                let rect = SKSpriteNode(color: .white, size: CGSize(width: 1, height: 1))
+                rect.anchorPoint = .zero
+                mask.addChild(rect)
+                holeScenery[index].rects.append(rect)
+            }
+            for (slot, sprite) in holeScenery[index].rects.enumerated() {
+                sprite.isHidden = slot >= holeRects.count
+                guard slot < holeRects.count else { continue }
+                sprite.position = holeRects[slot].origin
+                sprite.size = holeRects[slot].size
             }
         }
         for (index, crop) in groundCrops.enumerated() {

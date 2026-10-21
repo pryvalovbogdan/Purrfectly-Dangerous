@@ -43,19 +43,7 @@ enum LevelBackdrop {
             node.zPosition = groundLayers == nil ? -5 : 0
             (groundLayers?.fill ?? parent).addChild(node)
         }
-        // Back to front. The loose clouds float above the tree line, so they mostly show upright,
-        // where there is open sky; everything else stands on the ground line.
-        for (layer, factor, z, lift) in [("puffs", 0.03, -9.5, 150.0), ("clouds", 0.06, -9.0, 0), ("far", 0.15, -8.0, 0),
-                                         ("near", 0.4, -6.0, 0), ("bushes", 0.7, -5.5, 0)] {
-            let name = "bg_\(theme)_\(layer)"
-            guard let texture = library.textures(name, "still").first, let sheet = library.sheet(name) else { continue }
-            let node = ParallaxNode(texture: texture, size: CGSize(width: sheet.width, height: sheet.height),
-                                    viewWidth: size.width, factor: factor)
-            node.position.y = groundY + lift
-            node.zPosition = z
-            parent.addChild(node)
-            parallax.append(node)
-        }
+        parallax += standingLayers(theme: theme, size: size, standingOn: groundY, library: library, into: parent)
         let name = "ground_\(theme)"
         if let texture = library.textures(name, "still").first, let sheet = library.sheet(name) {
             let node = ParallaxNode(texture: texture, size: CGSize(width: sheet.width, height: sheet.height),
@@ -74,6 +62,41 @@ enum LevelBackdrop {
                     parallax.append(row)
                 }
             }
+        }
+        return parallax
+    }
+
+    /// The scrolling scenery layers, back to front: name, parallax factor, z, and height above the
+    /// line they stand on. The loose clouds float above the tree line, so they mostly show upright,
+    /// where there is open sky; everything else stands on the line.
+    static let layers: [(name: String, factor: CGFloat, z: CGFloat, lift: CGFloat)] = [
+        ("puffs", 0.03, -9.5, 150), ("clouds", 0.06, -9.0, 0), ("far", 0.15, -8.0, 0),
+        ("near", 0.4, -6.0, 0), ("bushes", 0.7, -5.5, 0),
+    ]
+
+    /// Adds the parallax layers for `theme` standing on `line` to `parent` and returns them. With
+    /// `withSky` the sky band goes behind them, standing on the same line (the game uses this for the
+    /// scenery seen down in a dip, seated on the dip's floor).
+    @discardableResult
+    static func standingLayers(theme: String, size: CGSize, standingOn line: CGFloat, library: SpriteLibrary,
+                               into parent: SKNode, withSky: Bool = false) -> [ParallaxNode] {
+        if withSky, let sky = library.textures("bg_\(theme)_sky", "still").first {
+            let node = SKSpriteNode(texture: sky, size: CGSize(width: size.width, height: 200))
+            node.anchorPoint = .zero
+            node.position.y = line
+            node.zPosition = -10
+            parent.addChild(node)
+        }
+        var parallax: [ParallaxNode] = []
+        for layer in layers {
+            let name = "bg_\(theme)_\(layer.name)"
+            guard let texture = library.textures(name, "still").first, let sheet = library.sheet(name) else { continue }
+            let node = ParallaxNode(texture: texture, size: CGSize(width: sheet.width, height: sheet.height),
+                                    viewWidth: size.width, factor: layer.factor)
+            node.position.y = line + layer.lift
+            node.zPosition = layer.z
+            parent.addChild(node)
+            parallax.append(node)
         }
         return parallax
     }

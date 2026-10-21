@@ -85,6 +85,85 @@ private struct HUDView: View {
 
     /// Upright, the buttons sit a little in from the corners and up off the bottom edge, nearer the thumbs.
     private var upright: Bool { verticalSizeClass != .compact }
+    /// The ability buttons' size on its side (whole-pixel 64 pt on 3x screens).
+    private static let wideButton: CGFloat = 64
+    @Environment(\.displayScale) private var displayScale
+
+    /// The cat-paw jump button at `size` pt, in the state the world is in.
+    @ViewBuilder
+    private func jumpButton(size: CGFloat) -> some View {
+    // The cat-paw jump button, in the state the world is in; the old arrow if the
+    // paw sprites are not drawn yet.
+    let face = ButtonFace.jump(hud.jumpButton, unlocked: hud.canDoubleJump)
+    let drawn = face.all.allSatisfy { model.sprites.sheet($0) != nil }
+    HoldButton(onChange: jump, pressEffect: drawn ? .sprite : .fade, size: size) { pressed in
+        if drawn {
+            ButtonFace(sprite: pressed ? face.pressed : face.idle, animation: face.animation, size: size)
+        } else {
+            ZStack {
+                Circle().fill(.black.opacity(0.15))
+                if hud.canDoubleJump { PounceRing() }
+                // A plain arrow reads as "jump" at a glance; a second one once it can pounce again in the air.
+                Image(systemName: hud.canDoubleJump ? "chevron.up.2" : "chevron.up")
+                    .font(.system(size: 38, weight: .black))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: 2)
+            }
+        }
+    }
+    .accessibilityLabel("Jump")
+    .accessibilityIdentifier("jumpButton")
+    }
+
+    /// The paw button (once Ghost Dash is won) and the yarn button (once Yarn Shot is), at `size` pt.
+    @ViewBuilder
+    private func abilityButtons(size: CGFloat) -> some View {
+        if hud.canDash {
+            // Ghost Dash (dash / pressed / cooling down); once Super Pounce is won, the
+            // pounce faces while the paw is charging. The old ring if not drawn.
+            let pawFace = ButtonFace.paw(dashReady: hud.dashReady, canPounce: hud.canPounce,
+                                         charge: hud.pounceCharge)
+            let pawDrawn = pawFace.all.allSatisfy { model.sprites.sheet($0) != nil }
+            HoldButton(onChange: paw, pressEffect: pawDrawn ? .sprite : .fade, size: size) { pressed in
+                if pawDrawn {
+                    ButtonFace(sprite: pressed ? pawFace.pressed : pawFace.idle, animation: pawFace.animation, size: size)
+                } else {
+                    ZStack {
+                        Circle().fill(.black.opacity(0.15))
+                        if hud.canPounce {
+                            Circle().stroke(Color.white.opacity(0.25), lineWidth: 5)
+                            Circle().trim(from: 0, to: hud.pounceCharge)
+                                .stroke(hud.pounceCharge >= 1 ? Color.yellow : Color.pink, lineWidth: 5)
+                                .rotationEffect(.degrees(-90))
+                        }
+                        SpriteImage(sprite: hud.pounceCharge >= 1 ? "ability_superPounce" : "ability_ghostDash",
+                                    animation: "still")
+                            .frame(width: 48, height: 48)
+                            .opacity(hud.dashReady || hud.pounceCharge > 0 ? 1 : 0.4)
+                    }
+                }
+            }
+            .accessibilityLabel(model.text("ability.ghostDash"))
+            .accessibilityHint(hud.canPounce ? model.text("ability.superPounce") : "")
+        }
+        if hud.canFire {
+            // Yarn: ready / pressed / cooling down. The old icon if not drawn.
+            let yarnFace = ButtonFace.yarn(ready: hud.fireReady)
+            let yarnDrawn = yarnFace.all.allSatisfy { model.sprites.sheet($0) != nil }
+            HoldButton(onChange: fire, pressEffect: yarnDrawn ? .sprite : .fade, size: size) { pressed in
+                if yarnDrawn {
+                    ButtonFace(sprite: pressed ? yarnFace.pressed : yarnFace.idle, animation: yarnFace.animation, size: size)
+                } else {
+                    ZStack {
+                        Circle().fill(.black.opacity(0.15))
+                        SpriteImage(sprite: "ability_yarnShot", animation: "still")
+                            .frame(width: 48, height: 48)
+                    }
+                }
+            }
+            .accessibilityLabel(model.text("ability.yarnShot"))
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -141,75 +220,14 @@ private struct HUDView: View {
             VStack {
                 Spacer()
                 HStack(alignment: .bottom) {
-                    VStack(spacing: upright ? 0 : -14) {
-                        if hud.canDash {
-                            // Ghost Dash (dash / pressed / cooling down); once Super Pounce is won, the
-                            // pounce faces while the paw is charging. The old ring if not drawn.
-                            let pawFace = ButtonFace.paw(dashReady: hud.dashReady, canPounce: hud.canPounce,
-                                                         charge: hud.pounceCharge)
-                            let pawDrawn = pawFace.all.allSatisfy { model.sprites.sheet($0) != nil }
-                            HoldButton(onChange: paw, pressEffect: pawDrawn ? .sprite : .fade) { pressed in
-                                if pawDrawn {
-                                    ButtonFace(sprite: pressed ? pawFace.pressed : pawFace.idle, animation: pawFace.animation)
-                                } else {
-                                    ZStack {
-                                        Circle().fill(.black.opacity(0.15))
-                                        if hud.canPounce {
-                                            Circle().stroke(Color.white.opacity(0.25), lineWidth: 5)
-                                            Circle().trim(from: 0, to: hud.pounceCharge)
-                                                .stroke(hud.pounceCharge >= 1 ? Color.yellow : Color.pink, lineWidth: 5)
-                                                .rotationEffect(.degrees(-90))
-                                        }
-                                        SpriteImage(sprite: hud.pounceCharge >= 1 ? "ability_superPounce" : "ability_ghostDash",
-                                                    animation: "still")
-                                            .frame(width: 48, height: 48)
-                                            .opacity(hud.dashReady || hud.pounceCharge > 0 ? 1 : 0.4)
-                                    }
-                                }
-                            }
-                            .accessibilityLabel(model.text("ability.ghostDash"))
-                            .accessibilityHint(hud.canPounce ? model.text("ability.superPounce") : "")
-                        }
-                        if hud.canFire {
-                            // Yarn: ready / pressed / cooling down. The old icon if not drawn.
-                            let yarnFace = ButtonFace.yarn(ready: hud.fireReady)
-                            let yarnDrawn = yarnFace.all.allSatisfy { model.sprites.sheet($0) != nil }
-                            HoldButton(onChange: fire, pressEffect: yarnDrawn ? .sprite : .fade) { pressed in
-                                if yarnDrawn {
-                                    ButtonFace(sprite: pressed ? yarnFace.pressed : yarnFace.idle, animation: yarnFace.animation)
-                                } else {
-                                    ZStack {
-                                        Circle().fill(.black.opacity(0.15))
-                                        SpriteImage(sprite: "ability_yarnShot", animation: "still")
-                                            .frame(width: 48, height: 48)
-                                    }
-                                }
-                            }
-                            .accessibilityLabel(model.text("ability.yarnShot"))
-                        }
+                    // Upright the paw stacks over the yarn on the earth below the ground line, and jump is on
+                    // the right; on its side all three are smaller, on the earth strip in the bottom corners
+                    // (the overlays below), under the running kitten.
+                    if upright {
+                        VStack(spacing: 0) { abilityButtons(size: 88) }
                     }
                     Spacer()
-                    // The cat-paw jump button, in the state the world is in; the old arrow if the
-                    // paw sprites are not drawn yet.
-                    let face = ButtonFace.jump(hud.jumpButton, unlocked: hud.canDoubleJump)
-                    let drawn = face.all.allSatisfy { model.sprites.sheet($0) != nil }
-                    HoldButton(onChange: jump, pressEffect: drawn ? .sprite : .fade) { pressed in
-                        if drawn {
-                            ButtonFace(sprite: pressed ? face.pressed : face.idle, animation: face.animation)
-                        } else {
-                            ZStack {
-                                Circle().fill(.black.opacity(0.15))
-                                if hud.canDoubleJump { PounceRing() }
-                                // A plain arrow reads as "jump" at a glance; a second one once it can pounce again in the air.
-                                Image(systemName: hud.canDoubleJump ? "chevron.up.2" : "chevron.up")
-                                    .font(.system(size: 38, weight: .black))
-                                    .foregroundStyle(.white)
-                                    .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: 2)
-                            }
-                        }
-                    }
-                    .accessibilityLabel("Jump")
-                    .accessibilityIdentifier("jumpButton")
+                    if upright { jumpButton(size: 88) }
                 }
                 // On its side the safe area already keeps the buttons clear of the notch, so they can
                 // reach a little past it towards the edges.
@@ -217,6 +235,33 @@ private struct HUDView: View {
                 .padding(.bottom, upright ? 20 : 0)
             }
             .disabled(hud.isPaused)
+
+            if !upright {
+                // On its side the ground line is only 40 units up, too low for the buttons to fit under
+                // it at full size: smaller, side by side, their tops just under the ground line in the
+                // safe-area corner, so they cover the earth strip and never the kitten running above.
+                ScreenFrame { size, insets in
+                    let ground = GameScene.groundHeight(viewSize: size, displayScale: displayScale)
+                    HStack(spacing: 8 - 2 * HoldButton<EmptyView>.padding(for: Self.wideButton)) {
+                        abilityButtons(size: Self.wideButton)
+                    }
+                    .padding(.leading, insets.leading + 4 - HoldButton<EmptyView>.padding(for: Self.wideButton))
+                    .padding(.top, size.height - ground + 2 - HoldButton<EmptyView>.padding(for: Self.wideButton))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .disabled(hud.isPaused)
+                // The jump button mirrors them in the bottom-right corner, clear of what comes in from
+                // the right.
+                ScreenFrame { size, insets in
+                    let ground = GameScene.groundHeight(viewSize: size, displayScale: displayScale)
+                    let pad = HoldButton<EmptyView>.padding(for: Self.wideButton)
+                    jumpButton(size: Self.wideButton)
+                        .padding(.trailing, insets.trailing + 4 - pad)
+                        .padding(.top, size.height - ground + 2 - pad)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                }
+                .disabled(hud.isPaused)
+            }
 
             if hud.isPaused {
                 Color.black.opacity(0.6).ignoresSafeArea()
@@ -244,16 +289,21 @@ private struct HoldButton<Label: View>: View {
 
     let onChange: (Bool) -> Void
     var pressEffect = PressEffect.fade
+    /// Drawn size in points; the touch area reaches `padding(for:)` further all round.
+    var size: CGFloat = 88
     /// The face, given whether the button is held.
     @ViewBuilder let label: (_ pressed: Bool) -> Label
     @GestureState private var isPressed = false
 
+    /// Extra touch area round a button of `size`: generous on the small ones too.
+    static func padding(for size: CGFloat) -> CGFloat { size >= 88 ? 14 : 12 }
+
     var body: some View {
         label(isPressed)
-            .frame(width: 88, height: 88)
+            .frame(width: size, height: size)
             .scaleEffect(isPressed ? (pressEffect == .sprite ? 0.96 : 0.92) : 1)
             .opacity(pressEffect == .sprite ? 1 : (isPressed ? 0.9 : 0.55))
-            .padding(14)
+            .padding(Self.padding(for: size))
             .contentShape(Circle())
             .gesture(DragGesture(minimumDistance: 0).updating($isPressed) { _, pressed, _ in pressed = true })
             // GestureState resets on release and on cancel, so a lost touch can never stick held.
@@ -270,6 +320,8 @@ private struct ButtonFace: View {
     @Environment(\.displayScale) private var displayScale
     let sprite: String
     let animation: String
+    /// The size to come nearest, in points.
+    var size: CGFloat = 88
 
     /// The sprites for one state of a button: at rest, while held, and its animation.
     struct Faces {
@@ -312,8 +364,8 @@ private struct ButtonFace: View {
 
     var body: some View {
         let width = model.sprites.sheet(sprite)?.width ?? 48
-        // Nearest 88 pt in whole device pixels per sprite pixel; a tie takes the smaller.
-        let exact = 88 * max(displayScale, 1) / width
+        // Nearest `size` in whole device pixels per sprite pixel; a tie takes the smaller.
+        let exact = size * max(displayScale, 1) / width
         let scale = max(1, Int(exact.rounded(.down)) + (exact - exact.rounded(.down) > 0.5 ? 1 : 0))
         PixelSprite(sprite: sprite, animations: [animation], pixelScale: scale)
     }
