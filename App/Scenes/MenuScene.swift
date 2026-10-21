@@ -133,7 +133,7 @@ final class MenuScene: SKScene {
 
         switch pose {
         case .running: hero.play("run")
-        case .standing: hero.play("idle")
+        case .standing: hero.play(hero.has("menu") ? "menu" : "idle")
         case .happy: hero.play(hero.has("sit_happy") ? "sit_happy" : "idle")
         case .knockedOut: knockOut(hero)
         }

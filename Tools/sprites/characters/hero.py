@@ -185,6 +185,7 @@ class HeroPose:
     length: float = 0        # torso stretched (+) or squashed (-)
     reach: float = 0         # arms longer by this much per segment (throwing, reaching)
     arm_behind: bool = True   # near arm under the head, so it never crosses the face
+    chunky: bool = False      # thick legs with flat white paws and toe marks (poses shown big on screens)
     lift: float = 0          # pixels above the ground
     head_dx: float = 0
     head_dy: float = 0
@@ -397,15 +398,26 @@ def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
     back.paste(despeckle(layer).outline())
 
     def leg(start, spec, colour, paw, on):
-        knee = on.limb(start, spec[0], THIGH, colour, 3)
-        foot = on.limb(knee, spec[1], SHIN, colour, 3)
-        on.rect(foot[0] - 1, foot[1] - 0.5, foot[0] + 1, foot[1] + 0.5, paw)     # white paw tip
+        width = 4 if pose.chunky else 3
+        knee = on.limb(start, spec[0], THIGH, colour, width)
+        foot = on.limb(knee, spec[1], SHIN, colour, width)
+        if pose.chunky:                                     # a flat white paw, toes marked, forward of the leg
+            on.rect(foot[0] - 1.5, foot[1] - 1, foot[0] + 2.5, foot[1] + 0.5, paw)
+            on.px(foot[0] + 0.5, foot[1], P.FUR_WHITE_D)
+            on.px(foot[0] + 1.5, foot[1], P.FUR_WHITE_D)
+        else:
+            on.rect(foot[0] - 1, foot[1] - 0.5, foot[0] + 1, foot[1] + 0.5, paw)     # white paw tip
         return foot
 
     def arm(start, spec, colour, paw, on):
-        elbow = on.limb(start, spec[0], UPPER_ARM + pose.reach, colour, 2)
-        hand = on.limb(elbow, spec[1], FOREARM + pose.reach, colour, 2)
-        on.rect(hand[0] - 0.5, hand[1] - 0.5, hand[0] + 0.5, hand[1] + 0.5, paw)
+        width = 3 if pose.chunky else 2
+        elbow = on.limb(start, spec[0], UPPER_ARM + pose.reach, colour, width)
+        hand = on.limb(elbow, spec[1], FOREARM + pose.reach, colour, width)
+        if pose.chunky:
+            on.rect(hand[0] - 1, hand[1] - 1, hand[0] + 1, hand[1] + 0.5, paw)
+            on.px(hand[0], hand[1], P.FUR_WHITE_D)
+        else:
+            on.rect(hand[0] - 0.5, hand[1] - 0.5, hand[0] + 0.5, hand[1] + 0.5, paw)
         return hand
 
     body = Canvas(*c.size)
@@ -577,7 +589,8 @@ def build() -> list[Sprite]:
 
     # Stands at ease: breathing, the cape stirring, the tail swishing; blinks on the last frame.
     hero.add("idle", [
-        hero_frame(HeroPose(cape=88 + k * 3, cape_len=12, flap=k * 1.6, ripple=16, tail=-70 + k * 3, curl=16, head_dy=dy, eye=e))
+        hero_frame(HeroPose(near_arm=(20, 8), far_arm=(6, -4), chunky=True, cape=88 + k * 3, cape_len=12,
+                            flap=k * 1.6, ripple=16, tail=-70 + k * 3, curl=16, head_dy=dy, eye=e))
         for k, (dy, e) in enumerate(((0, "open"), (0, "open"), (0.6, "open"), (0.6, "shut")))
     ], fps=4)
 
@@ -756,6 +769,10 @@ def screen_poses(hero: Sprite) -> None:
         sit.append(hero_frame(pose))
     hero.add("sit_happy", sit, fps=6)
 
+    # Start screen: crouched low and playful, both front legs planted, cape and scarf flowing back. Only the
+    # cape (frame 2), the eyes (frame 3, a blink) and the tail (frame 4) move.
+    hero.add("menu", [menu_frame(k) for k in range(4)], fps=4)
+
     # Knocked out: stretched out on its belly, head resting on the ground at the right with its ears up,
     # "x x" eyes and tongue out; tail lying out to the left, cape draped over its back. Frame 2: a 1 px twitch.
     ko = [ko_frame(k) for k in range(2)]
@@ -786,6 +803,126 @@ FRONT_HEAD = (
     "....DDDDDDDDDD....",
 )
 assert all(len(row) == 18 for row in FRONT_HEAD)
+
+
+# A bigger head for the start-screen pose (22x20, same style and ear shape as HEAD): big eyes with shine,
+# a pink nose and a tiny pink "w" mouth.
+MENU_HEAD = (
+    "...D..............F...",
+    "...DF............FF...",
+    "..DPF...........FPF...",
+    "..DPPF.........FPPF...",
+    ".DDPPF........FPPPF...",
+    ".DPPPFF......FFPPPFF..",
+    "..DLLLSLSFFFWWFSFFFF..",
+    ".DLLLLSLSFFFWWFSFFFFF.",
+    "DFLLLFFFFFFFWWFFFFFFFF",
+    "DFLLFFFFFFFFWWFFFFFFFF",
+    "DFFFFFFFFFFWWWWFFFFFFF",
+    "DFFFFFFHKKFWWWWHKKFFFF",
+    "DFFFFFFKKKWWWWWKKKFFFF",
+    "DSSFFFFKKKWWPPWKKKWFFF",
+    "DFFFFFWWWWpWpWpWWWWWFF",
+    ".DFFFWWWWWWpWpWWWWWWF.",
+    ".DDFFwWWWWWWWWWWWWWFF.",
+    "..DDDwwWWWWWWWWWWWFD..",
+    "...DDDwwwWWWWWWWWFD...",
+    ".....DDDwwwwwwwDD.....",
+)
+assert all(len(row) == 22 for row in MENU_HEAD)
+
+
+def menu_frame(k: int) -> Image.Image:
+    """The start-screen pose: a compact cat crouched low, three-quarter view facing right, its big head over a
+    short round body; two short white-pawed front legs side by side, the hind foot tucked at the back, the
+    tail curling behind the cape, which billows up and back to the left. Built from separately outlined parts;
+    only the cape (frame 2), the eyes (frame 3) and the tail (frame 4) move."""
+    fur, fur_l, fur_d, stripe = P.GINGER, P.GINGER_L, P.GINGER_D, P.GINGER_DD
+    white, white_d = P.FUR_WHITE, P.FUR_WHITE_D
+    g = GROUND
+    out = Canvas(*SIZE)
+    hx, hy = 18, 3                                           # top left of the head grid
+
+    def layer(draw, clean=True):
+        part = Canvas(*SIZE)
+        draw(part)
+        out.paste((despeckle(part) if clean else part).outline())
+
+    def tail(c):                                             # curling up at the back, behind the cape
+        flick = 2 if k == 3 else 0
+        pts = [(15, g - 3), (10, g - 3), (6, g - 5), (4, g - 9), (5 + flick, g - 13 - flick // 2)]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            c.line((x0, y0), (x1, y1), fur, 3)
+        c.rect(7, g - 5, 8, g - 3, stripe)
+        c.rect(3, g - 8, 5, g - 8, stripe)
+
+    def cape(c):                                             # billowing up and out to the left behind the cat
+        lift = (0, 3, 0, 1)[k]
+        top = [(23, g - 13), (17, g - 18), (12, g - 21 - lift), (7, g - 20 - lift), (3, g - 22 - lift),
+               (1, g - 17 - lift)]
+        bottom = [(4, g - 14), (2, g - 10), (8, g - 12), (12, g - 9), (17, g - 11), (23, g - 10)]
+        c.poly(top + bottom, P.CAPE)
+        c.poly(bottom + [(17, g - 13), (11, g - 13), (5, g - 15)], P.CAPE_D)
+        for (x0, y0), (x1, y1) in zip(top, top[1:]):         # light top edge
+            c.line((x0, y0 + 1), (x1, y1 + 1), P.CAPE_L)
+        for x, y in ((9, g - 18 - lift), (14, g - 17)):        # folds
+            c.line((x, y), (x + 1, y + 6), P.CAPE_D)
+
+    def body(c):                                             # short and round, mostly behind the head
+        c.ellipse(24, g - 6, 9, 6, fur_d)
+        c.ellipse(24, g - 6.6, 8.2, 5.2, fur)
+        c.line((19, g - 11), (20, g - 8), stripe)
+        c.ellipse(16, g - 4, 4.5, 4, fur)                    # tucked haunch
+        c.line((15, g - 7), (16, g - 5), stripe)
+
+    def hind_foot(c):                                        # a white oval at the back
+        c.ellipse(13.5, g - 1, 3.5, 1.6, white)
+        c.px(12, g, white_d)
+        c.px(14, g, white_d)
+
+    def front_legs(c):                                       # two short legs side by side, white paws, toes marked
+        for x0, colour in ((26, fur_d), (31, fur)):
+            c.rect(x0, g - 9, x0 + 3, g - 3, colour)
+            c.rect(x0, g - 6, x0 + 3, g - 6, stripe)
+            c.rect(x0 - 1, g - 2, x0 + 4, g, white if colour == fur else white_d)
+            for x in (x0, x0 + 2):
+                c.px(x, g, white_d if colour == fur else P.GREY_L)
+
+    def chest(c):                                            # white chest under the chin
+        c.ellipse(31, g - 10, 4.5, 3, white)
+
+    def head(c):
+        rows = [list(row) for row in MENU_HEAD]
+        if k == 2:                                           # blink: eyes shut into little curves
+            for y in range(11, 14):
+                for x in list(range(7, 10)) + list(range(15, 18)):
+                    rows[y][x] = "F"
+            for x, y in ((7, 12), (8, 13), (9, 12), (15, 12), (16, 13), (17, 12)):
+                rows[y][x] = "K"
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch != ".":
+                    c.px(hx + x, hy + y, STAMP_COLOURS[ch])
+
+    def scarf(c):                                            # a short knot under the chin, a round gold bell
+        c.rect(22, hy + 18, 33, hy + 19, P.CAPE)
+        c.rect(24, hy + 18, 30, hy + 18, P.CAPE_L)
+        c.rect(30, hy + 20, 32, hy + 20, P.CAPE)
+        c.rect(30, hy + 21, 31, hy + 22, P.GOLD)
+        c.px(30, hy + 21, P.YELLOW)
+        c.px(31, hy + 22, P.GOLD_D)
+
+    layer(tail)
+    layer(cape)
+    layer(body)
+    layer(hind_foot, clean=False)
+    layer(front_legs, clean=False)
+    layer(chest)
+    layer(head, clean=False)
+    layer(scarf, clean=False)
+    shifted = Image.new("RGBA", SIZE, P.CLEAR)               # 1 px right, so the cape tip clears the frame edge
+    shifted.alpha_composite(out.img, (1, 0))
+    return shifted
 
 
 def ko_frame(k: int) -> Image.Image:

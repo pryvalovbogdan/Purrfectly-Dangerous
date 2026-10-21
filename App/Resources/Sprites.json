@@ -1526,6 +1526,11 @@
     "fps": 6,
     "loop": true
    },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
    "ko": {
     "frames": 2,
     "fps": 3,

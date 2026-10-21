@@ -17,7 +17,7 @@ import export  # noqa: E402
 SPEC = {
     "hero": ((44, 36), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "double": 4, "throw": 4, "dash": 4,
                         "pounce": 4, "hurt": 2, "death": 6, "peek": 4, "cheer": 4, "sit_happy": 4, "ko": 2,
-                        "ghost": 4}),
+                        "ghost": 4, "menu": 4}),
     "yarn": ((12, 12), {"fly": 4, "impact": 5}),
     # World 1, forest
     "squirrel": ((36, 36), {"walk": 6, "death": 4}),
