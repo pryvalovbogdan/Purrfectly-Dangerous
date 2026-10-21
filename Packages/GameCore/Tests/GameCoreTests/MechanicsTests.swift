@@ -181,7 +181,7 @@ import Testing
         }
         let slickHop = tapApex(world)
         let dryHop = tapApex(RunnerWorld(level: flatLevel(), boss: nil))
-        #expect(dryHop < 15)
+        #expect(dryHop < 38)
         #expect(slickHop > 45)
     }
 

@@ -19,6 +19,15 @@ enum LevelBackdrop {
             node.position.y = groundY
             node.zPosition = -10
             parent.addChild(node)
+            // Below the ground line only the ground itself used to be drawn, so where the game hides it
+            // above the floor of a dip the scene's dark background showed through. The band mirrored
+            // about the ground line carries the horizon colours on down; the ground covers it elsewhere.
+            let mirrored = SKSpriteNode(texture: sky, size: CGSize(width: size.width, height: bandHeight))
+            mirrored.anchorPoint = .zero
+            mirrored.yScale = -1
+            mirrored.position.y = groundY
+            mirrored.zPosition = -10
+            parent.addChild(mirrored)
             let above = size.height - groundY - bandHeight
             if above > 0, let topColour = library.textures("bg_\(theme)_sky_top", "still").first {
                 let fill = SKSpriteNode(texture: topColour, size: CGSize(width: size.width, height: above + 1))

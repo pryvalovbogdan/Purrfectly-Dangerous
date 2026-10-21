@@ -510,38 +510,13 @@ def forest_bushes() -> Canvas:
 
 
 def forest_ravine() -> list[Sprite]:
-    """A mossy cliff wall with a hanging vine and roots, over blue water with a foam line."""
-    wall = Canvas(8, 48)
-    rnd = noise(13)
-    for y in range(6, 26):                                   # rock face: brown, then grey stone
-        reach = 3 + int(rnd() * 2.5) if y < 16 else 2 + int(rnd() * 2.5)
-        wall.rect(0, y, reach, y, P.EARTH if y < 16 else P.STONE)
-        wall.px(reach, y, P.EARTH_D if y < 16 else P.STONE_D)
-        if y % 5 == 0:
-            wall.rect(0, y, reach - 1, y, P.EARTH_DD if y < 16 else P.STONE_DD)
-    wall.rect(0, 27, 1, 47, P.WATER_DD)                      # wet rock under the water line: one clean edge,
-    wall.rect(2, 27, 2, 47, P.WATER_D)                       # since ragged pixels here read as glitches
-    wall.rect(0, 26, 3, 26, P.WHITE)                         # foam where the water meets the rock
-    wall.px(4, 26, P.WATER_L)
-    wall.rect(0, 0, 6, 5, P.KIT_GREEN)                       # turf lip with tufts hanging over the edge
-    wall.rect(0, 0, 6, 1, P.KIT_GREEN_L)
-    wall.px(2, 0, P.LEAF_Y)
-    wall.px(5, 0, P.LEAF_Y)
-    wall.rect(0, 5, 6, 5, P.KIT_GREEN_D)
-    wall.poly([(0, 5), (3, 5), (1.5, 10)], P.KIT_GREEN)
-    wall.poly([(3, 5), (7, 5), (6, 11)], P.KIT_GREEN)
-    wall.px(6, 12, P.KIT_GREEN_DD)
-    wall.px(7, 4, P.KIT_GREEN_D)
-    W.vine(wall, 6, 11, 11, 3, flowers=True)
-    wall.line((2, 10), (3, 18), P.BARK_D)                    # a root poking out
-    wall.px(4, 19, P.BARK_D)
-
+    """`ravine_forest_fill`, still required for every ravine level (the waterfall pit pieces, including the
+    wall and deep water, are in characters/waterfall.py): far wall in shade, then the pool, then deep water."""
     fill = Canvas(8, 48)
-    for y0, y1, col in ((0, 2, P.EARTH_DD), (3, 12, P.STONE_DD), (13, 19, P.DIST_DD), (20, 25, P.WATER_DD),
-                        (26, 26, P.WHITE), (27, 27, P.WATER_L), (28, 33, P.WATER), (30, 30, P.WATER_L),
-                        (34, 39, P.WATER_D), (37, 37, P.WATER), (40, 47, P.WATER_DD)):
+    for y0, y1, col in ((0, 39, P.CLIFF_BACK), (40, 40, P.WHITE), (41, 41, P.WATER_L), (42, 44, P.WATER),
+                        (45, 46, P.WATER_D), (47, 47, P.WATER_DD)):
         fill.rect(0, y0, 7, y1, col)
-    return [single("ravine_forest", wall), single("ravine_forest_fill", fill), flat("ravine_forest_deep", P.WATER_DD)]
+    return [single("ravine_forest_fill", fill)]
 
 
 def forest() -> list[Sprite]:

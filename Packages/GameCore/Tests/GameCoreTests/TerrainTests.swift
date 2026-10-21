@@ -54,6 +54,40 @@ import Testing
 
     // MARK: - Hero
 
+    /// A tap: pressed and already released by the first step, as a quick thumb on the button is.
+    func tap(_ world: inout RunnerWorld) -> Double {
+        var top = world.heroY
+        _ = world.step(Input(jumpPressed: true, jumpHeld: false), dt: dt)
+        while !world.onGround, !world.isOver {
+            _ = world.step(Input(), dt: dt)
+            top = max(top, world.heroY)
+        }
+        return top
+    }
+
+    @Test func aQuickTapStillHopsHighEnoughForALowStep() {
+        var world = RunnerWorld(level: flatLevel(), boss: nil)
+        _ = world.run(0.5)
+        let top = tap(&world)
+        #expect(top >= 28)
+        #expect(top < Tuning().jumpApex - 4)   // still shorter than a held jump
+    }
+
+    @Test func aTapAgainstAWallIsAlwaysAFullJumpAndClimbsIt() {
+        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
+        advance(&world) { $0.isAgainstWall }
+        #expect(tap(&world) >= 40)
+        #expect(world.heroY == 40)
+        #expect(!world.isAgainstWall)
+    }
+
+    @Test func aTapJustBeforeATallStepIsAFullJump() {
+        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
+        advance(&world) { $0.distance >= 300 - 8 - 30 }
+        #expect(tap(&world) >= 40)
+        #expect(world.heroY == 40)
+    }
+
     @Test func theHeroStopsAgainstAWallAndTheLevelWaits() throws {
         let walker = PlacedItem(at: 700, kind: .slime)
         var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 30)], items: [walker]), boss: nil)

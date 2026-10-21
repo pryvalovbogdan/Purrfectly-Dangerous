@@ -5,6 +5,9 @@ public struct Tuning: Sendable, Equatable {
     public var jumpVelocity = 300.0
     /// Upward speed is multiplied by this when the jump button is released early.
     public var jumpCut = 0.45
+    /// A release only cuts a jump after it has risen this long, so a quick tap (or a jump buffered
+    /// before landing, by when the thumb is usually up) still hops over a low step.
+    public var minJumpHold = 0.12
     public var doubleJumpScale = 0.9
     /// A jump pressed this long before landing still triggers.
     public var jumpBuffer = 0.1
@@ -300,6 +303,8 @@ public struct RunnerWorld: Sendable {
     private var nextID = 1
     private var jumpsUsed = 0
     private var jumpCutDone = false
+    /// Seconds since the last jump left the ground.
+    private var jumpRise = 0.0
     private var jumpBuffer = 0.0
     private var yarnCooldown = 0.0
     private var wasFireHeld = false
@@ -433,6 +438,15 @@ public struct RunnerWorld: Sendable {
         return top
     }
 
+    /// Pressed against a step's face, or with one in reach of the rising half of a jump that rises
+    /// higher than a short hop clears.
+    private var facesTallStep: Bool {
+        if isAgainstWall { return true }
+        let front = distance + tuning.heroWidth / 2
+        let reach = tuning.jumpReach(speed: level.speed) / 2
+        return ground.wall(from: front, to: front + reach, feet: heroY, step: tuning.stepUp) != nil
+    }
+
     /// Runs forward, unless the face of a step higher than the feet is in the way: then the hero
     /// stops against it and `distance` stays put until a jump lifts the feet above its top.
     private mutating func advance(dt: Double, events: inout [GameEvent]) {
@@ -481,8 +495,10 @@ public struct RunnerWorld: Sendable {
 
         if jumpBuffer > 0 {
             if onGround {
-                // Slick ground gives no grip for a short hop: every jump from it is a full one.
-                jumpCutDone = onSlick
+                // Slick ground gives no grip for a short hop, and a step a hop can't clear is never
+                // met with one: every jump from either is a full one.
+                jumpCutDone = onSlick || facesTallStep
+                jumpRise = 0
                 heroVY = tuning.jumpVelocity
                 onGround = false
                 standingOn = nil
@@ -500,7 +516,8 @@ public struct RunnerWorld: Sendable {
         }
 
         guard !onGround else { return }
-        if !input.jumpHeld, heroVY > 0, !jumpCutDone {
+        jumpRise += dt
+        if !input.jumpHeld, heroVY > 0, !jumpCutDone, jumpRise >= tuning.minJumpHold {
             heroVY *= tuning.jumpCut
             jumpCutDone = true
         }

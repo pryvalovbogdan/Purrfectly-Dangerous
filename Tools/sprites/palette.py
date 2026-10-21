@@ -147,6 +147,15 @@ WATER_L = _hex("6ae2fc")
 WATER = _hex("1fa0f2")
 WATER_D = _hex("0a72d4")
 WATER_DD = _hex("064c8e")
+WATER_NIGHT = _hex("05305e")   # deep pool shading into the dark at the bottom of tall pits
+WATER_ABYSS = _hex("03182e")
+FALL_STREAK = _hex("9ef0ff")   # bright streaks in falling water
+POOL_L = _hex("8af4ea")        # churned turquoise of the plunge pool
+POOL = _hex("2cc4dc")
+CLIFF_BACK_L = _hex("74809e")  # the far pit wall, in shade behind the falls
+CLIFF_BACK = _hex("56607e")
+CLIFF_BACK_D = _hex("3c4460")
+CLIFF_BACK_DD = _hex("232840")
 LANTERN = _hex("ffd86a")
 
 # Bosses (from the boss atlas in docs/concept/)
@@ -224,3 +233,13 @@ SKY_S1 = _hex("2f9bf3")
 SKY_S2 = _hex("4db1f8")
 SKY_S3 = _hex("6fc4fa")
 SKY_S4 = _hex("96d4fb")
+
+# App icon: a bright cartoon sky, pale distant cliffs, and the soft glow around the leaping kitten.
+ICON_SKY_TOP = _hex("2a86e0")
+ICON_SKY = _hex("4aa8f0")
+ICON_SKY_L = _hex("8cd0f8")
+ICON_HAZE = _hex("b8e4fa")
+ICON_CLIFF = _hex("7cb4e0")
+ICON_CLIFF_L = _hex("a2cdee")
+ICON_GLOW = _hex("fff6d8")
+ICON_MOUTH = _hex("8a1e3a")

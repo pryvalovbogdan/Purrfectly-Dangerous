@@ -40,6 +40,20 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | terrain_forest_edge | 8×16 | still 1. Left end cap (mirror for the right); top row level with `terrain_forest_top`'s |
 | terrain_forest_wall | 8×16 | still 1. Left side face below the cap (mirror for the right); tiles vertically |
 | terrain_forest_fill | 16×16 | still 1. Block interior; tiles both ways; opaque |
+| ravine_forest | 8×16 | still 1. Left pit wall (mirror for the right): rough mossy rock, dark outline on the pit side (col 7); tiles vertically, alternating with `ravine_forest_b` in any order |
+| ravine_forest_b | 8×16 | still 1. The second wall tile |
+| ravine_forest_rim | 12×24 | still 1. Left top cap: turf on cols 0-8 (row 0 = ground surface) over rock on cols 0-7, a moss-and-leaf clump hanging over the edge into the pit (cols 6-11), vines trailing down |
+| ravine_forest_vines | 6×24 | still 1. Hanging vine strands from a moss pad (mirror for the right wall) |
+| ravine_forest_back | 16×16 | still 1. Far pit wall in shade; tiles both ways |
+| ravine_forest_falls | 16×16 | flow 4 (10 fps). The curtain filling the pit; tiles both ways in every frame; streaks move down 4 px a frame |
+| ravine_forest_falls_edge | 4×16 | flow 4 (10 fps). Opaque soft edge between the left wall (col 0) and the curtain; mirror for the right; tiles vertically |
+| ravine_forest_lip | 16×6 | flow 4 (10 fps). White-blue brink where the water spills over; row 0 = ground surface; tiles horizontally |
+| ravine_forest_surface | 16×8 | wave 4 (8 fps). Pool surface: crest on rows 0-2 over turquoise; tiles horizontally |
+| ravine_forest_pool | 16×24 | churn 4 (8 fps). Plunge pool under the surface: rising bubbles in turquoise fading to the deep colour on row 23; tiles horizontally |
+| ravine_forest_splash | 16×12 | splash 4 (10 fps). Thick foam band with spray, across the full pit; tiles horizontally |
+| ravine_forest_deep | 16×16 | still 1. Deep water with faint streaks; tiles both ways |
+| ravine_forest_deep_fade | 16×32 | still 1. Deep water (row 0 continues `ravine_forest_deep`) dithered down to near-black navy |
+| ravine_forest_fill | 8×48 | still 1. Fallback only (still required for ravine levels and by the generic ravine code): back-wall colour to row 39, the pool from row 40 |
 | boss_squirrel | 112×132 | idle 4, throw 6, roll 6, climb 6 (leaps with the giant acorn), hurt 2, death 8 |
 | snowball | 16×16 | roll 4, death 4 |
 | penguin | 36×16 | slide 4, death 4 |
@@ -118,6 +132,23 @@ ground line, `S` = a piece's walk surface. All five sprites use anchor (0, 0) wh
   gets a mirrored edge on [x0 − 8, x0) and an edge on [x1, x1 + 8), with walls down to the floor. The floor's top
   and fill span [x0 − 1, x1 + 1) and fill down to `G` − 48.
 - Pieces are at least 24 wide. A piece 16 wide is just its two end columns, with no top or fill tiles.
+The forest ravine is a waterfall pit (`characters/waterfall.py`, after `docs/concept/Orange Cat Waterfall Tileset.png`).
+Pit [x0, x1), `G` = ground line, y up, pool surface `P` = `G` − 40, `a` = x0 + 8 and `b` = x1 − 8 (between the wall faces).
+Positions are node positions with anchor (0, 0); "top on y" means node y = y − height. Back to front:
+1. `ravine_forest_back` across [x0, x1) (`tileOffsets`), tops on `G`, `G` − 16, ... down to `P` − 8.
+2. `ravine_forest_falls` across [a, b), tops on `G`, `G` − 16, ... while the top is above `P` (the overshoot hides under the pool).
+3. `ravine_forest_falls_edge` at x = a and mirrored at [b − 4, b), in the same rows, over the curtain.
+4. `ravine_forest_lip` across [a, b), top on `G`.
+5. Water across [a, b): `ravine_forest_surface` top on `P`, `ravine_forest_pool` top on `P` − 8, `ravine_forest_deep` tops on
+   `P` − 32, `P` − 48, ..., and in tall pits `ravine_forest_deep_fade` as the bottom 32 units on screen.
+6. `ravine_forest_splash` across [a, b), top on `P` + 8 (it overlaps the curtain's foot and the surface crest).
+7. Walls at x0 and mirrored at [x1 − 8, x1): tops on `G` − 24, `G` − 40, ... to the screen bottom, alternating `ravine_forest`,
+   `ravine_forest_b`, `ravine_forest`, ... Every animated piece shows the same frame index at any moment.
+8. `ravine_forest_vines` at x0 + 5 and mirrored at [x1 − 11, x1 − 5), top on `G` − 14 (it hangs out from under the rim). More
+   strands may go lower on the walls of deep pits, but keep them above `P`.
+9. `ravine_forest_rim` at x0 and mirrored at [x1 − 12, x1), top on `G`.
+The rim, walls and edges are opaque, so they cover whatever is under the pit. Pits are at least 32 wide.
+
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 
 The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with

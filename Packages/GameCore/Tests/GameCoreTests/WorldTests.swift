@@ -17,8 +17,9 @@ import Testing
         }
         let tap = apex(held: false)
         let hold = apex(held: true)
-        #expect(tap > 5)
-        #expect(hold > tap * 2)
+        // Even a tap rises long enough to hop a low step; holding still goes clearly higher.
+        #expect(tap > 28)
+        #expect(hold > tap + 12)
         #expect(hold > ItemKind.stump.spec.height)
     }
 
