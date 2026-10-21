@@ -27,20 +27,27 @@ struct MenuView: View {
                 }
             }
             ScreenFrame { _, insets in
-                // Beside the Dynamic Island or notch (the status bar is hidden), else under the safe area.
-                SoundButton()
-                    .padding(.top, max(14, insets.top - 44))
-                    .padding(.trailing, max(insets.trailing, 14))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                // Beside the Dynamic Island or notch (the status bar is hidden), else under the safe area:
+                // the fish wallet at the left, sound at the right.
+                HStack(alignment: .top) {
+                    FishWallet(amount: model.fishWallet)
+                    Spacer()
+                    SoundButton()
+                }
+                .padding(.top, max(14, insets.top - 44))
+                .padding(.leading, max(insets.leading, 14))
+                .padding(.trailing, max(insets.trailing, 14))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            if let overlay {
+            if overlay == .levels {
                 MenuOverlay(close: { self.overlay = nil }) {
-                    switch overlay {
-                    case .levels: LevelsPanel(close: { self.overlay = nil })
-                    case .cats: CatsView(onBack: { self.overlay = nil })
-                    }
+                    LevelsPanel(close: { self.overlay = nil })
                 }
                 .transition(.opacity)
+            } else if overlay == .cats {
+                // The CATS screen fills the screen, with its own scene behind it.
+                CatsScreen(onBack: { self.overlay = nil })
+                    .transition(.opacity)
             }
         }
         .animation(.easeOut(duration: 0.15), value: overlay)
@@ -261,105 +268,8 @@ private struct LevelRow: View {
     }
 }
 
-// MARK: - Cats
-
-/// The skins screen: the orange cat (selected) and locked slots still to come.
-struct CatsView: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-    let onBack: () -> Void
-
-    /// Slots shown locked until more skins exist.
-    private static let lockedSlots = 3
-
-    var body: some View {
-        let columns = verticalSizeClass == .compact ? 4 : 2
-        VStack(spacing: 14) {
-            PixelTitle(text: model.ui("cats"), size: 26, alignment: .center, splitFrom: 9)
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(118), spacing: 12), count: columns), spacing: 12) {
-                ForEach(AppModel.skins, id: \.self) { skin in
-                    SkinSlot(skin: skin, selected: model.save.selectedSkin == skin) { model.selectSkin(skin) }
-                }
-                ForEach(0..<Self.lockedSlots, id: \.self) { _ in
-                    LockedSlot()
-                }
-            }
-            SecondaryButton(title: model.ui("back"), height: 44, fontSize: 15, action: onBack)
-                .frame(maxWidth: 260)
-        }
-        .parchmentCard()
-    }
-}
-
-private struct SkinSlot: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.displayScale) private var displayScale
-    let skin: String
-    let selected: Bool
-    let select: () -> Void
-
-    var body: some View {
-        let scale = model.sprites.pixelScale("hero", fitting: CGSize(width: 96, height: 76), displayScale: displayScale)
-        Button(action: select) {
-            VStack(spacing: 4) {
-                // Only the orange cat exists so far, and it is the hero as drawn.
-                PixelSprite(sprite: "hero", animations: ["idle"], pixelScale: scale, anyAnimation: false)
-                    .frame(height: 80, alignment: .bottom)
-                Text(model.text("hero.name").uppercased()).font(.pixel(12)).lineLimit(1).minimumScaleFactor(0.6)
-            }
-            .padding(.vertical, 8)
-        }
-        .buttonStyle(ChunkyButtonStyle(kind: .secondary, padding: 6))
-        .frame(height: 120)
-        .overlay {
-            if selected {
-                PixelRect().inset(by: -4).strokeBorder(Color.menuOrange, lineWidth: 4)
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            if selected {
-                NewBadge(text: model.ui("selected"), size: 8).offset(x: 6, y: -8)
-            }
-        }
-        .accessibilityLabel(model.text("hero.name"))
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-private struct LockedSlot: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.displayScale) private var displayScale
-
-    var body: some View {
-        let scale = model.sprites.pixelScale("cat_silhouette", fitting: CGSize(width: 96, height: 76), displayScale: displayScale)
-        VStack(spacing: 4) {
-            ZStack(alignment: .bottomTrailing) {
-                PixelSprite(sprite: "cat_silhouette", pixelScale: scale)
-                PixelIcon(sprite: "icon_lock", height: 24).offset(x: 6, y: 2)
-            }
-            .frame(height: 80, alignment: .bottom)
-            Text(model.ui("locked")).font(.pixel(12)).foregroundStyle(Color.parchmentInk.opacity(0.6))
-        }
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity)
-        .frame(height: 120)
-        .background(Color.parchmentEdge.opacity(0.35), in: PixelRect())
-        .overlay(PixelRect().strokeBorder(Color.menuInk.opacity(0.5), lineWidth: 3))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(model.ui("locked"))
-    }
-}
-
 #Preview("Menu") {
     MenuView().environment(AppModel())
-}
-
-#Preview("Cats") {
-    ZStack {
-        Color(red: 0.44, green: 0.71, blue: 0.88).ignoresSafeArea()
-        CatsView(onBack: {})
-    }
-    .environment(AppModel())
 }
 
 #Preview("Levels") {

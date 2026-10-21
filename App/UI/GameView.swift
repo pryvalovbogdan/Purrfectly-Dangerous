@@ -50,7 +50,7 @@ struct GameView: View {
 
     private func makeScene(viewSize: CGSize) -> GameScene {
         let level = model.playableLevel(levelIndex)
-        return GameScene(
+        let scene = GameScene(
             viewSize: viewSize,
             displayScale: displayScale,
             level: level,
@@ -66,6 +66,9 @@ struct GameView: View {
             text: { model.text($0) },
             onFinish: { model.finish(level: levelIndex, result: $0) }
         )
+        // The cat in use, from the CATS screen (looks only).
+        scene.heroSprite = model.heroSprite
+        return scene
     }
 }
 

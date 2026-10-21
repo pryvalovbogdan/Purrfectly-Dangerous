@@ -10,11 +10,17 @@ public struct SaveGame: Codable, Sendable, Equatable {
     public var bestEndlessScore = 0
     /// Most levels beaten in one endless run.
     public var bestEndlessCleared = 0
-    /// The cat skin picked on the CATS screen, by neutral id.
-    public var selectedSkin = SaveGame.defaultSkin
+    /// The cat skin picked on the CATS screen, by neutral id; always one the player owns.
+    public private(set) var selectedSkin = SaveGame.defaultSkin
+    /// Fish banked from every run (levels and endless, won or lost), spent on cats in the shop.
+    public private(set) var fishWallet = 0
+    /// Cats unlocked in the shop, by id; always holds the free one.
+    public private(set) var ownedSkins: Set<String> = [Skin.free]
 
     /// The skin every player has from the start.
-    public static let defaultSkin = "orange"
+    public static let defaultSkin = Skin.free
+    /// What the one cat was called before the shop; such saves now pick the free cat.
+    static let legacySkins: Set<String> = ["orange"]
 
     public init() {}
 
@@ -27,7 +33,40 @@ public struct SaveGame: Codable, Sendable, Equatable {
         soundOn = try values.decodeIfPresent(Bool.self, forKey: .soundOn) ?? true
         bestEndlessScore = try values.decodeIfPresent(Int.self, forKey: .bestEndlessScore) ?? 0
         bestEndlessCleared = try values.decodeIfPresent(Int.self, forKey: .bestEndlessCleared) ?? 0
-        selectedSkin = try values.decodeIfPresent(String.self, forKey: .selectedSkin) ?? Self.defaultSkin
+        fishWallet = max(0, try values.decodeIfPresent(Int.self, forKey: .fishWallet) ?? 0)
+        // Only cats the game has; the free one always.
+        let owned = try values.decodeIfPresent(Set<String>.self, forKey: .ownedSkins) ?? []
+        ownedSkins = owned.filter { Skin.named($0) != nil }.union([Skin.free])
+        let selected = try values.decodeIfPresent(String.self, forKey: .selectedSkin) ?? Self.defaultSkin
+        selectedSkin = ownedSkins.contains(selected) ? selected : Self.defaultSkin
+    }
+
+    public func owns(_ skin: String) -> Bool {
+        ownedSkins.contains(skin)
+    }
+
+    /// Banks the fish picked up in a run that just ended (a level won or lost, or an endless level).
+    public mutating func addFish(_ count: Int) {
+        fishWallet += max(0, count)
+    }
+
+    /// Buys `skin` with fish from the wallet, if there are enough and it is not owned yet.
+    @discardableResult
+    public mutating func unlock(skin id: String) -> SkinUnlock {
+        guard let skin = Skin.named(id) else { return .unknownSkin }
+        guard !owns(id) else { return .alreadyOwned }
+        guard fishWallet >= skin.price else { return .notEnoughFish(missing: skin.price - fishWallet) }
+        fishWallet -= skin.price
+        ownedSkins.insert(id)
+        return .unlocked
+    }
+
+    /// Picks the cat to play as; only an owned one. Returns whether it is now selected.
+    @discardableResult
+    public mutating func select(skin id: String) -> Bool {
+        guard owns(id) else { return false }
+        selectedSkin = id
+        return true
     }
 
     /// Records a level finished on its own.

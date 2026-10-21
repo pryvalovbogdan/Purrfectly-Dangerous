@@ -244,6 +244,11 @@ SPEC = {
 }
 
 
+# Recoloured heroes (`hero_<id>`): every one must match `hero` exactly in size, anchor and animations.
+HERO_SKINS = ("shadow", "misty", "sakura", "honey", "pixie", "clover", "snowball", "napster", "toffee", "cabage",
+              "sharky")
+
+
 @pytest.fixture(scope="module")
 def sprites():
     return {s.name: s for s in build.all_sprites()}
@@ -267,7 +272,8 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                     assert frame.getbbox() is not None, f"{sprite.name}/{name}[{index}] is empty"
 
 
-@pytest.mark.parametrize("name", ["hero", "boss_squirrel", "boss_icedragon", "boss_phantom", "boss_mecha",
+@pytest.mark.parametrize("name", ["hero", *(f"hero_{skin}" for skin in HERO_SKINS), "boss_squirrel",
+                                  "boss_icedragon", "boss_phantom", "boss_mecha",
                                   "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
                                   "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat",
                                   "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
@@ -350,3 +356,15 @@ def test_every_thing_the_game_can_show_has_a_sprite(sprites):
                "spark_feather", "acorn_thrown", "bone", "cannonball"}
     needed |= {f"ability_{name}" for name in ("yarnShot", "doublePounce", "ghostDash", "superPounce")}
     assert needed - set(sprites) == set()
+
+
+@pytest.mark.parametrize("skin", HERO_SKINS)
+def test_hero_skins_match_the_hero(sprites, skin):
+    """A skin is the same hero in another coat: same frame size, anchor, animations, frame counts and timing."""
+    hero, other = sprites["hero"], sprites[f"hero_{skin}"]
+    assert (other.size, other.cx, other.ground, other.faces_left) == (hero.size, hero.cx, hero.ground, hero.faces_left)
+    assert {a: (len(d.frames), d.fps, d.loop) for a, d in other.anims.items()} == \
+        {a: (len(d.frames), d.fps, d.loop) for a, d in hero.anims.items()}
+    differs = sum(a.tobytes() != b.tobytes() for name in hero.anims
+                  for a, b in zip(hero.anims[name].frames, other.anims[name].frames))
+    assert differs > 0, f"hero_{skin} looks exactly like the hero"

@@ -148,6 +148,8 @@ TITLES = [
     # The start logo: the peeking cat, the leaf wreath, the lettering and the fish. The sound button
     # (top right) and a bush (bottom left) poke into the box and are cleared.
     ("start_source.png", (25, 120, 915, 597), [(770, 0, 890, 60), (0, 400, 70, 477)], "title_start"),
+    # The CATS screen's leafy wooden title plank.
+    ("cats_source.png", (225, 38, 710, 200), [], "title_cats"),
 ]
 
 
@@ -203,6 +205,7 @@ def titles() -> None:
         cut_title(*title)
     for cut in SHEET_CUTS:
         cut_from_sheet(*cut)
+    cat_portraits()
 
 
 HUD_SOURCE = "hud_source.png"
@@ -225,6 +228,83 @@ def _checker_only(p: tuple) -> bool:
 
 
 PAUSE_SOURCE = "pause_source.png"
+CATS_SOURCE = "cats_source.png"
+CAT_SKINS = ["fluffy", "shadow", "misty", "sakura", "honey", "pixie", "clover", "snowball",
+             "napster", "toffee", "cabage", "sharky"]
+
+
+def cut_cat_card(box: tuple, name: str, cleared: tuple = ()) -> None:
+    """One cat portrait from the selection sheet's 4×3 card grid. The card behind it is a near-flat
+    colour (grey, darker when locked; a blue sky on the selected one), so a pixel is background when
+    it is close to the card colour sampled from the crop's border (or is sky blue) and connected to
+    the border. Only the largest remaining shape is kept, which drops the lock, check mark and sleep
+    z's; `cleared` rectangles remove badges that touch the cat. The game draws its own card."""
+    im = Image.open(Path(__file__).parent / CATS_SOURCE).convert("RGBA").crop(box)
+    w, h = im.size
+    px = im.load()
+    for x0, y0, x1, y1 in cleared:
+        for y in range(y0, min(y1, h)):
+            for x in range(x0, min(x1, w)):
+                px[x, y] = (0, 0, 0, 0)
+    border = sorted(px[x, y][:3] for x in range(w) for y in (0, 1, h - 2, h - 1) if px[x, y][3])
+    card = border[len(border) // 2]
+
+    def background(p: tuple) -> bool:
+        if p[3] == 0:
+            return True
+        r, g, b = p[:3]
+        sky = b > 150 and b > r + 40 and g > 100
+        return sky or sum(abs(p[i] - card[i]) for i in range(3)) < 46
+
+    clear = [[False] * h for _ in range(w)]
+    todo = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    while todo:
+        x, y = todo.pop()
+        if clear[x][y] or not background(px[x, y]):
+            continue
+        clear[x][y] = True
+        px[x, y] = (0, 0, 0, 0)
+        todo += [(nx, ny) for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
+                 if 0 <= nx < w and 0 <= ny < h and not clear[nx][ny]]
+    seen, best = set(), []
+    for start in ((x, y) for x in range(w) for y in range(h)):
+        if start in seen or px[start][3] == 0:
+            continue
+        shape, stack = [], [start]
+        seen.add(start)
+        while stack:
+            x, y = stack.pop()
+            shape.append((x, y))
+            for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= n[0] < w and 0 <= n[1] < h and n not in seen and px[n][3]:
+                    seen.add(n)
+                    stack.append(n)
+        best = max(best, shape, key=len)
+    keep = set(best)
+    for x in range(w):
+        for y in range(h):
+            if (x, y) not in keep:
+                px[x, y] = (0, 0, 0, 0)
+    piece = im.crop(im.getbbox())
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(piece, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+def cat_portraits() -> None:
+    cols = [(60, 236), (276, 452), (492, 668), (708, 884)]
+    rows = [(800, 928), (1005, 1133), (1212, 1328)]
+    for i, name in enumerate(CAT_SKINS):
+        (x0, x1), (y0, y1) = cols[i % 4], rows[i // 4]
+        cleared = ()
+        if i == 0:                      # the selected card: inside its gold frame, minus the tick
+            x0, y0, x1 = x0 + 8, y0 + 8, x1 - 8
+            cleared = ((x1 - x0 - 34, 0, x1 - x0, 30),)
+        if name in ("cabage", "sharky"):    # the padlock badge in the corner
+            cleared = ((x1 - x0 - 36, 0, x1 - x0, 40),)
+        cut_cat_card((x0, y0, x1, y1), f"cat_{name}", cleared)
 
 # Pieces cut from the user's UI sheets, which sit on a grey transparency checkerboard:
 # (source, box in the sheet, asset name[, background rule]).

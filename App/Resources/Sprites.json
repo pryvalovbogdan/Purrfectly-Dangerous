@@ -2153,6 +2153,1029 @@
    }
   }
  },
+ "hero_cabage": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_clover": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_honey": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_misty": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_napster": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_pixie": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_sakura": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_shadow": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_sharky": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_snowball": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hero_toffee": {
+  "width": 44,
+  "height": 36,
+  "anchorX": 0.5114,
+  "anchorY": 0.0278,
+  "animations": {
+   "run": {
+    "frames": 8,
+    "fps": 14,
+    "loop": true
+   },
+   "stop": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "idle": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "jump": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "fall": {
+    "frames": 2,
+    "fps": 8,
+    "loop": true
+   },
+   "double": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "throw": {
+    "frames": 4,
+    "fps": 16,
+    "loop": false
+   },
+   "dash": {
+    "frames": 4,
+    "fps": 16,
+    "loop": true
+   },
+   "pounce": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "peek": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "cheer": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "sit_happy": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "menu": {
+    "frames": 4,
+    "fps": 4,
+    "loop": true
+   },
+   "ko": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "ghost": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   }
+  }
+ },
  "hud_level_tab": {
   "width": 64,
   "height": 32,

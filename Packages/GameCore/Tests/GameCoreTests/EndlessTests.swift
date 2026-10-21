@@ -112,10 +112,12 @@ import Testing
 
     @Test func theChosenSkinIsSaved() throws {
         var game = SaveGame()
-        #expect(game.selectedSkin == "orange")
-        game.selectedSkin = "orange"
+        #expect(game.selectedSkin == "fluffy")
+        game.addFish(150)
+        _ = game.unlock(skin: "shadow")
+        do { let result = game.select(skin: "shadow"); #expect(result) }
         let loaded = try JSONDecoder().decode(SaveGame.self, from: JSONEncoder().encode(game))
-        #expect(loaded.selectedSkin == "orange")
+        #expect(loaded.selectedSkin == "shadow")
         #expect(loaded == game)
     }
 

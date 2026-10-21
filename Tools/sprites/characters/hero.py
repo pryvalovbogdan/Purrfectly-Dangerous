@@ -9,6 +9,7 @@ draws it from a `HeroPose`.
 from __future__ import annotations
 
 import math
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 
 from PIL import Image
@@ -18,6 +19,134 @@ from draw import Canvas, end_of, r, see_through, tint
 from sprite import Sprite
 
 SIZE = (44, 36)
+
+
+# ---------------------------------------------------------------------------------------------------
+# Skins: every hero animation redrawn in another coat as `hero_<id>`. The drawing code reads the palette
+# when it draws, so a skin swaps the fur, white, scarf/cape colours for the duration of the build
+# (`wearing`), and `dress` adds eye colour, a flower or a hood to the head grids.
+
+@dataclass(frozen=True)
+class Skin:
+    id: str
+    fur: tuple | None = None          # light, base, shadow, stripe (None keeps the orange tabby)
+    white: tuple | None = None        # muzzle, chest and paws: light, shade
+    cape: tuple | None = None         # scarf and cape: light, base, dark
+    iris: tuple | None = None         # coloured eyes
+    flower: bool = False              # a pink flower by the ear
+    patch: bool = False               # calico: a dark patch over the far ear and forehead
+    hood: str | None = None           # "frog" | "shark"
+    hood_colours: tuple | None = None
+
+
+SKINS = (
+    Skin("shadow", fur=P.SKIN_SHADOW_FUR_LIT, white=P.SKIN_SHADOW_WHITE, iris=P.SKIN_EYE_GREEN),
+    Skin("misty", fur=P.SKIN_GREY_FUR, cape=(P.BLUE_L, P.BLUE, P.BLUE_D)),
+    Skin("sakura", fur=P.SKIN_SNOW_FUR, cape=(P.YARN_L, P.YARN, P.YARN_D), flower=True),
+    Skin("honey", fur=P.SKIN_CREAM_FUR, cape=(P.YELLOW, P.GOLD, P.GOLD_D)),
+    Skin("pixie", fur=P.SKIN_PIXIE_FUR_LIT, white=P.SKIN_PIXIE_WHITE, cape=(P.PURPLE_L, P.PURPLE, P.PURPLE_D),
+         iris=P.SKIN_EYE_VIOLET),
+    Skin("clover", cape=(P.GREEN_L, P.GREEN, P.GREEN_D)),
+    Skin("snowball", fur=P.SKIN_SNOW_FUR, cape=(P.BLUE_L, P.BLUE, P.BLUE_D), iris=P.SKIN_EYE_BLUE),
+    Skin("napster", fur=P.SKIN_WARM_GREY_FUR, cape=(P.BROWN_L, P.BROWN, P.BROWN_D)),
+    Skin("toffee", fur=P.SKIN_CALICO_FUR, cape=(P.BROWN_L, P.BROWN, P.BROWN_D), patch=True),
+    Skin("cabage", cape=(P.LEAF_L, P.GREEN, P.FOREST), hood="frog", hood_colours=P.SKIN_FROG),
+    Skin("sharky", cape=(P.BLUE, P.BLUE_D, P.NAVY), hood="shark", hood_colours=P.SKIN_SHARK),
+)
+
+_SKIN: Skin | None = None
+
+
+@contextmanager
+def wearing(skin: Skin):
+    """Swaps the hero's palette entries for `skin` while drawing; always restores them."""
+    global _SKIN
+    names = ("GINGER_L", "GINGER", "GINGER_D", "GINGER_DD", "FUR_WHITE", "FUR_WHITE_D", "CAPE_L", "CAPE", "CAPE_D")
+    saved = {n: getattr(P, n) for n in names}
+    try:
+        if skin.fur:
+            P.GINGER_L, P.GINGER, P.GINGER_D, P.GINGER_DD = skin.fur
+        if skin.white:
+            P.FUR_WHITE, P.FUR_WHITE_D = skin.white
+        if skin.cape:
+            P.CAPE_L, P.CAPE, P.CAPE_D = skin.cape
+        _SKIN = skin
+        yield
+    finally:
+        for n, v in saved.items():
+            setattr(P, n, v)
+        _SKIN = None
+
+
+# Per head grid (keyed by rows x width): rows of ears, first eye row, and the face opening a hood leaves
+# (centre x, centre y, radius x, radius y), and where a flower sits by the near ear.
+GRIDS = {
+    (18, 18): dict(ears=5, eye=9, opening=(11.5, 12.5, 7.0, 5.5), flower=(16, 7)),
+    (20, 22): dict(ears=6, eye=11, opening=(12.5, 15.0, 8.0, 6.0), flower=(19, 8)),
+    (17, 18): dict(ears=5, eye=9, opening=(8.5, 12.0, 7.0, 5.0), flower=(15, 7)),
+}
+
+
+def dress(rows) -> list[list[str]]:
+    """The head grid for the current skin: coloured irises, a flower, or a hood."""
+    rows = [list(r) for r in rows]
+    spec = GRIDS.get((len(rows), len(rows[0])))
+    if spec is None:
+        return rows
+    h, w = len(rows), len(rows[0])
+    if _SKIN.iris:
+        for y in range(spec["eye"] - 1, spec["eye"] + 2):
+            for x in range(w):
+                if rows[y][x] == "K":
+                    rows[y][x] = "I"
+    if _SKIN.patch:                                          # calico: dark over the far ear and forehead
+        for y in range(0, spec["ears"] + 4):
+            for x in range(0, w // 2 - 1):
+                if rows[y][x] in "FLD":
+                    rows[y][x] = "S"
+    if _SKIN.flower:
+        fx, fy = spec["flower"]
+        for x, y, ch in ((fx, fy, "Y"), (fx - 1, fy, "R"), (fx + 1, fy, "R"), (fx, fy - 1, "R"), (fx, fy + 1, "r")):
+            if 0 <= x < w and 0 <= y < h:
+                rows[y][x] = ch
+    if _SKIN.hood:
+        cx, cy, rx, ry = spec["opening"]
+        tone = {"L": "h", "F": "g", "D": "j", "S": "j", "P": "j", "p": "j", "W": "g", "w": "g"}
+        for y in range(spec["ears"], h):
+            for x in range(w):
+                inside = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1
+                if rows[y][x] in tone and not inside:
+                    rows[y][x] = tone[rows[y][x]]
+        top = spec["ears"]
+        cols = [x for x in range(w) if rows[top][x] != "."]
+        left, right = min(cols), max(cols)
+        for y in range(top):                                 # no cat ears under a hood
+            rows[y] = ["."] * w
+        for y, inset in ((top - 1, 2), (top - 2, 4)):        # a rounded dome over the crown
+            for x in range(left + inset, right - inset + 1):
+                rows[y][x] = "h" if x < (left + right) / 2 - 2 else "g"
+        if _SKIN.hood == "frog":                             # two frog eyes on top
+            for ex in (left + 3, right - 3):
+                for dx, dy, ch in ((-1, -3, "g"), (0, -3, "g"), (1, -3, "g"), (-2, -2, "g"), (2, -2, "g"),
+                                   (-1, -2, "T"), (0, -2, "T"), (1, -2, "T"), (-1, -1, "T"), (0, -1, "K"),
+                                   (1, -1, "T"), (-2, -1, "g"), (2, -1, "g")):
+                    x, y = ex + dx, top + dy
+                    if 0 <= x < w and 0 <= y < h:
+                        rows[y][x] = ch
+        else:                                                # a shark fin, and teeth round the face opening
+            mid = (left + right) // 2
+            for k in range(4):
+                for x in range(mid - k - 1, mid + 1):
+                    if top - 2 - (3 - k) >= 0:
+                        rows[top - 2 - (3 - k)][x] = "j" if x == mid else "g"
+            ty = int(cy - ry)
+            for x in range(int(cx - rx) + 1, int(cx + rx)):
+                if 0 <= ty < h and rows[ty][x] != ".":
+                    rows[ty][x] = "T"
+                    if x % 2 == 0 and ty + 1 < h:
+                        rows[ty + 1][x] = "T"
+    return rows
+
 CX, GROUND = 22, 34
 
 @dataclass(frozen=True)
@@ -284,8 +413,14 @@ EARS_BACK = (
 )
 HEAD_CENTRE = (8.5, 11)          # the stamp pixel that sits on the head joint
 FAR_EYE, NEAR_EYE = (7, 9), (13, 9)    # three-quarter view: the far eye is narrower
-STAMP_COLOURS = {"F": P.GINGER, "L": P.GINGER_L, "D": P.GINGER_D, "S": P.GINGER_DD, "W": P.FUR_WHITE,
-                 "w": P.FUR_WHITE_D, "P": P.PINK, "p": P.PINK_D, "K": P.BLACK, "H": P.WHITE}
+def stamp_colours() -> dict:
+    """Colours of the head-grid characters, read from the palette when drawing (skins swap the palette)."""
+    hood = _SKIN.hood_colours if _SKIN and _SKIN.hood_colours else (P.WHITE, P.WHITE, P.WHITE)
+    return {"F": P.GINGER, "L": P.GINGER_L, "D": P.GINGER_D, "S": P.GINGER_DD, "W": P.FUR_WHITE,
+            "w": P.FUR_WHITE_D, "P": P.PINK, "p": P.PINK_D, "K": P.BLACK, "H": P.WHITE,
+            "I": _SKIN.iris if _SKIN and _SKIN.iris else P.BLACK,          # iris, coloured-eye skins
+            "R": P.YARN, "Y": P.YELLOW, "r": P.YARN_D,                       # sakura's flower
+            "h": hood[0], "g": hood[1], "j": hood[2], "T": P.WHITE, "O": P.OUTLINE}   # hoods
 assert all(len(row) == 18 for row in HEAD + EARS_BACK)
 
 
@@ -333,10 +468,11 @@ def _face(pose: HeroPose) -> list[list[str]]:
 
 
 def _stamp(c: Canvas, rows, x0: int, y0: int) -> None:
+    rows = dress(rows) if _SKIN else rows
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
             if ch != ".":
-                c.px(x0 + x, y0 + y, STAMP_COLOURS[ch])
+                c.px(x0 + x, y0 + y, stamp_colours()[ch])
 
 
 def despeckle(c: Canvas) -> Canvas:
@@ -565,7 +701,16 @@ def speed_lines(i: int, colours=(P.WHITE, P.CREAM), reach: float = 6):
 
 
 def build() -> list[Sprite]:
-    hero = Sprite("hero", SIZE, cx=CX, ground=GROUND)
+    sprites = [hero_sprite("hero"), yarn()]
+    for skin in SKINS:
+        with wearing(skin):
+            sprites.append(hero_sprite(f"hero_{skin.id}"))
+    return sprites
+
+
+def hero_sprite(name: str) -> Sprite:
+    """Every hero animation, drawn in whatever coat is being worn (see `wearing`)."""
+    hero = Sprite(name, SIZE, cx=CX, ground=GROUND)
 
     hero.add("run", [hero_frame(running(i), dx=RUN_DX) for i in range(8)], fps=14)
 
@@ -693,8 +838,7 @@ def build() -> list[Sprite]:
     hero.add("hurt", [tint(hurt, P.WHITE, 0.3), hero_frame(hurt_pose, extras=[hit_star(1)])], fps=10)
     hero.add("death", death_frames(hurt_pose), fps=8, loop=False)
     screen_poses(hero)
-
-    return [hero, yarn()]
+    return hero
 
 
 def draped_cape(angle: float, length: float, flap: float, ripple: float = 8, dx: float = -3, dy: float = 0):
@@ -899,10 +1043,7 @@ def menu_frame(k: int) -> Image.Image:
                     rows[y][x] = "F"
             for x, y in ((7, 12), (8, 13), (9, 12), (15, 12), (16, 13), (17, 12)):
                 rows[y][x] = "K"
-        for y, row in enumerate(rows):
-            for x, ch in enumerate(row):
-                if ch != ".":
-                    c.px(hx + x, hy + y, STAMP_COLOURS[ch])
+        _stamp(c, rows, hx, hy)
 
     def scarf(c):                                            # a short knot under the chin, a round gold bell
         c.rect(22, hy + 18, 33, hy + 19, P.CAPE)

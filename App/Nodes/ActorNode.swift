@@ -3,13 +3,16 @@ import SpriteKit
 /// A sprite that plays named animations from the sprite manifest.
 final class ActorNode: SKSpriteNode {
     let spriteName: String
+    /// Plays an animation this sprite lacks from here instead (a recoloured hero falls back to `hero`).
+    let fallbackSprite: String?
     private let library: SpriteLibrary
     private(set) var current = ""
     /// True while a non-looping animation is still running.
     private(set) var isBusy = false
 
-    init(sprite: String, library: SpriteLibrary) {
+    init(sprite: String, library: SpriteLibrary, fallback: String? = nil) {
         spriteName = sprite
+        fallbackSprite = fallback == sprite ? nil : fallback
         self.library = library
         let sheet = library.sheet(sprite)
         let size = CGSize(width: sheet?.width ?? 16, height: sheet?.height ?? 16)
@@ -24,17 +27,24 @@ final class ActorNode: SKSpriteNode {
     }
 
     func has(_ name: String) -> Bool {
-        library.animation(spriteName, name) != nil
+        source(for: name) != nil
+    }
+
+    /// The sprite that has animation `name`: this one, else the fallback.
+    func source(for name: String) -> String? {
+        if library.animation(spriteName, name) != nil { return spriteName }
+        if let fallbackSprite, library.animation(fallbackSprite, name) != nil { return fallbackSprite }
+        return nil
     }
 
     /// Starts `name` unless it is already playing. Looping animations repeat; others stop on the last frame.
     func play(_ name: String, restart: Bool = false, completion: (() -> Void)? = nil) {
         guard restart || name != current else { return }
-        guard let animation = library.animation(spriteName, name) else {
+        guard let sprite = source(for: name), let animation = library.animation(sprite, name) else {
             completion?()
             return
         }
-        let textures = library.textures(spriteName, name)
+        let textures = library.textures(sprite, name)
         guard !textures.isEmpty else {
             completion?()
             return

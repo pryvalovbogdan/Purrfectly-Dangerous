@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "cat_shadow.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

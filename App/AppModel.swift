@@ -160,6 +160,11 @@ final class AppModel {
     }
 
     func finish(level index: Int, result: GameResult) {
+        // Every level that ends, won or lost, on its own or in an endless run, banks its fish.
+        if !autoplay, result.fish > 0 {
+            save.addFish(result.fish)
+            store.save(save)
+        }
         guard var run = endless else {
             if result.won, !autoplay {
                 save.complete(levelID: levels[index].id, score: result.score, xp: result.xp)
@@ -207,15 +212,34 @@ final class AppModel {
         updateMusic()
     }
 
-    /// The cat skin picked on the CATS screen. Only skins the game has can be chosen.
-    func selectSkin(_ id: String) {
-        guard AppModel.skins.contains(id), save.selectedSkin != id else { return }
-        save.selectedSkin = id
-        store.save(save)
+    // MARK: - Cats shop (rules and save in GameCore: `Skin`, `SaveGame.unlock` / `select`)
+
+    /// Fish banked from every run, to spend on cats.
+    var fishWallet: Int { save.fishWallet }
+    /// Cats the player owns, by id (always includes the free one).
+    var ownedSkins: Set<String> { save.ownedSkins }
+    /// The cat in use, by id.
+    var selectedSkin: String { save.selectedSkin }
+
+    /// Buys a cat with fish from the wallet; saved when it works.
+    @discardableResult
+    func unlockSkin(_ id: String) -> SkinUnlock {
+        let result = save.unlock(skin: id)
+        if result == .unlocked { store.save(save) }
+        return result
     }
 
-    /// Skins the CATS screen offers, by neutral id; the first one is everyone's from the start.
-    static let skins = [SaveGame.defaultSkin]
+    /// Picks the cat to play as; only an owned one. Returns whether it is now the one in use.
+    @discardableResult
+    func selectSkin(_ id: String) -> Bool {
+        guard save.selectedSkin != id else { return save.owns(id) }
+        guard save.select(skin: id) else { return false }
+        store.save(save)
+        return true
+    }
+
+    /// Every cat the shop offers, by neutral id, in shop order; the first is everyone's from the start.
+    static let skins = Skin.catalog.map(\.id)
 
     func setSound(on: Bool) {
         save.soundOn = on

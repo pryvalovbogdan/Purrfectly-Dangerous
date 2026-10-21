@@ -202,6 +202,39 @@ The START button begins an endless run through the four worlds in order, each wi
 loop 15% faster up to ×2 (only the game clock changes, so the no-hit proof holds on every loop).
 Scoring and saving as in the engine's `EndlessRun`.
 
+## Cats and the fish wallet
+
+Every fish picked up goes into a **fish wallet** kept in the save. A level banks its fish when it
+ends, won or lost, played on its own or as part of an endless run. (A level left part-way with QUIT
+banks nothing; bot runs never bank.) The per-level best scores and medals are kept as before; the
+wallet is separate and only ever spent in the CATS shop. Saves from before the wallet start at 0.
+
+The CATS screen sells cats, paid for from the wallet. A cat is **purely cosmetic**: it changes how
+the kitten looks and nothing else (the simulation never sees it).
+
+| Id | Price (fish) |
+| --- | --- |
+| `fluffy` | 0 (everyone's from the start) |
+| `shadow` | 150 |
+| `misty` | 200 |
+| `sakura` | 250 |
+| `honey` | 300 |
+| `pixie` | 400 |
+| `clover` | 500 |
+| `snowball` | 600 |
+| `napster` | 750 |
+| `toffee` | 900 |
+| `cabage` | 2000 |
+| `sharky` | 2000 |
+
+- Unlocking needs the full price in the wallet; it takes the fish and owns the cat for good. With too
+  few fish, nothing changes and the shop says how many are missing. A cat already owned can't be
+  bought again.
+- Only an owned cat can be selected. The cat in use is saved; saves from before the shop (whose one
+  cat was "orange") load with Fluffy owned and selected.
+- The catalog and rules are `Skin` and `SaveGame.unlock(skin:)` / `select(skin:)` in GameCore. Names
+  and one-line descriptions are in Lore.json as `skin.<id>.name` and `skin.<id>.desc`.
+
 ## Names
 
 Every displayed name — the title, tagline "One cat. Nine lives. Zero fish.", worlds, bosses,

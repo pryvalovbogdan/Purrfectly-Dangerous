@@ -238,7 +238,7 @@ struct LevelCompleteView: View {
             MenuBackground(pose: .happy, celebrate: true, groundShare: MenuView.groundShare, wideHeroPlace: 0.12)
             ResultLayout(figureHeight: 0.85, cardHeight: (230, 200)) { width, maxHeight, _ in
                 WreathTitle(text: model.ui("level_complete"), wreath: "title_wreath_small", width: width,
-                            maxHeight: maxHeight, topper: [.cheer, .idle], topperSink: 0.3,
+                            maxHeight: maxHeight, topper: [TitleFigure.cheer.drawn(from: model.heroSprite), .cheer, .idle], topperSink: 0.3,
                             sunburst: true, fish: true)
             } card: { compact in
                 card(summary, compact: compact)

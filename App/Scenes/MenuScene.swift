@@ -16,6 +16,8 @@ final class MenuScene: SKScene {
         case happy
         /// Out cold, `ko`, with dizzy stars and its ghost bobbing above (game over).
         case knockedOut
+        /// No hero in the scene (the CATS screen draws its own preview).
+        case empty
     }
 
     /// Default share of the screen height below the ground line when upright.
@@ -37,6 +39,8 @@ final class MenuScene: SKScene {
     private let celebrate: Bool
     private let groundShare: CGFloat
     private let wideHeroPlace: CGFloat?
+    /// The hero's sprite: the recoloured `hero_<skin>` of the cat in use, or `hero`.
+    private let heroSprite: String
     private var parallax: [ParallaxNode] = []
     /// Cloud layers, which keep drifting when the rest of the scene stands still.
     private var clouds: [ParallaxNode] = []
@@ -50,8 +54,10 @@ final class MenuScene: SKScene {
     ///   - groundShare: share of an upright screen below the ground line; the buttons sit on that earth.
     ///   - wideHeroPlace: where the hero stands across a wide screen (0…1); nil for the default.
     init(viewSize: CGSize, displayScale: CGFloat, library: SpriteLibrary, pose: Pose = .running, theme: String? = nil,
-         celebrate: Bool = false, groundShare: CGFloat = MenuScene.narrowGroundShare, wideHeroPlace: CGFloat? = nil) {
+         celebrate: Bool = false, groundShare: CGFloat = MenuScene.narrowGroundShare, wideHeroPlace: CGFloat? = nil,
+         heroSprite: String = "hero") {
         self.library = library
+        self.heroSprite = library.sheet(heroSprite) != nil ? heroSprite : "hero"
         self.pose = pose
         self.theme = theme
         self.celebrate = celebrate
@@ -121,12 +127,12 @@ final class MenuScene: SKScene {
             addMenuBackdrop(groundY: groundY)
         }
 
-        let hero = ActorNode(sprite: "hero", library: library)
+        let hero = ActorNode(sprite: heroSprite, library: library, fallback: "hero")
         hero.setScale(Self.heroScale)
         // At rest on a wide screen the hero steps aside to leave the middle to the score card.
         let place: CGFloat = upright ? 0.5 : (wideHeroPlace ?? (pose == .running ? 0.22 : 0.13))
         hero.position = CGPoint(x: (size.width * place).rounded(), y: groundY)
-        addChild(hero)
+        if pose != .empty { addChild(hero) }
         if theme == nil, !hasPicture {
             addSign(groundY: groundY, heroPlace: place)
         }
@@ -136,6 +142,7 @@ final class MenuScene: SKScene {
         case .standing: hero.play(hero.has("menu") ? "menu" : "idle")
         case .happy: hero.play(hero.has("sit_happy") ? "sit_happy" : "idle")
         case .knockedOut: knockOut(hero)
+        case .empty: break
         }
         if celebrate {
             addSparkles()
@@ -285,13 +292,14 @@ final class MenuScene: SKScene {
             hero.play("ko")
         } else {
             // A frame from before the death animation fades the hero away.
-            let frames = library.textures("hero", "death")
+            let frames = library.textures(hero.source(for: "death") ?? heroSprite, "death")
             if !frames.isEmpty { hero.texture = frames[min(3, frames.count - 1)] }
         }
-        let sheet = library.sheet("hero")
+        let sheet = library.sheet(heroSprite)
         let sheetHeight = sheet?.height ?? 36
         let sheetWidth = sheet?.width ?? 44
-        let drawn = MainActor.assumeIsolated { library.opaqueBounds("hero", animation) }
+        let drawnSprite = hero.source(for: animation) ?? heroSprite
+        let drawn = MainActor.assumeIsolated { library.opaqueBounds(drawnSprite, animation) }
             ?? CGRect(x: 5, y: 15, width: 34, height: 21)
         let devicePixels = max(1, (size.width * pixelsPerUnit * Self.knockedOutWidthShare / drawn.width).rounded())
         let scale = devicePixels / pixelsPerUnit
@@ -310,11 +318,12 @@ final class MenuScene: SKScene {
             addChild(stars)
         }
         if hero.has("ghost") {
-            let ghost = ActorNode(sprite: "hero", library: library)
+            let ghost = ActorNode(sprite: heroSprite, library: library, fallback: "hero")
             ghost.setScale(smallScale)
             ghost.play("ghost")
             ghost.alpha = 0.85
-            let ghostDrawn = MainActor.assumeIsolated { library.opaqueBounds("hero", "ghost") }
+            let ghostSprite = ghost.source(for: "ghost") ?? heroSprite
+            let ghostDrawn = MainActor.assumeIsolated { library.opaqueBounds(ghostSprite, "ghost") }
                 ?? CGRect(x: 6, y: 2, width: 31, height: 30)
             // Its lowest drawn row a little above the cat (and above the stars).
             let lift = drawnTop + 8 * smallScale + 4 - (sheetHeight - ghostDrawn.maxY) * smallScale

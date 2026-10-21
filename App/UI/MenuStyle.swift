@@ -56,7 +56,8 @@ struct MenuBackground: View {
 
     private func makeScene(_ size: CGSize) -> MenuScene {
         MenuScene(viewSize: size, displayScale: displayScale, library: model.sprites, pose: pose, theme: theme,
-                  celebrate: celebrate, groundShare: groundShare, wideHeroPlace: wideHeroPlace)
+                  celebrate: celebrate, groundShare: groundShare, wideHeroPlace: wideHeroPlace,
+                  heroSprite: model.heroSprite)
     }
 }
 
@@ -107,20 +108,29 @@ struct PixelSprite: View {
     var anyAnimation = true
     var animated = true
     var flipped = false
+    /// A sprite to play the animation from when `sprite` lacks all of `animations` (a recoloured
+    /// hero falls back to `hero`).
+    var fallback: String?
     @State private var start = Date()
 
-    private var resolved: (name: String, info: SpriteLibrary.Animation, sheet: SpriteLibrary.Sheet)? {
+    private var resolved: (sprite: String, name: String, info: SpriteLibrary.Animation, sheet: SpriteLibrary.Sheet)? {
         let library = model.sprites
+        if let fallback, fallback != sprite, library.sheet(fallback) != nil,
+           !animations.contains(where: { library.animation(sprite, $0) != nil }),
+           let name = animations.first(where: { library.animation(fallback, $0) != nil }),
+           let info = library.animation(fallback, name), let sheet = library.sheet(fallback) {
+            return (fallback, name, info, sheet)
+        }
         guard let sheet = library.sheet(sprite) else { return nil }
         let name = animations.first { library.animation(sprite, $0) != nil }
             ?? (anyAnimation ? library.animationName(sprite, preferring: animations.first ?? "still") : nil)
         guard let name, let info = library.animation(sprite, name) else { return nil }
-        return (name, info, sheet)
+        return (sprite, name, info, sheet)
     }
 
     var body: some View {
         if let resolved {
-            let frames = model.sprites.images(sprite, resolved.name)
+            let frames = model.sprites.images(resolved.sprite, resolved.name)
             let unit = CGFloat(pixelScale) / max(displayScale, 1)
             if !frames.isEmpty {
                 Group {
@@ -345,6 +355,11 @@ struct TitleFigure {
 
     static let cheer = TitleFigure(sprite: "hero", animation: "cheer", headShare: 0.94, headOfTitle: 0.5)
     static let idle = TitleFigure(sprite: "hero", animation: "idle", headShare: 0.94, headOfTitle: 0.5)
+
+    /// The same figure drawn from another sprite (the recoloured hero of the cat in use).
+    func drawn(from sprite: String) -> TitleFigure {
+        TitleFigure(sprite: sprite, animation: animation, headShare: headShare, headOfTitle: headOfTitle)
+    }
 }
 
 /// A logo-style heading in the pixel lettering (the level-complete title): the hero standing behind
@@ -444,7 +459,7 @@ struct WreathTitle: View {
         let dx = (figure.sheet.width / 2 - figure.bounds.midX) * k + shift
         let dy = (figure.sheet.height - figure.bounds.maxY) * k
         return PixelSprite(sprite: figure.choice.sprite, animations: [figure.animation], pixelScale: figureScale,
-                           anyAnimation: false)
+                           anyAnimation: false, fallback: "hero")
             .background {
                 if sunburst { Sunburst(maxWidth: width * 1.1, preferredScale: figureScale) }
             }

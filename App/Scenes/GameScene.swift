@@ -113,6 +113,8 @@ final class GameScene: SKScene {
     private var awardUntil = 0.0
 
     private let haptics = UIImpactFeedbackGenerator(style: .medium)
+    /// The hero's sprite: the recoloured `hero_<skin>` of the cat in use, or `hero`. Looks only.
+    var heroSprite = "hero"
 
     init(viewSize: CGSize, displayScale: CGFloat, level: LevelDefinition, boss: BossDefinition?, stats: HeroStats, library: SpriteLibrary,
          hud: GameHUD, soundOn: Bool, autoplay: Bool = false, timeScale: Double = 1, openingBanner: String? = nil,
@@ -190,7 +192,7 @@ final class GameScene: SKScene {
         actors.zPosition = 10
         addChild(actors)
         buildPlatforms()
-        hero = ActorNode(sprite: "hero", library: library)
+        hero = ActorNode(sprite: library.sheet(heroSprite) != nil ? heroSprite : "hero", library: library, fallback: "hero")
         hero.zPosition = 5
         hero.play("run")
         actors.addChild(hero)
