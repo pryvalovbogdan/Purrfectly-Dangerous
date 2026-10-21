@@ -282,12 +282,7 @@ private struct HUDView: View {
             }
 
             if hud.isPaused {
-                Color.black.opacity(0.6).ignoresSafeArea()
-                VStack(spacing: 18) {
-                    Text(model.ui("paused")).font(.pixel(28))
-                    Button(model.ui("resume")) { hud.isPaused = false }.buttonStyle(PixelButton())
-                    Button(model.ui("quit"), action: quit).buttonStyle(PixelButton(tint: .gray))
-                }
+                PauseMenu(resume: { hud.isPaused = false }, quit: quit)
             }
         }
         .foregroundStyle(.white)
@@ -365,6 +360,10 @@ private struct TouchPad: UIViewRepresentable {
 
     func updateUIView(_ view: TouchPadView, context: Context) {
         view.onChange = onChange
+        // A disabled button (the game paused) takes no touches at all; one held as it is disabled
+        // lets go.
+        view.isUserInteractionEnabled = context.environment.isEnabled
+        if !context.environment.isEnabled { view.release() }
     }
 
     static func dismantleUIView(_ view: TouchPadView, coordinator: ()) {
@@ -558,19 +557,6 @@ struct Bar: View {
     }
 }
 
-struct PixelButton: ButtonStyle {
-    var tint = Color.orange
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.pixel(16))
-            .foregroundStyle(.black)
-            .padding(.horizontal, 22)
-            .padding(.vertical, 10)
-            .background(tint.opacity(configuration.isPressed ? 0.6 : 1), in: Rectangle())
-            .overlay(Rectangle().stroke(.black, lineWidth: 2))
-    }
-}
 
 extension View {
     /// A one-pixel dark edge so HUD text stays readable over bright snow or sky.
@@ -584,3 +570,103 @@ extension Font {
         .system(size: size, weight: .heavy, design: .monospaced)
     }
 }
+
+// MARK: - Pause
+
+/// The pause menu from the user's sheet (docs/concept/Retro Cat Pause Menu Sprite Sheet.png): one
+/// painted panel (`pause_panel`) with PAUSED and its RESUME and QUIT TO MENU buttons baked in, over the
+/// dimmed game. Each baked button has a hit area laid over it that shows the button's pressed art while
+/// held and acts when the finger lifts inside it. The overlay takes every touch.
+private struct PauseMenu: View {
+    @Environment(AppModel.self) private var model
+    let resume: () -> Void
+    let quit: () -> Void
+
+    /// pause_panel.png is 691×744.
+    private static let aspect: CGFloat = 691.0 / 744.0
+    /// The baked buttons, as fractions of the panel image.
+    private static let resumeRect = CGRect(x: 0.10, y: 0.473, width: 0.805, height: 0.161)
+    private static let quitRect = CGRect(x: 0.10, y: 0.661, width: 0.805, height: 0.162)
+
+    var body: some View {
+        ZStack {
+            // Swallows every touch that misses the panel's buttons.
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {}
+            GeometryReader { proxy in
+                // Upright about 86% of the width; on its side about 92% of the (safe) height.
+                let upright = proxy.size.height > proxy.size.width
+                let width = upright
+                    ? min(proxy.size.width * 0.86, proxy.size.height * 0.92 * Self.aspect)
+                    : proxy.size.height * 0.92 * Self.aspect
+                let panel = CGSize(width: width.rounded(), height: (width / Self.aspect).rounded())
+                Image("pause_panel")
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: panel.width, height: panel.height)
+                    .accessibilityElement()
+                    .accessibilityLabel(model.ui("paused"))
+                    .accessibilityAddTraits(.isHeader)
+                    .overlay(alignment: .topLeading) {
+                        ZStack(alignment: .topLeading) {
+                            PauseButtonArea(rect: Self.resumeRect, panel: panel, pressedImage: "pause_resume_pressed",
+                                            label: model.ui("resume"), action: resume)
+                            PauseButtonArea(rect: Self.quitRect, panel: panel, pressedImage: "pause_quit_pressed",
+                                            label: model.ui("quit"), action: quit)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+}
+
+/// A touch area over one of the pause panel's baked buttons, 6 pt larger all round. Held, it draws the
+/// button's pressed art into the button's own rect; lifted inside, it acts; slid off, it cancels.
+private struct PauseButtonArea: View {
+    /// The button as fractions of the panel.
+    let rect: CGRect
+    /// The panel's size in points.
+    let panel: CGSize
+    let pressedImage: String
+    let label: String
+    let action: () -> Void
+    @State private var pressed = false
+
+    private static let pad: CGFloat = 6
+
+    var body: some View {
+        let button = CGRect(x: rect.minX * panel.width, y: rect.minY * panel.height,
+                            width: rect.width * panel.width, height: rect.height * panel.height)
+        let area = button.insetBy(dx: -Self.pad, dy: -Self.pad)
+        ZStack {
+            Color.clear
+            Image(pressedImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: button.width, height: button.height)
+                .opacity(pressed ? 1 : 0)
+        }
+        .frame(width: area.width, height: area.height)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    pressed = CGRect(origin: .zero, size: area.size).contains(value.location)
+                }
+                .onEnded { value in
+                    let inside = CGRect(origin: .zero, size: area.size).contains(value.location)
+                    pressed = false
+                    if inside { action() }
+                }
+        )
+        .offset(x: area.minX, y: area.minY)
+        .accessibilityElement()
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { action() }
+    }
+}
+

@@ -217,16 +217,32 @@ def _hud_background(p: tuple) -> bool:
     return checker or blue
 
 
+def _checker_only(p: tuple) -> bool:
+    """Only the neutral grey/white checkerboard, for sheets whose art has white and light-blue
+    edges (clouds) that the HUD rule would eat."""
+    r, g, b = p[:3]
+    return max(r, g, b) - min(r, g, b) <= 4 and min(r, g, b) > 200
+
+
+PAUSE_SOURCE = "pause_source.png"
+
 # Pieces cut from the user's UI sheets, which sit on a grey transparency checkerboard:
-# (source, box in the sheet, asset name).
+# (source, box in the sheet, asset name[, background rule]).
 SHEET_CUTS = [
     (HUD_SOURCE, HUD_CAT_BOX, "hud_cat"),
     ("boss_squirrel_ui_source.png", (338, 6, 1648, 322), "boss_banner_squirrel"),
     ("boss_squirrel_ui_source.png", (48, 672, 350, 836), "boss_crown_squirrel"),
+    # The pause panel (cat, clouds, leaves, PAUSED, both buttons, the grassy base). The buttons are
+    # part of the picture; the game lays its touch areas over them.
+    (PAUSE_SOURCE, (20, 120, 712, 880), "pause_panel", _checker_only),
+    (PAUSE_SOURCE, (728, 258, 1116, 378), "pause_resume", _checker_only),
+    (PAUSE_SOURCE, (1130, 258, 1516, 378), "pause_resume_pressed", _checker_only),
+    (PAUSE_SOURCE, (728, 414, 1116, 534), "pause_quit", _checker_only),
+    (PAUSE_SOURCE, (1130, 414, 1516, 534), "pause_quit_pressed", _checker_only),
 ]
 
 
-def cut_from_sheet(source: str, box: tuple, name: str) -> None:
+def cut_from_sheet(source: str, box: tuple, name: str, background=None) -> None:
     """One piece from a user UI sheet, like the titles: the checkerboard (and any navy panel behind
     the piece) is flood-filled away from the edges, stopped by the art's outline, then only the
     largest connected shape is kept, which drops stray specks."""
@@ -237,7 +253,7 @@ def cut_from_sheet(source: str, box: tuple, name: str) -> None:
     todo = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
     while todo:
         x, y = todo.pop()
-        if clear[x][y] or not _hud_background(px[x, y]):
+        if clear[x][y] or not (background or _hud_background)(px[x, y]):
             continue
         clear[x][y] = True
         px[x, y] = (0, 0, 0, 0)
