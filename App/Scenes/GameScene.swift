@@ -764,11 +764,13 @@ final class GameScene: SKScene {
             case .shattered(let id):
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.shatter) }
             case .bumped:
-                // Stopped against a step: a squash and a puff of dust at the front paws.
+                // Knocked back off a step: a squash, and dust kicked off the face back toward the kitten.
                 play(.thump)
                 hero.run(.sequence([.scaleX(to: 1.15, y: 0.82, duration: 0.05), .scale(to: 1, duration: 0.15)]),
                          withKey: "bump")
-                dust(at: CGPoint(x: framing.heroScreenX + CGFloat(world.tuning.heroWidth / 2), y: screenY(world.heroY) + 2))
+                let face = world.lastBumpFace.map(groundScreenX)
+                    ?? framing.heroScreenX + CGFloat(world.tuning.heroWidth / 2)
+                dust(at: CGPoint(x: face, y: screenY(world.heroY) + 2), awayFromWall: true)
             case .hazardBroke(let id):
                 if let node = hazardNodes.removeValue(forKey: id) {
                     if node.position.x > -20, node.position.x < size.width + 20 { dust(at: node.position) }
@@ -793,6 +795,7 @@ final class GameScene: SKScene {
             case .bossTelegraph, .bossAttack:
                 break
             case .bossHit:
+                hud.bossHits += 1
                 play(.bossHit)
                 bossHurtUntil = world.time + 0.25
                 trueBossNode?.flash()
@@ -890,8 +893,10 @@ final class GameScene: SKScene {
     }
 
     /// A few earth-coloured pixels kicked up and fading.
-    private func dust(at origin: CGPoint) {
-        for (index, (dx, dy)) in [(-6.0, 5.0), (-3.0, 8.0), (2.0, 7.0), (-8.0, 2.0), (4.0, 3.0)].enumerated() {
+    /// With `awayFromWall` every grain flies left, off a face the kitten ran into on its right.
+    private func dust(at origin: CGPoint, awayFromWall: Bool = false) {
+        for (index, (spread, dy)) in [(-6.0, 5.0), (-3.0, 8.0), (2.0, 7.0), (-8.0, 2.0), (4.0, 3.0)].enumerated() {
+            let dx = awayFromWall ? -abs(spread) - 2 : spread
             let node = SKSpriteNode(color: SKColor(red: 0.72, green: 0.62, blue: 0.46, alpha: 1),
                                     size: CGSize(width: index % 2 == 0 ? 2 : 1, height: index % 2 == 0 ? 2 : 1))
             node.position = CGPoint(x: origin.x.rounded(), y: origin.y.rounded())
@@ -1310,9 +1315,11 @@ final class GameScene: SKScene {
         show(\.pounceCharge, (charge * 20).rounded() / 20)
         if let boss = world.bossState, world.phase == .boss {
             show(\.bossName, text("\(boss.id).name"))
+            show(\.bossID, boss.id)
             show(\.bossFraction, boss.hpFraction)
         } else {
             show(\.bossName, nil)
+            show(\.bossID, nil)
         }
         if hud.banner != nil, world.time > bannerUntil { hud.banner = nil }
         if hud.award != nil, world.time > awardUntil { hud.award = nil }

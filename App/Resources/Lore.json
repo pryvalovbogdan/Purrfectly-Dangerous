@@ -41,5 +41,6 @@
  "ui.sound_off": "Sound off",
  "ui.paused": "PAUSED",
  "ui.resume": "RESUME",
- "ui.quit": "QUIT TO MENU"
+ "ui.quit": "QUIT TO MENU",
+ "ui.level_short": "LV"
 }

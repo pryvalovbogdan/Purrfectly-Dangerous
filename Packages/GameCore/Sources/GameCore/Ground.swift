@@ -74,6 +74,16 @@ public struct GroundProfile: Sendable, Equatable {
         return nil
     }
 
+    /// Moving left with the trailing edge going from `back` to `target`: the nearest face behind that
+    /// is more than `step` above `feet` (a higher step the hero came down from), as its x.
+    public func wall(behind back: Double, to target: Double, feet: Double, step: Double) -> Double? {
+        for edge in edges.reversed() where edge <= back + Self.epsilon && edge >= target {
+            let behind = height(leftOf: edge)
+            if behind > feet + step, behind > height(at: edge) { return edge }
+        }
+        return nil
+    }
+
     /// The first seam between `x` and `front` (in either direction, `front` included) where the
     /// ground on the far side is not at `level`. Walkers turn back there.
     public func step(from x: Double, to front: Double, level: Double) -> Double? {

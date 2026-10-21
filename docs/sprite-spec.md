@@ -94,6 +94,16 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | button_double_pressed | 48×48 | sparkle 6 @8fps. Magenta disc, gold ring with a pink glow outside, brighter white sparkles, the paw 1 px lower |
 | button_double_disabled | 48×48 | still 1. Slate disc, grey paw, three faint white sparkles |
 | paw_trail | 16×16 | burst 5 @12fps, not looping. Gold sparkles flying out and up with three motion streaks below, for the cat's feet on a double jump; the streaks reach the bottom row |
+| hud_panel | 24×24 | still 1. 9-slice HUD panel: dark outline, 2 px royal-blue border lit top-left, dark inner line, deep navy fill, rounded corners. Slice insets 6 on every side |
+| hud_level_tab | 64×32 | still 1. The "LV" panel: body from row 8 down, a raised tab on the top-left (x 0-37) with a 45° shoulder down to the body at x 46. Stretch horizontally only: left inset 50, right inset 7 (the full height is kept) |
+| heart_full, heart_half, heart_empty | 16×14 | still 1 each. Glossy red heart with a white shine and dark outline; half is red left, charcoal right; empty is charcoal |
+| heart_lose | 24×22 | burst 5 @12fps, not looping. Flash, crack, the halves split and drop in pieces, fading. The heart sits at (4, 4), so centre it on the 16×14 heart it replaces |
+| heart_gain | 24×22 | glow 6 @10fps. The heart at (4, 4) with a pulsing gold glow and four twinkling sparkles |
+| xp_bar_frame | 24×10 | still 1. 9-slice track: dark outline, light inner line, dark track. Insets 3 on every side; the fill area is x 2 to width-3, y 2-7 (6 rows) |
+| xp_bar_fill | 1×6 | still 1. One column of the yellow fill (light top two rows, base, dark bottom row), stretched sideways inside the track. Tint per kitten level with `HUD_FILL_GREEN|BLUE|YELLOW|RED` (+ `_L`, `_D`) in palette.py: 1 green, 2 blue, 3 yellow, 4-5 red |
+| level_up_arrows | 32×28 | rise 6 @10fps. Two gold up-arrows rising one beat apart, with sparkles |
+| boss_bar_frame | 40×12 | still 1. Boss HP bar after `docs/concept/The Great Squirrel King UI Sprite Sheet.png` (its banner and crown are cut image assets, not drawn): rounded gold end caps with a rivet, gold rims over wooden rails, a dark line round a dark navy track. 9-slice insets: left/right 7, top/bottom 4; the fill area is x 7 to width-8, y 4-7 (4 rows) |
+| boss_bar_fill, boss_bar_fill_low, boss_bar_flash | 1×4 | still 1 each. One column of the fill, stretched sideways in the track: red (light top, two mid, dark bottom); amber for under 33%; white for a hit flash |
 | menu_scene_portrait | 210×230 | still 1. The start screen's backdrop as one opaque picture for an upright screen (landmarks inside the middle 195 columns, x 7-202, so any screen 195-210 wide shows them whole): tree with a red-roofed house and a cat signpost (left), pines, blue mountains and a river (middle), castle on a cliff with a waterfall, wooden bridges, bushes and flowers (right). Sky drawn in full-row bands; its top rows are `menu_sky`'s bottom colour. Bottom row sits directly on `ground_forest` (anchor at the bottom). Nothing tiles or scrolls |
 | menu_scene_landscape | 440×150 | still 1. The same for a wide screen: landmarks inside the middle 333 columns (x 54-386); the extra width at the sides is forest (left) and cliff, river and bridge (right) |
 | menu_sky | 16×64 | still 1. Sky above the scene, four full-row bands ending in the scenes' top colour; stretch it, its bands have no dithering |
@@ -109,7 +119,7 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | leaf_drift | 10×8 | loop 4 (a leaf tumbling) |
 | stars_dizzy | 16×8 | loop 4 (three twinkles circling) |
 
-Also generated: `heart_full`, `heart_empty`; an `ability_<id>` icon (24×24) for `yarnShot`, `doublePounce`,
+Also generated: an `ability_<id>` icon (24×24) for `yarnShot`, `doublePounce`,
 `ghostDash` and `superPounce`; `spark_star|ember|feather` for the burst around the kitten (ember is a curl of
 yarn); and a `hazard_<kind>` sprite with a `fly` animation for every hazard kind in `Bosses.json` — `acorn`,
 `acorn_high`, `breath`, `shard`, `ice_spike`, `wave`, `wisp`, `burning_patch`, `tail`, `claw` — plus

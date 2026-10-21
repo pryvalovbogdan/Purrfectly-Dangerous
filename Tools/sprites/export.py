@@ -201,6 +201,73 @@ def cut_title(source: str, box: tuple, cleared: list, name: str) -> None:
 def titles() -> None:
     for title in TITLES:
         cut_title(*title)
+    for cut in SHEET_CUTS:
+        cut_from_sheet(*cut)
+
+
+HUD_SOURCE = "hud_source.png"
+HUD_CAT_BOX = (30, 90, 252, 310)
+
+
+def _hud_background(p: tuple) -> bool:
+    """The sheet's grey transparency checkerboard and the navy panel behind the head."""
+    r, g, b = p[:3]
+    checker = max(r, g, b) - min(r, g, b) < 22 and min(r, g, b) > 150
+    blue = b > r + 18 and b >= g
+    return checker or blue
+
+
+# Pieces cut from the user's UI sheets, which sit on a grey transparency checkerboard:
+# (source, box in the sheet, asset name).
+SHEET_CUTS = [
+    (HUD_SOURCE, HUD_CAT_BOX, "hud_cat"),
+    ("boss_squirrel_ui_source.png", (338, 6, 1648, 322), "boss_banner_squirrel"),
+    ("boss_squirrel_ui_source.png", (48, 672, 350, 836), "boss_crown_squirrel"),
+]
+
+
+def cut_from_sheet(source: str, box: tuple, name: str) -> None:
+    """One piece from a user UI sheet, like the titles: the checkerboard (and any navy panel behind
+    the piece) is flood-filled away from the edges, stopped by the art's outline, then only the
+    largest connected shape is kept, which drops stray specks."""
+    im = Image.open(Path(__file__).parent / source).convert("RGBA").crop(box)
+    w, h = im.size
+    px = im.load()
+    clear = [[False] * h for _ in range(w)]
+    todo = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    while todo:
+        x, y = todo.pop()
+        if clear[x][y] or not _hud_background(px[x, y]):
+            continue
+        clear[x][y] = True
+        px[x, y] = (0, 0, 0, 0)
+        todo += [(nx, ny) for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
+                 if 0 <= nx < w and 0 <= ny < h and not clear[nx][ny]]
+    seen, best = set(), []
+    for start in ((x, y) for x in range(w) for y in range(h)):
+        if start in seen or px[start][3] == 0:
+            continue
+        shape, stack = [], [start]
+        seen.add(start)
+        while stack:
+            x, y = stack.pop()
+            shape.append((x, y))
+            for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= n[0] < w and 0 <= n[1] < h and n not in seen and px[n][3]:
+                    seen.add(n)
+                    stack.append(n)
+        best = max(best, shape, key=len)
+    keep = set(best)
+    for x in range(w):
+        for y in range(h):
+            if (x, y) not in keep:
+                px[x, y] = (0, 0, 0, 0)
+    piece = im.crop(im.getbbox())
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(piece, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
 
 
 def contact_sheet(sprites: list[Sprite], path: Path, scale: int = 4) -> None:

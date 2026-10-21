@@ -75,15 +75,6 @@ def yarn_basket() -> Sprite:
     return sprite
 
 
-def heart(name: str, fill, shade) -> Sprite:
-    c = Canvas(11, 10)
-    c.ellipse(2.5, 2.5, 2, 2, fill)
-    c.ellipse(6.5, 2.5, 2, 2, fill)
-    c.poly([(0.5, 3.5), (8.5, 3.5), (4.5, 8)], fill)
-    c.px(2, 2, shade)
-    return single(name, c.outline())
-
-
 def paw(c: Canvas, x: float, y: float, s: float, colour) -> None:
     """A paw print centred on (x, y); about 9*s wide."""
     c.ellipse(x, y + 2 * s, 2.6 * s, 2.1 * s, colour)
@@ -184,5 +175,5 @@ def sparks() -> list[Sprite]:
 
 
 def build() -> list[Sprite]:
-    return [fish(), yarn_basket(), medal(), heart("heart_full", P.RED, P.WHITE),
-            heart("heart_empty", P.SLATE, P.GREY_D), *ability_icons(), *sparks()]
+    # heart_full / heart_empty are drawn with the rest of the HUD in hud.py.
+    return [fish(), yarn_basket(), medal(), *ability_icons(), *sparks()]

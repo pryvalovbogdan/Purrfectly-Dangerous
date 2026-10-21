@@ -84,10 +84,11 @@ public struct Bot: Sendable {
         outcome(start, plan: plan, horizon: horizon, dt: dt).safe
     }
 
-    /// Plays `plan` on a copy of the world. A plan that ends with the hero stopped against a wall
-    /// is still safe; `distance` tells whether it got anywhere.
+    /// Plays `plan` on a copy of the world. Being knocked back off a step is harmless, so it does not
+    /// make a plan unsafe; `bumpedAt` is the face of the first step run into, if any.
     static func outcome(_ start: RunnerWorld, plan: BotPlan?, horizon: Double,
-                        dt: Double) -> (safe: Bool, distance: Double) {
+                        dt: Double) -> (safe: Bool, distance: Double, bumpedAt: Double?) {
+        var bumpedAt: Double?
         var world = start
         var elapsed = 0.0
         var horizon = horizon
@@ -98,11 +99,12 @@ public struct Bot: Sendable {
             let input = plan?.input(elapsed: elapsed, dt: dt, base: base) ?? base
             for event in world.step(input, dt: dt) {
                 switch event {
-                case .heroHit, .heroDied: return (false, world.distance)
+                case .heroHit, .heroDied: return (false, world.distance, bumpedAt)
+                case .bumped: bumpedAt = bumpedAt ?? world.lastBumpFace
                 default: break
                 }
             }
-            if world.phase == .victory || world.isOver { return (true, world.distance) }
+            if world.phase == .victory || world.isOver { return (true, world.distance, bumpedAt) }
             elapsed += dt
             // A move only has to get the hero back on the ground safely; what comes after that is
             // a fresh decision, so stop looking shortly after touchdown.
@@ -111,8 +113,11 @@ public struct Bot: Sendable {
                 horizon = min(horizon, elapsed + 0.12)
             }
         }
-        return (true, world.distance)
+        return (true, world.distance, bumpedAt)
     }
+
+    /// How far ahead, in seconds of running, the bot looks for a step it would bounce off.
+    static let stepLookAhead = 0.7
 
     func candidates(for world: RunnerWorld) -> [BotPlan] {
         var candidates = [BotPlan(hold: 0.4), BotPlan(hold: 0.03)]
@@ -142,15 +147,17 @@ public struct Bot: Sendable {
         }
         guard world.onGround else { return base }
         let threatened = !Self.survives(world, plan: nil, horizon: 0.45, dt: dt)
-        // Stopped against a step: look for a safe move that gets on top of it.
-        let stuck = world.isAgainstWall
-        guard threatened || stuck else { return base }
+        // A step ahead that running on would bounce off: jump onto it from far enough out. Looking
+        // further ahead than for threats leaves room for the take-off a tall step or a Double Pounce
+        // needs; a move only counts if it ends with the hero past the face without a bounce.
+        let face = Self.outcome(world, plan: nil, horizon: Self.stepLookAhead, dt: dt).bumpedAt
+        guard threatened || face != nil else { return base }
         let options = candidates(for: world)
         var chosen: BotPlan?
-        if stuck {
+        if let face {
             chosen = options.first {
                 let result = Self.outcome(world, plan: $0, horizon: 1.3, dt: dt)
-                return result.safe && result.distance > world.distance + 1
+                return result.safe && result.bumpedAt == nil && result.distance > face
             }
         }
         if chosen == nil, threatened {
@@ -211,8 +218,8 @@ public enum LevelValidator {
         let run = botRun(level, boss: boss, tuning: tuning)
         if run.finished {
             report.clearTime = run.time
-        } else if let stuckAt = run.stuckAt {
-            report.problems.append("no-hit bot was stuck against a step at distance \(Int(stuckAt)) for over \(Int(maxStuckTime)) s")
+        } else if let blocked = run.blocked {
+            report.problems.append("no-hit bot \(blocked)")
         } else {
             report.problems.append("no-hit bot failed at distance \(Int(run.distance)) (\(run.phase))")
         }
@@ -288,8 +295,11 @@ public enum LevelValidator {
     /// line is only 40 units above the bottom edge).
     static let maxTerrainHeight = 60.0
     static let maxDipDepth = 32.0
-    /// Seconds the bot may stand stopped against a step before the level counts as a softlock.
-    public static let maxStuckTime = 4.0
+    /// A step the bot bounces off more often than this, or that keeps it back (from the first bounce
+    /// until it is past the face) for longer than `maxHeldBack` seconds, counts as a softlock. So does
+    /// no forward progress at all for `maxHeldBack` seconds.
+    public static let maxBumps = 3
+    public static let maxHeldBack = 4.0
     /// Headroom a climb leaves over the top of a jump, as for ledges.
     static let climbClearance = 6.0
 
@@ -369,24 +379,42 @@ public enum LevelValidator {
         return problems
     }
 
-    /// The bot plays the level on one heart. `stuckAt` is set when it stood still against a step for
-    /// longer than `maxStuckTime` (a softlock), and the run stops there.
+    /// The bot plays the level on one heart. `blocked` says why the run was stopped early when a
+    /// step keeps bouncing it back (see `maxBumps` and `maxHeldBack`): a softlock.
     static func botRun(_ level: LevelDefinition, boss: BossDefinition?, tuning: Tuning = Tuning(),
                        dt: Double = 1.0 / 60)
-        -> (finished: Bool, time: Double, distance: Double, phase: Phase, stuckAt: Double?) {
+        -> (finished: Bool, time: Double, distance: Double, phase: Phase, blocked: String?) {
         let stats = HeroStats(xp: Progression.xp(forLevel: level.entryHeroLevel), maxHearts: 1)
         var world = RunnerWorld(level: level, boss: boss, stats: stats, tuning: tuning)
         var bot = Bot()
         let limit = level.length / max(level.speed, 1) + 240
-        var movedAt = 0.0
-        var lastDistance = world.distance
+        var furthest = world.distance, progressAt = 0.0
+        var bumps: [Double: Int] = [:]
+        var heldBy: (face: Double, since: Double)?
+        func stop(_ why: String) -> (Bool, Double, Double, Phase, String?) {
+            (false, world.time, world.distance, world.phase, why)
+        }
         while !world.isOver, world.time < limit {
-            _ = world.step(bot.input(for: world, dt: dt), dt: dt)
-            if world.distance > lastDistance + 1e-6 {
-                movedAt = world.time
-                lastDistance = world.distance
-            } else if world.time - movedAt > maxStuckTime {
-                return (false, world.time, world.distance, world.phase, world.distance)
+            let events = world.step(bot.input(for: world, dt: dt), dt: dt)
+            if events.contains(.bumped), let face = world.lastBumpFace {
+                bumps[face, default: 0] += 1
+                if bumps[face, default: 0] > maxBumps {
+                    return stop("bounced off the step at \(Int(face)) more than \(maxBumps) times")
+                }
+                if heldBy?.face != face { heldBy = (face, world.time) }
+            }
+            if let held = heldBy {
+                if world.distance > held.face {
+                    heldBy = nil
+                } else if world.time - held.since > maxHeldBack {
+                    return stop("was held back by the step at \(Int(held.face)) for over \(Int(maxHeldBack)) s")
+                }
+            }
+            if world.distance > furthest + 1e-6 {
+                furthest = world.distance
+                progressAt = world.time
+            } else if world.time - progressAt > maxHeldBack {
+                return stop("made no progress at distance \(Int(world.distance)) for over \(Int(maxHeldBack)) s")
             }
         }
         return (world.phase == .won, world.time, world.distance, world.phase, nil)

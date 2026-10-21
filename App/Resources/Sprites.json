@@ -583,6 +583,58 @@
    }
   }
  },
+ "boss_bar_fill": {
+  "width": 1,
+  "height": 4,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "boss_bar_fill_low": {
+  "width": 1,
+  "height": 4,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "boss_bar_flash": {
+  "width": 1,
+  "height": 4,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "boss_bar_frame": {
+  "width": 40,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "boss_icedragon": {
   "width": 190,
   "height": 134,
@@ -1397,8 +1449,8 @@
   }
  },
  "heart_empty": {
-  "width": 11,
-  "height": 10,
+  "width": 16,
+  "height": 14,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -1410,8 +1462,8 @@
   }
  },
  "heart_full": {
-  "width": 11,
-  "height": 10,
+  "width": 16,
+  "height": 14,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -1419,6 +1471,45 @@
     "frames": 1,
     "fps": 1,
     "loop": true
+   }
+  }
+ },
+ "heart_gain": {
+  "width": 24,
+  "height": 22,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "glow": {
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "heart_half": {
+  "width": 16,
+  "height": 14,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "heart_lose": {
+  "width": 24,
+  "height": 22,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "burst": {
+    "frames": 5,
+    "fps": 12,
+    "loop": false
    }
   }
  },
@@ -1539,6 +1630,32 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
+    "loop": true
+   }
+  }
+ },
+ "hud_level_tab": {
+  "width": 64,
+  "height": 32,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "hud_panel": {
+  "width": 24,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
     "loop": true
    }
   }
@@ -1723,6 +1840,19 @@
    "loop": {
     "frames": 4,
     "fps": 6,
+    "loop": true
+   }
+  }
+ },
+ "level_up_arrows": {
+  "width": 32,
+  "height": 28,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "rise": {
+    "frames": 6,
+    "fps": 10,
     "loop": true
    }
   }
@@ -2734,6 +2864,32 @@
    "fire": {
     "frames": 4,
     "fps": 14,
+    "loop": true
+   }
+  }
+ },
+ "xp_bar_fill": {
+  "width": 1,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "xp_bar_frame": {
+  "width": 24,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
     "loop": true
    }
   }

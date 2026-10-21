@@ -33,6 +33,10 @@ final class GameHUD {
     /// How far the paw is charged toward a Super Pounce, 0...1.
     var pounceCharge = 0.0
     var bossName: String?
+    /// The boss's neutral id (`boss_squirrel`, …), for its own banner art; nil outside the fight.
+    var bossID: String?
+    /// Counts the hits on the boss, so the bar can flash on each.
+    var bossHits = 0
     var bossFraction = 1.0
     var banner: String?
     /// An ability just won, shown as an award card for a moment.

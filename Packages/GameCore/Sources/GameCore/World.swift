@@ -43,6 +43,13 @@ public struct Tuning: Sendable, Equatable {
     public var victoryDelay = 2.0
     /// A lip of ground up to this high is stepped onto without a jump.
     public var stepUp = 4.0
+    /// Running into a step face too high to get onto knocks the hero back for this long, at this
+    /// speed, with a small hop if it was on the ground; it then holds its place until it lands (or
+    /// jumps) and runs on. The run-up it gets back (26 units) is what a full jump needs to climb the
+    /// highest one-jump step (44) at the fastest level speed (140), with the jump pressed on landing.
+    public var bumpBack = 0.22
+    public var bumpBackSpeed = 120.0
+    public var bumpHop = 140.0
 
     public init() {}
 
@@ -238,7 +245,7 @@ public enum GameEvent: Sendable, Equatable {
     case shattered(id: Int)
     /// A creature dropped from its thread, reached the ground and starts walking.
     case droppedDown(id: Int)
-    /// The hero ran into the face of a step too high to walk onto and stopped; sent once per contact.
+    /// The hero ran into the face of a step too high to walk onto and is knocked back; once per hit.
     case bumped
     /// A thrown thing ran into the face of a step and broke.
     case hazardBroke(id: Int)
@@ -270,8 +277,8 @@ public struct RunnerWorld: Sendable {
     public private(set) var time = 0.0
     /// Hero's world x; the level scrolls by increasing this.
     public private(set) var distance = 0.0
-    /// How fast `distance` grew on the last step (slick ground and a pounce make it faster; it is 0
-    /// while the hero is stopped against a wall).
+    /// How fast `distance` grew on the last step (slick ground and a pounce make it faster; it is
+    /// negative while the hero is knocked back off a step, and 0 while it then waits to land).
     public private(set) var runSpeed: Double
     public private(set) var heroY = 0.0
     public private(set) var heroVY = 0.0
@@ -295,9 +302,14 @@ public struct RunnerWorld: Sendable {
     public private(set) var pouncing = false
     public private(set) var fishCollected = 0
     public private(set) var score = 0
-    /// Pressed against the face of a step too high to walk onto: `distance` does not grow, so the
-    /// level waits, while the clock, enemies and thrown things carry on.
+    /// True only on the step the hero runs into the face of a step too high to walk onto.
     public private(set) var isAgainstWall = false
+    /// Seconds of knockback left after such a hit: the hero moves backwards and `distance` shrinks.
+    public private(set) var bumpBackLeft = 0.0
+    /// The x of the face last run into.
+    public private(set) var lastBumpFace: Double?
+    /// Knocked back and not yet landed or jumped again: no forward motion, so the run-up is kept.
+    private var bumpHold = false
 
     private var nextItem = 0
     private var nextID = 1
@@ -440,7 +452,7 @@ public struct RunnerWorld: Sendable {
         return top
     }
 
-    /// Pressed against a step's face, or with one in reach of the rising half of a jump that rises
+    /// Touching a step's face this step, or with one in reach of the rising half of a jump that rises
     /// higher than a short hop clears.
     private var facesTallStep: Bool {
         if isAgainstWall { return true }
@@ -449,20 +461,51 @@ public struct RunnerWorld: Sendable {
         return ground.wall(from: front, to: front + reach, feet: heroY, step: tuning.stepUp) != nil
     }
 
-    /// Runs forward, unless the face of a step higher than the feet is in the way: then the hero
-    /// stops against it and `distance` stays put until a jump lifts the feet above its top.
+    public var isBumpedBack: Bool { bumpBackLeft > 0 }
+
+    /// Runs forward. Running into the face of a step higher than the feet (by more than `stepUp`)
+    /// stops the hero at it and knocks it back for `bumpBack` seconds, with a small hop from the
+    /// ground; no harm done. The knockback never carries the hero's middle over a ravine, nor its
+    /// back into the face of a higher step behind.
     private mutating func advance(dt: Double, events: inout [GameEvent]) {
         let start = distance
         let half = tuning.heroWidth / 2
-        let front = distance + half
-        if let wall = ground.wall(from: front, to: front + runSpeed * dt, feet: heroY, step: tuning.stepUp) {
-            distance = max(distance, wall - half)
+        isAgainstWall = false
+        if bumpBackLeft > 0 {
+            bumpBackLeft = max(0, bumpBackLeft - dt)
+            var target = distance - tuning.bumpBackSpeed * dt
+            for ravine in ravines where ravine.end <= distance + GroundProfile.epsilon {
+                target = max(target, ravine.end)
+            }
+            if let face = ground.wall(behind: distance - half, to: target - half, feet: heroY, step: tuning.stepUp) {
+                target = max(target, face + half)
+            }
+            distance = min(distance, target)
             runSpeed = (distance - start) / dt
-            if !isAgainstWall { events.append(.bumped) }
-            isAgainstWall = true
+        } else if bumpHold, !onGround {
+            runSpeed = 0
         } else {
-            distance += runSpeed * dt
-            isAgainstWall = false
+            let front = distance + half
+            if let wall = ground.wall(from: front, to: front + runSpeed * dt, feet: heroY, step: tuning.stepUp) {
+                distance = max(distance, wall - half)
+                runSpeed = (distance - start) / dt
+                isAgainstWall = true
+                lastBumpFace = wall
+                bumpBackLeft = tuning.bumpBack
+                bumpHold = true
+                events.append(.bumped)
+                if onGround {
+                    // A small hop back; a Double Pounce is still there, as off a ledge.
+                    heroVY = tuning.bumpHop
+                    onGround = false
+                    standingOn = nil
+                    jumpsUsed = 1
+                    jumpCutDone = true
+                    jumpRise = 0
+                }
+            } else {
+                distance += runSpeed * dt
+            }
         }
         // A low lip is walked (or risen) onto.
         if standingOn == nil, let floor, heroY < floor { heroY = floor }
@@ -509,6 +552,7 @@ public struct RunnerWorld: Sendable {
                 standingOn = nil
                 jumpsUsed = 1
                 jumpBuffer = 0
+                bumpHold = false
                 events.append(.jumped(double: false))
             } else if input.jumpPressed, jumpsUsed < 2, stats.has(.doublePounce) {
                 heroVY = tuning.jumpVelocity * tuning.doubleJumpScale
@@ -516,6 +560,8 @@ public struct RunnerWorld: Sendable {
                 // Always full height: players tap, and a cut second jump clears too little.
                 jumpCutDone = true
                 jumpBuffer = 0
+                bumpHold = false
+                bumpBackLeft = 0
                 events.append(.jumped(double: true))
             }
         }
@@ -548,6 +594,7 @@ public struct RunnerWorld: Sendable {
             standingOn = best.index
             jumpsUsed = 0
             pouncing = false
+            bumpHold = false
             events.append(.landed)
             if let index = best.index, platforms[index].mode == .crumbles, platformLanded[index] == nil {
                 platformLanded[index] = time

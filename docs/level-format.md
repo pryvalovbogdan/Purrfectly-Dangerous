@@ -101,8 +101,8 @@ one (coins above are fine). Walking enemies turn back at a rim, so one placed be
 patrols the ledge. To have a walker turn where the player can watch, start it far enough from the
 rim that it arrives about two seconds after it spawns (a goblin about 45 units, a hound about 90).
 
-Terrain: the kitten stops against any face higher than 4 above its feet and needs a jump to get
-on; the level waits while it is stopped. Every rise it meets (onto a block, from stair to stair, out
+Terrain: running into any face higher than 4 above its feet knocks the kitten back about 26 units
+(never over a ravine rim behind, nor into a higher face behind); it needs a jump to get on. Every rise it meets (onto a block, from stair to stair, out
 of a dip) must be climbable with the hero level guaranteed there: at most 44 with one jump, at most
 84 once Double Pounce (level 3) is guaranteed by `entryHeroLevel` or by a `yarn_basket` before it.
 Keep terrain out of the start runway and the last 60 units (the boss arena is flat), 16 away from
@@ -147,7 +147,8 @@ placed. Walkers turn back at every step, so one placed on a block patrols it. Dr
 checks (runway, abilities guaranteed where needed, ravines, boss and attack names resolve) and then a bot
 that must finish the level and boss **on a single heart**. A failure reports the distance at which
 the bot was hit, e.g. `no-hit bot failed at distance 4431 (dead)` — a distance past `length` means
-the boss pattern is the problem. `no-hit bot was stuck against a step at distance 1210 for over 4 s`
-means the bot could not get onto a step (a softlock). Terrain messages name the piece or the rise,
+the boss pattern is the problem. `no-hit bot bounced off the step at 1210 more than 3 times`
+or `no-hit bot was held back by the step at 1210 for over 4 s` means the bot could not get onto a
+step (a softlock); `no-hit bot made no progress at distance 1210 for over 4 s` that it got nowhere. Terrain messages name the piece or the rise,
 e.g. `step at 996 rises 40; one jump at hero level 2 climbs at most 44`,
 `terrain at 1210 is too close to the ravine at 1260`, `bush at 1000 stands across a step`.

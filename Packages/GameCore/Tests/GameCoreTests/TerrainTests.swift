@@ -73,14 +73,6 @@ import Testing
         #expect(top < Tuning().jumpApex - 4)   // still shorter than a held jump
     }
 
-    @Test func aTapAgainstAWallIsAlwaysAFullJumpAndClimbsIt() {
-        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
-        advance(&world) { $0.isAgainstWall }
-        #expect(tap(&world) >= 40)
-        #expect(world.heroY == 40)
-        #expect(!world.isAgainstWall)
-    }
-
     @Test func aTapJustBeforeATallStepIsAFullJump() {
         var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
         advance(&world) { $0.distance >= 300 - 8 - 30 }
@@ -88,28 +80,96 @@ import Testing
         #expect(world.heroY == 40)
     }
 
-    @Test func theHeroStopsAgainstAWallAndTheLevelWaits() throws {
-        let walker = PlacedItem(at: 700, kind: .slime)
-        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 30)], items: [walker]), boss: nil)
-        let events = advance(&world) { $0.isAgainstWall }
+    /// Runs into the face at 300 (40 high) and returns the events up to and including the hit.
+    func runIntoWall(_ world: inout RunnerWorld) -> [GameEvent] {
+        advance(&world) { $0.isAgainstWall }
+    }
+
+    @Test func runningIntoAWallKnocksTheHeroBackWithoutHarm() throws {
+        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)]), boss: nil)
+        let events = runIntoWall(&world)
         #expect(events.filter { $0 == .bumped }.count == 1)
-        let stoppedAt = world.distance
-        #expect(abs(stoppedAt - (300 - world.tuning.heroWidth / 2)) < 1e-6)
-        let slime = try #require(world.entities.first)
-        // Stuck for a second: no distance, no second bump, but the clock and the slime carry on.
-        let time = world.time
-        let more = world.run(1)
-        #expect(world.distance == stoppedAt)
-        #expect(world.runSpeed == 0)
-        #expect(world.time > time + 0.9)
-        #expect(!more.contains(.bumped))
-        #expect(try #require(world.entities.first).x < slime.x - 10)
-        // A jump gets on top.
-        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
-        advance(&world, limit: 2, Input(jumpHeld: true)) { $0.onGround }
-        #expect(world.heroY == 30)
-        #expect(world.distance > stoppedAt)
+        #expect(world.lastBumpFace == 300)
+        let contact = world.distance
+        #expect(abs(contact - (300 - world.tuning.heroWidth / 2)) < 1e-6)
+        // A small hop back, with the Double Pounce still there.
+        #expect(!world.onGround)
+        #expect(world.isBumpedBack)
+        // Knocked back by about bumpBack × bumpBackSpeed, moving backwards on screen too.
+        world.run(0.05)
+        #expect(world.runSpeed < 0)
         #expect(!world.isAgainstWall)
+        advance(&world, limit: 2) { $0.onGround }
+        let knock = world.tuning.bumpBack * world.tuning.bumpBackSpeed
+        #expect(abs((contact - world.distance) - knock) < world.tuning.bumpBackSpeed * dt * 2)
+        // No harm: no heart lost and no immunity.
+        #expect(world.stats.hearts == 3)
+        #expect(world.invulnerable == 0)
+        // Then it runs on, and (without a jump) is knocked back again.
+        let landedAt = world.distance
+        let again = advance(&world, limit: 2) { $0.isAgainstWall }
+        #expect(world.distance > landedAt)
+        #expect(again.filter { $0 == .bumped }.count == 1)
+    }
+
+    @Test func aJumpPressedDuringTheKnockbackFiresOnLandingAndClearsTheStep() {
+        // The highest step one jump climbs, at the fastest level speed: the run-up the knockback
+        // gives back is enough for it.
+        var level = level([Terrain(at: 300, width: 100, height: 44)])
+        level.speed = 140
+        var world = RunnerWorld(level: level, boss: nil)
+        _ = runIntoWall(&world)
+        // Pressed on the way down from the hop: kept until the feet touch down.
+        advance(&world, limit: 1) { $0.heroVY < 0 }
+        var events = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        events += advance(&world, limit: 2, Input(jumpHeld: true)) { $0.onGround && $0.heroY == 44 }
+        #expect(events.contains(.jumped(double: false)))
+        #expect(!events.contains(.bumped))
+        #expect(world.heroY == 44)
+        #expect(world.distance > 300)
+    }
+
+    @Test func aDoublePounceOnceKnockedBackClimbs() {
+        var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)], entry: 3, reward: 3),
+                                boss: nil, stats: hero(3))
+        _ = runIntoWall(&world)
+        // Pressed at the end of the knockback, from the hop: it carries on forward and over.
+        advance(&world, limit: 1) { !$0.isBumpedBack }
+        let events = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            + advance(&world, limit: 2, Input(jumpHeld: true)) { $0.onGround }
+        #expect(events.contains(.jumped(double: true)))
+        #expect(!events.contains(.bumped))
+        #expect(world.heroY == 40)
+    }
+
+    @Test func theKnockbackStopsAtARavineRimBehind() {
+        // The kitten jumps a ravine and lands just short of a face: knocked back, it stops with its
+        // middle on the rim instead of going over.
+        var level = level([Terrain(at: 306, width: 100, height: 40)])
+        level.ravines = [Ravine(at: 260, width: 30)]
+        var world = RunnerWorld(level: level, boss: nil)
+        advance(&world) { $0.distance > 225 }
+        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        let events = advance(&world, limit: 2, Input(jumpHeld: true)) { $0.isAgainstWall }
+        #expect(events.contains(.bumped))
+        advance(&world, limit: 2) { $0.onGround }
+        #expect(abs(world.distance - 290) < 1e-6)
+        #expect(!world.isOver)
+        #expect(world.stats.hearts == 3)
+    }
+
+    @Test func theKnockbackStopsAgainstAHigherStepBehind() {
+        // Off a 20 block into a trench 40 wide before a 60 one: knocked back, its back stops
+        // against the face of the block it came down from.
+        var world = RunnerWorld(level: level([Terrain(at: 0, width: 300, height: 20),
+                                              Terrain(at: 340, width: 100, height: 60)]), boss: nil)
+        #expect(world.groundHeight(at: 0) == 20)
+        let events = advance(&world) { $0.isAgainstWall }
+        #expect(events.contains(.landed))
+        #expect(world.lastBumpFace == 340)
+        advance(&world, limit: 2) { $0.onGround }
+        #expect(abs(world.distance - (300 + world.tuning.heroWidth / 2)) < 1e-6)
+        #expect(world.heroY == 0)
     }
 
     @Test func aLowLipIsWalkedOnto() {
@@ -136,13 +196,13 @@ import Testing
         #expect(world.stats.hearts == 3)
     }
 
-    @Test func aDipIsFallenIntoAndItsFarWallStopsTheHero() {
+    @Test func aDipIsFallenIntoAndItsFarWallBouncesTheHero() {
         var world = RunnerWorld(level: level([Terrain(at: 300, width: 80, height: -24)]), boss: nil)
         advance(&world) { $0.isAgainstWall }
-        #expect(world.heroY == -24)
-        #expect(abs(world.distance - (380 - world.tuning.heroWidth / 2)) < 1e-6)
+        #expect(world.lastBumpFace == 380)
+        advance(&world, limit: 1) { $0.heroVY < 0 }
         _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
-        advance(&world, limit: 2, Input(jumpHeld: true)) { $0.onGround }
+        advance(&world, limit: 2, Input(jumpHeld: true)) { $0.onGround && $0.heroY == 0 }
         #expect(world.heroY == 0)
         #expect(world.distance > 380)
         #expect(!world.isOver)
@@ -154,15 +214,15 @@ import Testing
         advance(&dasher) { $0.distance > 280 }
         let events = dasher.step(Input(pawPressed: true), dt: dt) + dasher.run(0.5)
         #expect(events.contains(.dashed))
-        #expect(dasher.isAgainstWall)
+        #expect(events.contains(.bumped))
         #expect(dasher.distance <= 292 + 1e-6)
 
         var pouncer = RunnerWorld(level: level(wall, entry: 5), boss: nil, stats: hero(5))
         advance(&pouncer, Input(pawHeld: true)) { $0.distance > 240 }
         let leap = pouncer.step(Input(), dt: dt) + pouncer.run(1)
         #expect(leap.contains(.pounced))
+        #expect(leap.contains(.bumped))
         #expect(pouncer.distance <= 292 + 1e-6)
-        #expect(pouncer.heroY == 0)
     }
 
     @Test func yarnStopsAgainstAWall() {
@@ -258,7 +318,7 @@ import Testing
         #expect(LevelValidator.terrainProblems(in: level, items: level.items, tuning: Tuning()).isEmpty)
         let run = LevelValidator.botRun(level, boss: nil)
         #expect(run.finished)
-        #expect(run.stuckAt == nil)
+        #expect(run.blocked == nil)
     }
 
     @Test func aWallNeedingDoublePounceIsOnlyAllowedOnceItIsGuaranteed() {
@@ -268,7 +328,7 @@ import Testing
             .contains { $0.contains("step at 500 rises 58; one jump at hero level 2 climbs at most 44") })
         let run = LevelValidator.botRun(early, boss: nil)
         #expect(!run.finished)
-        #expect(run.stuckAt != nil)
+        #expect(run.blocked != nil)
 
         let late = level(wall, length: 1200, entry: 3, reward: 3)
         #expect(LevelValidator.terrainProblems(in: late, items: [], tuning: Tuning()).isEmpty)
@@ -282,11 +342,13 @@ import Testing
 
     @Test func aSoftlockIsReported() {
         // Too high even for a Double Pounce: the validator says so before the bot runs, and the bot
-        // on its own gives up after `maxStuckTime` rather than standing there for ever.
+        // on its own gives up once it has bounced off the same face more than `maxBumps` times.
         let level = level([Terrain(at: 500, width: 120, height: 100)], length: 1200, entry: 3, reward: 3)
         let run = LevelValidator.botRun(level, boss: nil)
-        #expect(run.stuckAt != nil)
-        #expect(run.time < 500 / 100 + LevelValidator.maxStuckTime + 1)
+        #expect(run.blocked?.contains("bounced off the step at 500 more than \(LevelValidator.maxBumps) times") == true)
+        #expect(run.time < 500 / 100 + LevelValidator.maxHeldBack + 1)
+        let report = LevelValidator.validate(level, bosses: [:])
+        #expect(report.problems.contains { $0.contains("step at 500 rises 100") })
     }
 
     @Test func badTerrainIsRejected() {

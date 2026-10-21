@@ -89,29 +89,11 @@ private struct HUDView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 6) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 3) {
-                            ForEach(0..<hud.maxHearts, id: \.self) { index in
-                                SpriteImage(sprite: index < hud.hearts ? "heart_full" : "heart_empty", animation: "still")
-                                    .frame(width: 22, height: 20)
-                            }
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(hud.hearts) of \(hud.maxHearts) hearts")
-                        FishCount(count: hud.fish)
-                    }
-                    // A dark backing keeps the counters readable over clouds and snow.
-                    .padding(6)
-                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("LV \(hud.heroLevel)").font(.pixel(13)).outlined()
-                        Bar(fraction: hud.xpFraction, color: .yellow).frame(width: 90, height: 6)
-                    }
-                    .padding(.top, 2)
-                    .padding(6)
-                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
-                    Spacer()
+                HStack(alignment: .bottom, spacing: 12) {
+                    // The lives panel (cat head, hearts, fish) and the LV panel with the XP bar.
+                    LivesPanel(hearts: hud.hearts, maxHearts: hud.maxHearts, fish: hud.fish)
+                    LevelPanel(level: hud.heroLevel, fraction: hud.xpFraction)
+                    Spacer(minLength: 0)
                     Button {
                         hud.isPaused.toggle()
                     } label: {
@@ -123,12 +105,7 @@ private struct HUDView: View {
                     .accessibilityLabel(hud.isPaused ? "Resume" : "Pause")
                 }
                 if let boss = hud.bossName {
-                    VStack(spacing: 2) {
-                        Text(boss.uppercased()).font(.pixel(11)).outlined()
-                        Bar(fraction: hud.bossFraction, color: .red).frame(maxWidth: 240).frame(height: 8)
-                    }
-                    .padding(6)
-                    .background(.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
+                    BossHealth(id: hud.bossID, name: boss, fraction: hud.bossFraction, hits: hud.bossHits)
                 }
                 if let banner = hud.banner {
                     Text(banner)
@@ -227,19 +204,6 @@ private struct HUDView: View {
 }
 
 /// The fish counter: a fish and "×N".
-private struct FishCount: View {
-    let count: Int
-
-    var body: some View {
-        HStack(spacing: 4) {
-            SpriteImage(sprite: "fish", animation: "spin").frame(width: 24, height: 18)
-            Text("×\(count)").font(.pixel(14)).outlined()
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(count) fish")
-    }
-}
-
 /// A round on-screen button that reports when a finger goes down on it and when it lifts. The
 /// touch area reaches a little past the drawn circle so a thumb that lands just off it still counts.
 private struct HoldButton<Label: View>: View {
