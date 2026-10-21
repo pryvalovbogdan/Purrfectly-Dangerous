@@ -363,6 +363,9 @@ public struct RunnerWorld: Sendable {
     public var isPounceReady: Bool { stats.has(.superPounce) && pawCharge >= tuning.chargeTime }
     public var isDashing: Bool { dashTime > 0 }
     public var canDash: Bool { stats.has(.ghostDash) && dashCooldownLeft <= 0 }
+    /// Yarn Shot is won and its cooldown has run out (what the yarn button shows; a throw also needs
+    /// a fresh press during a run or boss fight).
+    public var canThrow: Bool { stats.has(.yarnShot) && yarnCooldown <= 0 }
     public var isOver: Bool { phase == .won || phase == .dead }
     /// In the air with a Double Pounce still to use (what the jump button shows).
     public var canDoubleJump: Bool { !onGround && stats.has(.doublePounce) && jumpsUsed < 2 }

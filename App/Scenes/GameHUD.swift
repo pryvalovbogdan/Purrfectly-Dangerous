@@ -14,6 +14,8 @@ final class GameHUD {
     /// Progress toward the next hero level, 0...1 (1 at max level).
     var xpFraction = 0.0
     var canFire = false
+    /// The next yarn throw is ready (Yarn Shot won and its cooldown over).
+    var fireReady = false
     /// The paw button shows once Ghost Dash is unlocked.
     var canDash = false
     /// False while the dash is cooling down.

@@ -841,6 +841,45 @@
    }
   }
  },
+ "button_dash": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_dash_cooldown": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_dash_pressed": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "button_double": {
   "width": 48,
   "height": 48,
@@ -907,6 +946,71 @@
   }
  },
  "button_jump_pressed": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_pounce": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_pounce_charged": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "sparkle": {
+    "frames": 6,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "button_yarn": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_yarn_cooldown": {
+  "width": 48,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "button_yarn_pressed": {
   "width": 48,
   "height": 48,
   "anchorX": 0.5,
@@ -2185,19 +2289,6 @@
    }
   }
  },
- "ravine_forest_deep_fade": {
-  "width": 16,
-  "height": 32,
-  "anchorX": 0.5,
-  "anchorY": 0,
-  "animations": {
-   "still": {
-    "frames": 1,
-    "fps": 1,
-    "loop": true
-   }
-  }
- },
  "ravine_forest_falls": {
   "width": 16,
   "height": 16,
@@ -2227,6 +2318,19 @@
  "ravine_forest_fill": {
   "width": 8,
   "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_forest_floor": {
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {

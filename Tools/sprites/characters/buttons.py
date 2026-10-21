@@ -77,13 +77,16 @@ GREY_PAW = {"fur": P.BTN_PAW_GREY_L, "fur_d": P.BTN_PAW_GREY, "pad": P.BTN_PAD_G
             "pad_d": P.BTN_GREY}
 
 
-def paw(c: Canvas, cols: dict, dy: int = 0) -> None:
-    """The paw print, with a soft shadow on the disc below it; `dy` shifts it down (pressed)."""
+def paw(c: Canvas, cols: dict, dy: int = 0, scale: float = 1.0, dx: float = 0.0) -> None:
+    """The paw print, with a soft shadow on the disc below it; `dy` shifts it down (pressed). `scale` and `dx`
+    make a smaller paw moved sideways (the pounce button), scaled about the paw's middle (24, 24)."""
     shadow = Canvas(SIZE, SIZE)
     layer = Canvas(SIZE, SIZE)
     for y in range(SIZE):
         for x in range(SIZE):
             px, py = x + 0.5, y + 0.5 - dy
+            if scale != 1.0 or dx:
+                px, py = C + (px - C - dx) / scale, C + (py - C) / scale
             if _in_paw(px, py - 2):
                 shadow.px(x, y, (0, 0, 0, 70))
             if not _in_paw(px, py):
@@ -167,6 +170,135 @@ def paw_trail() -> Sprite:
     return sprite
 
 
+# --- ability buttons (bottom left): same disc and ring as the jump button --------------------------------
+
+
+def yarn_icon(dy: int = 0) -> Canvas:
+    """A big purple-pink ball of yarn, wound in two directions, lit top-left, a loose thread curling away."""
+    c = Canvas(SIZE, SIZE)
+    bx, by, rad = C + 1.5, C - 1.5 + dy, 10.5
+    for k in range(11):                                      # the loose thread, out to the bottom left
+        t = k / 10
+        x = bx - 6 - t * 8 + math.sin(t * 5) * 1.5
+        y = by + 8 + t * 3 - math.sin(t * 3.5) * 2.5
+        c.px(x, y, P.YARN if k % 3 else P.YARN_L)
+        c.px(x, y + 1, P.YARN_D)
+    for y in range(SIZE):
+        for x in range(SIZE):
+            dxp, dyp = x + 0.5 - bx, y + 0.5 - by
+            d = math.hypot(dxp, dyp)
+            if d > rad:
+                continue
+            lit = _lit(dxp, dyp)
+            colour = P.YARN
+            if d > rad - 1.6 and lit < -0.2:
+                colour = P.YARN_V
+            elif d > rad - 2 and lit > 0.5:
+                colour = P.YARN_L
+            # wound strands: one set across the lower right, another round the upper left
+            u = dxp * 0.6 + dyp * 0.8
+            v = dxp * 0.8 - dyp * 0.6
+            if u > -2:
+                if (v + 40) % 3.4 < 1.0:
+                    colour = P.YARN_D
+            elif (math.hypot(dxp + 3, dyp + 3) + 40) % 3.2 < 1.0:
+                colour = P.YARN_D
+            c.px(x, y, colour)
+    for k in range(4):                                       # a shine
+        c.px(bx - 5 + k, by - 6 - (k > 1), P.WHITE if k in (1, 2) else P.YARN_L)
+    return c.outline()
+
+
+def ghost_icon(dy: int = 0) -> Canvas:
+    """A see-through ghost-cat head with a wispy bottom, dark eyes, and motion lines trailing to the left."""
+    c = Canvas(SIZE, SIZE)
+    hx, hy = C + 3, C - 1 + dy
+    for k, (y, n) in enumerate(((hy - 3, 9), (hy + 1, 12), (hy + 5, 8))):   # motion lines
+        c.rect(hx - 14 - n + 4, y, hx - 13, y, P.WHITE if k != 1 else P.CYAN)
+    head = Canvas(SIZE, SIZE)
+    head.poly([(hx - 8, hy - 2), (hx - 7, hy - 11), (hx - 2, hy - 6)], P.ICE_L)        # ears
+    head.poly([(hx + 8, hy - 2), (hx + 7, hy - 11), (hx + 2, hy - 6)], P.ICE_L)
+    head.ellipse(hx, hy, 9, 7.5, P.ICE_L)
+    for k in range(4):                                        # wispy scalloped bottom
+        head.ellipse(hx - 6 + k * 4, hy + 7, 2, 2.5, P.ICE_L)
+    head.ellipse(hx + 2, hy + 3, 6, 4, P.CYAN)                # shade lower right
+    head.ellipse(hx - 1, hy + 1, 6.5, 5, P.ICE_L)
+    head.poly([(hx - 6, hy - 4), (hx - 6.5, hy - 9), (hx - 3.5, hy - 5.5)], P.WHITE)
+    for ex in (hx - 4, hx + 3):                               # eyes with a shine
+        head.rect(ex, hy - 2, ex + 1, hy + 1, P.ICE_D)
+        head.px(ex + 1, hy - 2, P.WHITE)
+    head.px(hx - 0.5, hy + 2, P.PINK)
+    head.rect(hx - 9, hy + 5, hx + 9, hy + 5, P.CAPE)        # the hero's red scarf, so it reads as our cat
+    head.rect(hx + 5, hy + 6, hx + 6, hy + 7, P.CAPE_D)
+    head.outline(P.BLUE_D)
+    px = head.img.load()
+    for y in range(SIZE):                                     # see-through, but solid enough to read
+        for x in range(SIZE):
+            r_, g, b, a = px[x, y]
+            if a and (r_, g, b, 255) not in (P.CAPE, P.CAPE_D, P.BLUE_D, P.ICE_D):
+                px[x, y] = (r_, g, b, 215)
+    c.paste(head)
+    return c
+
+
+def pounce_icon(dy: int = 0) -> Canvas:
+    """A smaller paw pushed forward, with speed streaks behind it."""
+    c = Canvas(SIZE, SIZE)
+    for k, (y, x0, n, col) in enumerate(((17, 10, 5, P.WHITE), (23, 8, 7, P.YELLOW), (29, 10, 5, P.WHITE))):
+        c.rect(x0, y + dy, x0 + n, y + dy + (1 if k == 1 else 0), col)
+    paw(c, PAW_COLOURS, dy, scale=0.82, dx=4)
+    return c
+
+
+def greyed(layer: Canvas) -> Canvas:
+    """The icon in greys by brightness (cooldown): outline kept dark, alpha kept."""
+    out = Canvas(SIZE, SIZE)
+    src = layer.img.load()
+    for y in range(SIZE):
+        for x in range(SIZE):
+            r_, g, b, a = src[x, y]
+            if not a:
+                continue
+            lum = 0.3 * r_ + 0.59 * g + 0.11 * b
+            colour = P.BTN_PAW_GREY_L if lum > 190 else P.BTN_PAW_GREY if lum > 140 else P.BTN_PAD_GREY if lum > 70 \
+                else P.OUTLINE
+            out.px(x, y, (*colour[:3], a))
+    return out
+
+
+def ability_button(face, face_l, ring, ring_l, ring_d, icon, glow=None, dy=0, grey=False, sparkles=False,
+                   frame=0) -> Canvas:
+    c = Canvas(SIZE, SIZE)
+    disc(c, face, face_l, ring, ring_l, ring_d, glow, glint=sparkles and frame == 3)
+    layer = icon(dy)
+    c.paste(greyed(layer) if grey else layer)
+    if sparkles:
+        for k, (x, y) in enumerate(SPARKLES):
+            size = TWINKLE[(frame + k * 2 + k // 3) % 6]
+            sparkle(c, x, y, min(size, 4), (P.WHITE, P.YELLOW, P.GOLD))
+    return c
+
+
+def ability_buttons() -> list[Sprite]:
+    yarn = (P.BTN_ROYAL, P.BTN_ROYAL_L, P.BTN_VIOLET, P.BTN_VIOLET_L, P.BTN_VIOLET_D)
+    dash = (P.BTN_TEAL, P.BTN_TEAL_L, P.CYAN, P.ICE_L, P.BTN_CYAN_D)
+    pounce = (P.BTN_ORANGE, P.BTN_ORANGE_L, P.GOLD, P.YELLOW, P.GOLD_D)
+    slate = (P.BTN_SLATE, P.BTN_SLATE_L, P.BTN_GREY, P.BTN_GREY_L, P.BTN_GREY_D)
+    charged = Sprite("button_pounce_charged", (SIZE, SIZE))
+    charged.add("sparkle", [ability_button(*pounce, pounce_icon, glow=P.YELLOW, sparkles=True, frame=f)
+                            for f in range(6)], fps=8)
+    return [
+        single("button_yarn", ability_button(*yarn, yarn_icon)),
+        single("button_yarn_pressed", ability_button(*yarn, yarn_icon, glow=P.BTN_GLOW, dy=1)),
+        single("button_yarn_cooldown", ability_button(*slate, yarn_icon, grey=True)),
+        single("button_dash", ability_button(*dash, ghost_icon)),
+        single("button_dash_pressed", ability_button(*dash, ghost_icon, glow=P.CYAN, dy=1)),
+        single("button_dash_cooldown", ability_button(*slate, ghost_icon, grey=True)),
+        single("button_pounce", ability_button(*pounce, pounce_icon)),
+        charged,
+    ]
+
+
 def build() -> list[Sprite]:
     jump = (P.BTN_NAVY, P.BTN_NAVY_L, P.BTN_BLUE, P.BTN_BLUE_L, P.BTN_BLUE_D)
     pressed = (P.BTN_PURPLE, P.BTN_PURPLE_L, P.BTN_PINK, P.BTN_PINK_L, P.BTN_PINK_D)
@@ -187,4 +319,5 @@ def build() -> list[Sprite]:
         double_pressed,
         single("button_double_disabled", button(*slate, cols=GREY_PAW, sparkles="faint")),
         paw_trail(),
+        *ability_buttons(),
     ]

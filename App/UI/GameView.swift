@@ -132,30 +132,46 @@ private struct HUDView: View {
                 HStack(alignment: .bottom) {
                     VStack(spacing: upright ? 0 : -14) {
                         if hud.canDash {
-                            HoldButton(onChange: paw) { _ in
-                                ZStack {
-                                    Circle().fill(.black.opacity(0.15))
-                                    if hud.canPounce {
-                                        Circle().stroke(Color.white.opacity(0.25), lineWidth: 5)
-                                        Circle().trim(from: 0, to: hud.pounceCharge)
-                                            .stroke(hud.pounceCharge >= 1 ? Color.yellow : Color.pink, lineWidth: 5)
-                                            .rotationEffect(.degrees(-90))
+                            // Ghost Dash (dash / pressed / cooling down); once Super Pounce is won, the
+                            // pounce faces while the paw is charging. The old ring if not drawn.
+                            let pawFace = ButtonFace.paw(dashReady: hud.dashReady, canPounce: hud.canPounce,
+                                                         charge: hud.pounceCharge)
+                            let pawDrawn = pawFace.all.allSatisfy { model.sprites.sheet($0) != nil }
+                            HoldButton(onChange: paw, pressEffect: pawDrawn ? .sprite : .fade) { pressed in
+                                if pawDrawn {
+                                    ButtonFace(sprite: pressed ? pawFace.pressed : pawFace.idle, animation: pawFace.animation)
+                                } else {
+                                    ZStack {
+                                        Circle().fill(.black.opacity(0.15))
+                                        if hud.canPounce {
+                                            Circle().stroke(Color.white.opacity(0.25), lineWidth: 5)
+                                            Circle().trim(from: 0, to: hud.pounceCharge)
+                                                .stroke(hud.pounceCharge >= 1 ? Color.yellow : Color.pink, lineWidth: 5)
+                                                .rotationEffect(.degrees(-90))
+                                        }
+                                        SpriteImage(sprite: hud.pounceCharge >= 1 ? "ability_superPounce" : "ability_ghostDash",
+                                                    animation: "still")
+                                            .frame(width: 48, height: 48)
+                                            .opacity(hud.dashReady || hud.pounceCharge > 0 ? 1 : 0.4)
                                     }
-                                    SpriteImage(sprite: hud.pounceCharge >= 1 ? "ability_superPounce" : "ability_ghostDash",
-                                                animation: "still")
-                                        .frame(width: 48, height: 48)
-                                        .opacity(hud.dashReady || hud.pounceCharge > 0 ? 1 : 0.4)
                                 }
                             }
                             .accessibilityLabel(model.text("ability.ghostDash"))
                             .accessibilityHint(hud.canPounce ? model.text("ability.superPounce") : "")
                         }
                         if hud.canFire {
-                            HoldButton(onChange: fire) { _ in
-                                ZStack {
-                                    Circle().fill(.black.opacity(0.15))
-                                    SpriteImage(sprite: "ability_yarnShot", animation: "still")
-                                        .frame(width: 48, height: 48)
+                            // Yarn: ready / pressed / cooling down. The old icon if not drawn.
+                            let yarnFace = ButtonFace.yarn(ready: hud.fireReady)
+                            let yarnDrawn = yarnFace.all.allSatisfy { model.sprites.sheet($0) != nil }
+                            HoldButton(onChange: fire, pressEffect: yarnDrawn ? .sprite : .fade) { pressed in
+                                if yarnDrawn {
+                                    ButtonFace(sprite: pressed ? yarnFace.pressed : yarnFace.idle, animation: yarnFace.animation)
+                                } else {
+                                    ZStack {
+                                        Circle().fill(.black.opacity(0.15))
+                                        SpriteImage(sprite: "ability_yarnShot", animation: "still")
+                                            .frame(width: 48, height: 48)
+                                    }
                                 }
                             }
                             .accessibilityLabel(model.text("ability.yarnShot"))
@@ -164,11 +180,11 @@ private struct HUDView: View {
                     Spacer()
                     // The cat-paw jump button, in the state the world is in; the old arrow if the
                     // paw sprites are not drawn yet.
-                    let face = JumpFace.sprite(for: hud.jumpButton, unlocked: hud.canDoubleJump)
-                    let drawn = model.sprites.sheet(face.idle) != nil && model.sprites.sheet(face.pressed) != nil
+                    let face = ButtonFace.jump(hud.jumpButton, unlocked: hud.canDoubleJump)
+                    let drawn = face.all.allSatisfy { model.sprites.sheet($0) != nil }
                     HoldButton(onChange: jump, pressEffect: drawn ? .sprite : .fade) { pressed in
                         if drawn {
-                            JumpFace(sprite: pressed ? face.pressed : face.idle, animation: face.animation)
+                            ButtonFace(sprite: pressed ? face.pressed : face.idle, animation: face.animation)
                         } else {
                             ZStack {
                                 Circle().fill(.black.opacity(0.15))
@@ -235,23 +251,51 @@ private struct HoldButton<Label: View>: View {
     }
 }
 
-/// The cat-paw jump button sprite, at the whole-pixel scale nearest 88 pt.
-private struct JumpFace: View {
+/// An action button drawn as its sprite (the cat-paw jump, yarn and paw buttons, all 48×48), at the
+/// whole-pixel scale nearest 88 pt.
+private struct ButtonFace: View {
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
     let sprite: String
     let animation: String
 
-    /// Sprites for each state: a gold, sparkling paw only while a Double Pounce is there to use, so
-    /// the button is never gold before the ability is won.
-    static func sprite(for state: GameHUD.JumpButton, unlocked: Bool) -> (idle: String, pressed: String, animation: String) {
+    /// The sprites for one state of a button: at rest, while held, and its animation.
+    struct Faces {
+        let idle: String
+        let pressed: String
+        var animation = "still"
+        var all: [String] { [idle, pressed] }
+    }
+
+    /// The jump button: a gold, sparkling paw only while a Double Pounce is there to use, so it is
+    /// never gold before the ability is won.
+    static func jump(_ state: GameHUD.JumpButton, unlocked: Bool) -> Faces {
         switch state {
-        case .ready: ("button_jump", "button_jump_pressed", "still")
-        case .double: ("button_double", "button_double_pressed", "sparkle")
+        case .ready: Faces(idle: "button_jump", pressed: "button_jump_pressed")
+        case .double: Faces(idle: "button_double", pressed: "button_double_pressed", animation: "sparkle")
         case .spent:
-            unlocked ? ("button_double_disabled", "button_double_disabled", "still")
-                : ("button_jump_disabled", "button_jump_disabled", "still")
+            unlocked ? Faces(idle: "button_double_disabled", pressed: "button_double_disabled")
+                : Faces(idle: "button_jump_disabled", pressed: "button_jump_disabled")
         }
+    }
+
+    /// The yarn button, dimmed while the next throw is not ready.
+    static func yarn(ready: Bool) -> Faces {
+        ready ? Faces(idle: "button_yarn", pressed: "button_yarn_pressed")
+            : Faces(idle: "button_yarn_cooldown", pressed: "button_yarn_cooldown")
+    }
+
+    /// The paw button: Ghost Dash, dimmed while it cools down; once Super Pounce is won, the pounce
+    /// face while the paw charges and the sparkling one when the charge is full.
+    static func paw(dashReady: Bool, canPounce: Bool, charge: Double) -> Faces {
+        if canPounce, charge >= 1 {
+            return Faces(idle: "button_pounce_charged", pressed: "button_pounce_charged", animation: "sparkle")
+        }
+        if canPounce, charge > 0 {
+            return Faces(idle: "button_pounce", pressed: "button_pounce")
+        }
+        return dashReady ? Faces(idle: "button_dash", pressed: "button_dash_pressed")
+            : Faces(idle: "button_dash_cooldown", pressed: "button_dash_cooldown")
     }
 
     var body: some View {

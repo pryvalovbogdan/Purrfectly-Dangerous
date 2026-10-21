@@ -57,6 +57,16 @@ import Testing
         #expect(world.step(Input(pawPressed: true, pawHeld: true), dt: dt).contains(.dashed))
     }
 
+    @Test func canThrowFollowsTheYarnCooldown() {
+        #expect(!RunnerWorld(level: flatLevel(), boss: nil, stats: hero(1)).canThrow)
+        var world = RunnerWorld(level: flatLevel(), boss: nil, stats: hero(2))
+        #expect(world.canThrow)
+        #expect(world.step(Input(fireHeld: true), dt: dt).contains { if case .yarnThrown = $0 { true } else { false } })
+        #expect(!world.canThrow)
+        world.run(world.tuning.yarnCooldown + dt)
+        #expect(world.canThrow)
+    }
+
     @Test func ghostDashDoesNotPassTerrainOrRavines() {
         var world = RunnerWorld(level: flatLevel(items: [.init(at: 300, kind: .stump)]), boss: nil, stats: hero(4))
         advance(&world) { gap($0, .stump) < 18 }

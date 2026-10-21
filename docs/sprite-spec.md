@@ -51,8 +51,8 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | ravine_forest_surface | 16×8 | wave 4 (8 fps). Pool surface: crest on rows 0-2 over turquoise; tiles horizontally |
 | ravine_forest_pool | 16×24 | churn 4 (8 fps). Plunge pool under the surface: rising bubbles in turquoise fading to the deep colour on row 23; tiles horizontally |
 | ravine_forest_splash | 16×12 | splash 4 (10 fps). Thick foam band with spray, across the full pit; tiles horizontally |
-| ravine_forest_deep | 16×16 | still 1. Deep water with faint streaks; tiles both ways |
-| ravine_forest_deep_fade | 16×32 | still 1. Deep water (row 0 continues `ravine_forest_deep`) dithered down to near-black navy |
+| ravine_forest_deep | 16×16 | still 1. Deep water with faint streaks; tiles both ways. Not drawn by the waterfall pit any more; kept because the ravine-level test and the renderer's piece check ask for it |
+| ravine_forest_floor | 16×16 | still 1. Pit bottom under the pool: rows 0-4 are the deep colour with rounded wet stone tops rising into it, then grey earth cobbles whose undersides leave a ragged clear bottom edge; tiles horizontally |
 | ravine_forest_fill | 8×48 | still 1. Fallback only (still required for ravine levels and by the generic ravine code): back-wall colour to row 39, the pool from row 40 |
 | boss_squirrel | 112×132 | idle 4, throw 6, roll 6, climb 6 (leaps with the giant acorn), hurt 2, death 8 |
 | snowball | 16×16 | roll 4, death 4 |
@@ -93,6 +93,10 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | button_double | 48×48 | sparkle 6 @8fps. Amber-brown disc, gold ring, the same paw, five gold/white four-point sparkles twinkling in turn (grow, flash, fade); a white glint runs over the ring on frame 3 |
 | button_double_pressed | 48×48 | sparkle 6 @8fps. Magenta disc, gold ring with a pink glow outside, brighter white sparkles, the paw 1 px lower |
 | button_double_disabled | 48×48 | still 1. Slate disc, grey paw, three faint white sparkles |
+| button_yarn, button_yarn_pressed, button_yarn_cooldown | 48×48 | still 1 each. Yarn Shot button, same disc and ring as `button_jump`: royal-blue disc, pink-violet ring, a big purple-pink ball of yarn with a loose thread. Pressed: pink-violet glow outside the ring, the ball 1 px lower. Cooldown: slate disc, the icon in greys |
+| button_dash, button_dash_pressed, button_dash_cooldown | 48×48 | still 1 each. Ghost Dash: teal disc, cyan ring, a see-through ghost-cat head (the hero's red scarf) with motion lines. Pressed: cyan glow, icon 1 px lower. Cooldown: grey |
+| button_pounce | 48×48 | still 1. Super Pounce: orange disc, gold ring, a paw (the jump paw at 0.82 scale, moved right) with speed streaks |
+| button_pounce_charged | 48×48 | sparkle 6 @8fps. The same with a gold glow outside the ring, twinkling sparkles and a ring glint on frame 3 (charge full) |
 | paw_trail | 16×16 | burst 5 @12fps, not looping. Gold sparkles flying out and up with three motion streaks below, for the cat's feet on a double jump; the streaks reach the bottom row |
 | hud_panel | 24×24 | still 1. 9-slice HUD panel: dark outline, 2 px royal-blue border lit top-left, dark inner line, deep navy fill, rounded corners. Slice insets 6 on every side |
 | hud_level_tab | 64×32 | still 1. The "LV" panel: body from row 8 down, a raised tab on the top-left (x 0-37) with a 45° shoulder down to the body at x 46. Stretch horizontally only: left inset 50, right inset 7 (the full height is kept) |
@@ -156,15 +160,18 @@ Positions are node positions with anchor (0, 0); "top on y" means node y = y −
 2. `ravine_forest_falls` across [a, b), tops on `G`, `G` − 16, ... while the top is above `P` (the overshoot hides under the pool).
 3. `ravine_forest_falls_edge` at x = a and mirrored at [b − 4, b), in the same rows, over the curtain.
 4. `ravine_forest_lip` across [a, b), top on `G`.
-5. Water across [a, b): `ravine_forest_surface` top on `P`, `ravine_forest_pool` top on `P` − 8, `ravine_forest_deep` tops on
-   `P` − 32, `P` − 48, ..., and in tall pits `ravine_forest_deep_fade` as the bottom 32 units on screen.
+5. Water across [a, b): `ravine_forest_surface` top on `P`, `ravine_forest_pool` top on `P` − 8 (its last row is the deep colour).
 6. `ravine_forest_splash` across [a, b), top on `P` + 8 (it overlaps the curtain's foot and the surface crest).
-7. Walls at x0 and mirrored at [x1 − 8, x1): tops on `G` − 24, `G` − 40, ... to the screen bottom, alternating `ravine_forest`,
-   `ravine_forest_b`, `ravine_forest`, ... Every animated piece shows the same frame index at any moment.
-8. `ravine_forest_vines` at x0 + 5 and mirrored at [x1 − 11, x1 − 5), top on `G` − 14 (it hangs out from under the rim). More
+7. `ravine_forest_floor` across [a, b), top on `P` − 32. The pit ends there: below `P` − 48 nothing is drawn, and the ground strip's
+   earth (`ground_forest_earth`) shows, so the pit and its bottom must not hide or replace the earth below `P` − 48.
+8. Walls at x0 and mirrored at [x1 − 8, x1), in front of the floor: tops on `G` − 24, `G` − 40, ... until a tile's bottom reaches
+   `P` − 48, alternating `ravine_forest`, `ravine_forest_b`, `ravine_forest`, ... (the last may overshoot below the floor by up to 15).
+   Every animated piece shows the same frame index at any moment.
+9. `ravine_forest_vines` at x0 + 5 and mirrored at [x1 − 11, x1 − 5), top on `G` − 14 (it hangs out from under the rim). More
    strands may go lower on the walls of deep pits, but keep them above `P`.
-9. `ravine_forest_rim` at x0 and mirrored at [x1 − 12, x1), top on `G`.
-The rim, walls and edges are opaque, so they cover whatever is under the pit. Pits are at least 32 wide.
+10. `ravine_forest_rim` at x0 and mirrored at [x1 − 12, x1), top on `G`.
+With `P` = `G` − 40 the whole pit is 88 deep: 40 of falls, 32 of water, 16 of floor. The rim, walls and edges are opaque.
+Pits are at least 28 wide.
 
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 

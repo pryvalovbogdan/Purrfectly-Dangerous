@@ -78,6 +78,9 @@ final class GameScene: SKScene {
     /// Looping scenery tiles (waterfall curtains, pool surface, splashes). Their frame is picked from
     /// the world clock in `render()`, so every tile of a kind shows the same frame and none drift.
     private var clockAnimated: [(node: SKSpriteNode, owner: SKNode, frames: [SKTexture], fps: Double)] = []
+    /// Pool surface of the waterfall pits (nil for a plain pit): a kitten falling in sinks out of
+    /// sight there instead of dropping past the floor over the earth.
+    private var pitWaterY: CGFloat?
     /// Frames per second of that shared clock: the waterfall curtain's rate.
     private var clockRate = 10.0
     /// The hero went down a ravine: the drop is animated here, so `renderHero` leaves them alone.
@@ -189,6 +192,7 @@ final class GameScene: SKScene {
         groundCrops.removeAll()
         groundMaskRects.removeAll()
         clockAnimated.removeAll()
+        pitWaterY = nil
         let theme = world.level.background
         if library.textures("bg_\(theme)_sky", "still").isEmpty { backgroundColor = .darkGray }
         var layers: (fill: SKNode, strip: SKNode)?
@@ -437,11 +441,10 @@ final class GameScene: SKScene {
               let back = frames("\(name)_back", "still"), let falls = frames("\(name)_falls", "flow"),
               let fallsEdge = frames("\(name)_falls_edge", "flow"), let lip = frames("\(name)_lip", "flow"),
               let surface = frames("\(name)_surface", "wave"), let pool = frames("\(name)_pool", "churn"),
-              let splash = frames("\(name)_splash", "splash"), let deep = frames("\(name)_deep", "still")
+              let splash = frames("\(name)_splash", "splash"), let floorTile = frames("\(name)_floor", "still")
         else { return false }
         let wallB = frames("\(name)_b", "still") ?? wall
         let vines = frames("\(name)_vines", "still")
-        let fade = frames("\(name)_deep_fade", "still")
         let G = groundY
         // The pool sits 40 below the ground line, less where the line is low (landscape) so 18 of water
         // stays on screen. `layout(viewSize:)` rebuilds the scenery on rotation.
@@ -498,39 +501,32 @@ final class GameScene: SKScene {
             z = 4
             for x in across(a, b, surface.size) { add(surface, x: x, top: P) }
             for x in across(a, b, pool.size) { add(pool, x: x, top: P - 8) }
-            let floor: CGFloat
-            if let fade, P - 32 > fade.size.height {
-                floor = fade.size.height
-                for x in across(a, b, fade.size) { add(fade, x: x, top: floor) }
-            } else {
-                floor = 0
-            }
-            top = P - 32
-            while top > floor {
-                for x in across(a, b, deep.size) { add(deep, x: x, top: max(top, floor + deep.size.height)) }
-                top -= deep.size.height
-            }
             // 6. The foam band across [a, b), top on P + 8.
             z = 5
             for x in across(a, b, splash.size) { add(splash, x: x, top: P + 8) }
-            // 7. Walls at x0 and mirrored at [x1 - 8, x1), tops on G - 24, G - 40, … to the screen bottom, alternating.
+            // 7. The pit's floor, top on P - 32 (down to P - 48). Below it nothing is drawn, so the ground
+            // strip's earth shows there as everywhere else.
+            z = 5.5
+            for x in across(a, b, floorTile.size) { add(floorTile, x: x, top: P - 32) }
+            // 8. Walls at x0 and mirrored at [x1 - 8, x1), tops on G - 24, G - 40, … alternating, until a
+            // tile's bottom reaches P - 48 (the last may overshoot below the floor).
             z = 6
             top = G - 24
             var alternate = false
-            while top > 0 {
+            while top > P - 48 {
                 let piece = alternate ? wallB : wall
                 add(piece, x: 0, top: top)
                 add(piece, x: x1 - piece.size.width, top: top, mirrored: true)
                 alternate.toggle()
                 top -= wall.size.height
             }
-            // 8. Vines hanging from under the rims.
+            // 9. Vines hanging from under the rims.
             z = 7
             if let vines {
                 add(vines, x: 5, top: G - 14)
                 add(vines, x: x1 - 5 - vines.size.width, top: G - 14, mirrored: true)
             }
-            // 9. Rims on top, at x0 and mirrored at [x1 - 12, x1).
+            // 10. Rims on top, at x0 and mirrored at [x1 - 12, x1).
             z = 8
             add(rim, x: 0, top: G)
             add(rim, x: x1 - rim.size.width, top: G, mirrored: true)
@@ -538,6 +534,7 @@ final class GameScene: SKScene {
             scenery.addChild(node)
             groundNodes.append((ravine.at, ravine.width, node))
         }
+        pitWaterY = P
         return true
     }
 
@@ -837,9 +834,12 @@ final class GameScene: SKScene {
         let sky = SKSpriteNode(color: .white, size: CGSize(width: size.width, height: size.height - groundY))
         sky.anchorPoint = .zero
         sky.position.y = groundY
-        let pit = SKSpriteNode(color: .white, size: CGSize(width: CGFloat(ravine.width), height: groundY))
+        // The pit's opening: from the ground line down to the water of a waterfall pit, or to the
+        // bottom of the screen for a plain one.
+        let bottom = pitWaterY ?? 0
+        let pit = SKSpriteNode(color: .white, size: CGSize(width: CGFloat(ravine.width), height: groundY - bottom))
         pit.anchorPoint = .zero
-        pit.position.x = groundScreenX(ravine.at)
+        pit.position = CGPoint(x: groundScreenX(ravine.at), y: bottom)
         let mask = SKNode()
         mask.addChild(sky)
         mask.addChild(pit)
@@ -1297,6 +1297,7 @@ final class GameScene: SKScene {
             show(\.xpFraction, 1)
         }
         show(\.canFire, stats.has(.yarnShot))
+        show(\.fireReady, world.canThrow)
         show(\.canDash, stats.has(.ghostDash))
         show(\.canPounce, stats.has(.superPounce))
         show(\.dashReady, world.canDash)

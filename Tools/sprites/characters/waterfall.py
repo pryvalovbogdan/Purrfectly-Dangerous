@@ -323,21 +323,30 @@ def deep() -> Sprite:
     return single("ravine_forest_deep", c)
 
 
-def deep_fade() -> Sprite:
-    """16x32: deep water (row 0 continues `ravine_forest_deep`) darkening to near-black navy at the bottom."""
-    c = Canvas(16, 32)
-    steps = [(0, 8, P.WATER_DD, P.WATER_DD), (8, 12, P.WATER_DD, P.WATER_NIGHT), (12, 18, P.WATER_NIGHT, P.WATER_NIGHT),
-             (18, 22, P.WATER_NIGHT, P.WATER_ABYSS), (22, 32, P.WATER_ABYSS, P.WATER_ABYSS)]
-    for y0, y1, a, b in steps:
-        for y in range(y0, y1):
-            for x in range(16):
-                c.px(x, y, b if (x + y) % 2 else a)
-    for x0, y, n in ((2, 3, 4), (10, 6, 3)):
-        for d in range(n):
-            c.px(x0 + d, y, P.WATER_D)
-    return single("ravine_forest_deep_fade", c)
+def floor() -> Sprite:
+    """16x16 pit bottom under the pool, tiling horizontally. Rows 0-4 are the pool's deep colour, with the
+    rounded tops of big wet stones rising into it (a bumpy bed, not a flat line). Below them, smaller grey
+    cobbles like the earth's. The bottom contour is the rounded undersides of those cobbles, left clear
+    between them, so the floor sits on whatever earth row is below without a straight seam."""
+    c = Canvas(16, 16)
+    c.rect(0, 0, 15, 4, P.WATER_DD)                          # the last of the pool
+    c.rect(0, 5, 15, 11, P.EARTH_DD)                         # mortar behind the stones
+    for x0, x1, y0 in ((0, 6, 2), (7, 15, 3)):               # big wet stones, tops in the water
+        W.cobble(c, x0, y0, x1, 10, (P.STONE_L, P.STONE, P.STONE_D))
+        c.px(x0 + 2, y0, P.WATER_L)                          # a wet glint
+        c.px(x0 + 3, y0, P.BLUE_L)
+        c.px(x1 - 1, y0 + 2, P.STONE_D)
+    for x0, y in ((7, 1), (6, 2)):                           # silt between them
+        c.px(x0, y + 2, P.WATER_NIGHT)
+    for x0, x1, y1 in ((0, 4, 14), (5, 10, 15), (11, 15, 13)):  # earth-grey cobbles, ragged bottom
+        W.cobble(c, x0, 9, x1, y1, (P.STONE, P.STONE_D, P.STONE_DD))
+    c.px(7, 12, P.KIT_GREEN_D)                               # a speck of moss and one of gold, as in the earth
+    c.px(2, 11, P.GOLD_D)
+    c.px(4, 5, P.KIT_GREEN_D)                                # water weed on a stone
+    c.px(4, 4, P.KIT_GREEN)
+    return single("ravine_forest_floor", c)
 
 
 def build() -> list[Sprite]:
     return [wall_a(), wall_b(), rim(), vines(), back(), falls(), falls_edge(), lip(), surface(), pool(), splash(),
-            deep(), deep_fade()]
+            deep(), floor()]

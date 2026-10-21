@@ -58,7 +58,7 @@ SPEC = {
     "ravine_forest_pool": ((16, 24), {"churn": 4}),
     "ravine_forest_splash": ((16, 12), {"splash": 4}),
     "ravine_forest_deep": ((16, 16), {"still": 1}),
-    "ravine_forest_deep_fade": ((16, 32), {"still": 1}),
+    "ravine_forest_floor": ((16, 16), {"still": 1}),
     "ravine_forest_fill": ((8, 48), {"still": 1}),
     "boss_squirrel": ((112, 132), {"idle": 4, "throw": 6, "roll": 6, "climb": 6, "hurt": 2, "death": 8}),
     # World 2, frost
@@ -106,6 +106,10 @@ SPEC = {
     "button_double_pressed": ((48, 48), {"sparkle": 6}),
     "button_double_disabled": ((48, 48), {"still": 1}),
     "paw_trail": ((16, 16), {"burst": 5}),
+    **{name: ((48, 48), {"still": 1}) for name in (
+        "button_yarn", "button_yarn_pressed", "button_yarn_cooldown", "button_dash", "button_dash_pressed",
+        "button_dash_cooldown", "button_pounce")},
+    "button_pounce_charged": ((48, 48), {"sparkle": 6}),
     # HUD
     "hud_panel": ((24, 24), {"still": 1}),
     "hud_level_tab": ((64, 32), {"still": 1}),
