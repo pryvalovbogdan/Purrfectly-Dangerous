@@ -80,6 +80,25 @@ import Testing
         #expect(world.heroY == 40)
     }
 
+    /// A step a hop gets onto (level 1's 16-high ones) leaves tap and hold their difference; only a
+    /// taller one turns every jump in front of it into a full jump.
+    @Test func aTapBeforeALowStepIsStillAShortHop() {
+        #expect(Tuning().hopClearance > 16 && Tuning().hopClearance < 24)
+        var tapped = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 16)]), boss: nil)
+        advance(&tapped) { $0.distance >= 300 - 8 - 30 }
+        var held = tapped
+        let hop = tap(&tapped)
+        #expect(hop < Tuning().jumpApex - 8)
+        #expect(tapped.heroY == 16)                          // and it still gets onto the step
+        _ = held.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        var top = held.heroY
+        while !held.onGround, !held.isOver {
+            _ = held.step(Input(jumpHeld: true), dt: dt)
+            top = max(top, held.heroY)
+        }
+        #expect(top > hop + 12)
+    }
+
     /// Level 1's opening: a 16 step, then a bush. A jump pressed while dropping off the step is meant
     /// for the bush; it must not fire the moment the feet land, which would come down on the bush.
     @Test func aPressWhileDroppingOffAStepDoesNotFireOnLanding() {

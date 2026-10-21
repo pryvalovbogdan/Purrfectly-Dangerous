@@ -121,8 +121,8 @@ The creature roster follows the expanded concept, `docs/concept/Purrfectly_Dange
 | `mini_yeti` | mini yeti | slow bruiser with a wide swipe (a wide hitbox), 4 HP; can't be stomped. Needs kitten level 3 | Double Pounce over it, or 4 yarn |
 | `ice_ledge` | crumbling ice platform (platform) | crumbles 0.4 s after landing | keep moving |
 
-§9 of the expanded concept also lists creature rosters for worlds 3 and 4; those are future work and
-not in the game yet (the tables below are what the game builds).
+§9 of the expanded concept also lists a creature roster for world 4; that is future work and not in
+the game yet (the table for world 4 below is what the game builds).
 
 Wide ravines (needing Double Pounce) appear here. Boss `boss_icedragon` — **Glacipurr**,
 vulnerable only while recovering, 24 HP.
@@ -131,10 +131,20 @@ vulnerable only while recovering, 24 HP.
 3. Ices the floor (slick for the rest of the attack), then dives from above (high; stay down).
 
 ### 3 — haunted (speed 130, Hard)
+The creature roster follows the expanded concept §9 (World 3 — The Haunted Meowseum) and its sheet
+`docs/concept/Haunted Meowseum Enemy Sprite Showcase.png`. The concept's mini-boss, the Bone Mouse
+Captain, is future work (no mini-bosses yet).
+
 | Id | Role | Behaviour | Beat it by |
 | --- | --- | --- | --- |
-| `ghost_cat` | ghost cat | drifts toward the kitten, blinking in and out on a fixed cycle; only hurts while visible; yarn passes through | time it, or Ghost Dash |
-| `bat` | swooping bat | flies at head height, swoops as it nears | stay down or jump late; yarn |
+| `ghost_cat` | ghost cat | drifts toward the kitten, blinking in and out on a fixed cycle; only hurts while visible; yarn passes through. While visible it throws a spirit ball every ~2.4 s, straight at head height (26), just over a standing kitten | time it, or Ghost Dash; stay down for the spirit balls |
+| `bat` | bat cat | flies at head height, swoops as it nears (unchanged; restyled) | stay down or jump late; yarn |
+| `haunted_portrait` | haunted portrait | a flying frame hovering just over a standing kitten (32), drifting in, firing low magic shots; 2 HP | jump the shots; 2 yarn from a hop |
+| `cursed_armor` | cursed armor cat | a harmless knight statue (yarn bounces off) until the kitten is within ~140; it flashes 0.5 s, wakes and walks in; awake, touching it hurts (no stomp), 3 HP. Needs kitten level 3 | Double Pounce over it, or 3 yarn once awake |
+| `candle_cat` | candle cat | slow walker sending fire orbs along the ground; the flame on its head burns a stomper | jump the orbs and it; yarn |
+| `poltergeist_book` | poltergeist book | floats high (48), drifting in, lobbing magic bolts that land ahead of the kitten and fizzle out | don't jump into a falling bolt; yarn from a full jump |
+| `gargoyle_cat` | gargoyle cat | perched stone, harmless (yarn bounces off) until the kitten is ~240 away; it flashes 0.5 s, leaps ~70 toward the kitten, lands ahead of it and walks in. In the air and after, touching it hurts; landing on it is a safe bounce, 2 HP | jump or bounce over it; 2 yarn once down |
+| `shadow_cat` | shadow cat | unseen and intangible until the kitten is within ~180; then it appears 80 ahead of the kitten, flashes 0.4 s (keeping that distance) and dashes in fast | jump it as it dashes (a stomp kills), or yarn it once it is visible |
 | `skeleton_mouse` | skeleton mouse | stands and throws bones low | jump the bones; stomp (kills) or 2 yarn |
 | `skull` | floating skull | projectile flying straight at head height | stay down, or Ghost Dash |
 | `bell` | cursed bell | hangs; every ~2 s rings a low sound wave along the ground | jump the waves |

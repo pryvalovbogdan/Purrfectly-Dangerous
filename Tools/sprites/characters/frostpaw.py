@@ -107,8 +107,12 @@ def aurora(c: Canvas, base: float, swing: float, height: float, strength: float,
 
 
 def moon(c: Canvas, x: float, y: float, rad: float) -> None:
-    for r, a in ((rad + 9, 26), (rad + 5, 46), (rad + 2, 80)):     # glow
-        c.ellipse(x, y, r, r, (P.MOON_D[0], P.MOON_D[1], P.MOON_D[2], a))
+    halo = Canvas(*c.size)                                         # glow, blended over the aurora
+    for r, a in ((rad + 9, 26), (rad + 5, 46), (rad + 2, 80)):
+        layer = Canvas(*c.size)
+        layer.ellipse(x, y, r, r, (P.MOON_D[0], P.MOON_D[1], P.MOON_D[2], a))
+        halo.paste(layer)
+    c.paste(halo)
     c.ellipse(x, y, rad, rad, P.MOON)
     c.ellipse(x + 2, y + 2, rad - 1, rad - 1, P.MOON_S)
     c.ellipse(x - 1, y - 1, rad - 2, rad - 2, P.MOON)
@@ -123,11 +127,13 @@ def night_clouds() -> Canvas:
     stars(c, 301, 70, 120)
     aurora(c, 6, 6, 52, 0.85, 0)
     moon(c, 252, 34, 13)
-    for x, y, w in ((214, 46, 30), (266, 52, 24), (40, 96, 50), (150, 104, 40)):   # thin clouds across the light
+    wisps = Canvas(*c.size)                                   # thin clouds across the light, blended
+    for x, y, w in ((214, 46, 30), (266, 52, 24), (40, 96, 50), (150, 104, 40)):
         for k in range(w):
-            c.px(x + k, y + math.sin(k / 5) * 0.8, (P.SNOW_DD[0], P.SNOW_DD[1], P.SNOW_DD[2], 90))
+            wisps.px(x + k, y + math.sin(k / 5) * 0.8, P.SNOW_DD)
             if 3 < k < w - 3:
-                c.px(x + k, y + 1, (P.FR_NIGHT_HAZE[0], P.FR_NIGHT_HAZE[1], P.FR_NIGHT_HAZE[2], 110))
+                wisps.px(x + k, y + 1, P.FR_NIGHT_HAZE)
+    c.paste(see_through(wisps.img, 100))
     return c
 
 
@@ -178,11 +184,13 @@ def frost_far() -> Canvas:
     W.mountains(c, h, 31, 5, (78, 112), (P.FR_MTN, P.FR_MTN_D, P.FR_MTN_DD), tips=P.SNOW)
     W.mountains(c, h, 32, 7, (44, 74), (P.FR_MTN_D, P.FR_MTN_DD, P.FR_ROCK_D), tips=P.SNOW_D)
     rnd = noise(33)
-    for _ in range(26):                                      # snow streaks down the lit faces
+    streaks = Canvas(LAYER_W, h)                             # snow streaks down the faces, blended over them
+    for _ in range(26):
         x, y = rnd() * LAYER_W, h - 40 - rnd() * 60
         for k in range(3 + int(rnd() * 4)):
-            c.px(x - k * 0.6, y + k, (P.SNOW[0], P.SNOW[1], P.SNOW[2], 150)) if c.img.getpixel(
-                (int(x - k * 0.6) % LAYER_W, int(y + k))) [3] else None
+            if c.img.getpixel((int(x - k * 0.6) % LAYER_W, int(y + k)))[3]:
+                streaks.px(x - k * 0.6, y + k, P.SNOW)
+    c.paste(see_through(streaks.img, 150))
     ice_castle(c, 196, h - 8)
     for k in range(26):                                      # a band of tiny distant pines along the foot
         px = k * LAYER_W / 26 + (k * 7) % 5
@@ -214,7 +222,6 @@ def snowy_pine(c: Canvas, x: float, base: float, h: float, spread: float) -> Non
 
 def hut(c: Canvas, x: float, base: float) -> None:
     """A small wooden hut with a snowy roof, lit windows and a lantern by the door (about 32x28)."""
-    c.ellipse(x - 6, base - 9, 9, 7, (P.LAMP[0], P.LAMP[1], P.LAMP[2], 40))     # warm glow
     c.rect(x - 13, base - 15, x + 13, base, P.PLANK_D)
     for k, yy in enumerate(range(int(base - 15), int(base), 3)):
         c.rect(x - 13, yy, x + 13, yy + 1, P.PLANK if k % 2 else P.BARK)
@@ -272,6 +279,9 @@ def frost_near() -> Canvas:
         W.piece(c, lambda layer, px, th=th, spread=spread, base=base: snowy_pine(layer, px, base, th, spread), x,
                 outline=P.FR_PINE_DD)
     W.piece(c, lambda layer, px: hut(layer, px, h - 3), 156, outline=P.FR_ROCK_DD)
+    warm = Canvas(LAYER_W, h)                                # the hut's window light, blended over it
+    warm.ellipse(150, h - 12, 9, 7, (P.LAMP[0], P.LAMP[1], P.LAMP[2], 40))
+    c.paste(warm)
     c.rect(0, h - 4, LAYER_W - 1, h - 1, P.SNOW)                  # the snowy floor of the wood
     c.rect(0, h - 4, LAYER_W - 1, h - 4, P.SNOW_L)
     return W.haze(c, P.FR_NIGHT_L, 0.14)

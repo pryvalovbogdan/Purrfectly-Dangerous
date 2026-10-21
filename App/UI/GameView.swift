@@ -88,6 +88,17 @@ private struct HUDView: View {
 
     var body: some View {
         ZStack {
+            #if DEBUG
+            if model.jumpTest {
+                // For the jump-height UI test: "<jumps landed> <last apex>", barely visible.
+                Text("\(hud.debugJumpCount) \(String(format: "%.1f", hud.debugJumpApex))")
+                    .font(.system(size: 8))
+                    .opacity(0.02)
+                    .accessibilityIdentifier("jumpApex")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .allowsHitTesting(false)
+            }
+            #endif
             VStack(spacing: 6) {
                 HStack(alignment: .bottom, spacing: 12) {
                     // The lives panel (cat head, hearts, fish) and the LV panel with the XP bar.
@@ -198,6 +209,7 @@ private struct HUDView: View {
                         }
                     }
                     .accessibilityLabel("Jump")
+                    .accessibilityIdentifier("jumpButton")
                 }
                 // On its side the safe area already keeps the buttons clear of the notch, so they can
                 // reach a little past it towards the edges.

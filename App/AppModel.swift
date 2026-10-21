@@ -94,7 +94,7 @@ final class AppModel {
     func playableLevel(_ index: Int) -> LevelDefinition {
         var level = levels[index]
         #if DEBUG
-        if jumpTest {
+        if jumpTest, !ProcessInfo.processInfo.arguments.contains("-uitest-keep-level") {
             level.items = []
             level.ravines = nil
             level.slick = nil

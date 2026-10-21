@@ -104,14 +104,44 @@ SPEC = {
     "terrain_frost_fill": ((16, 16), {"still": 1}),
     "boss_icedragon": ((190, 134), {"idle": 6, "shards": 6, "breath": 8, "dive": 6, "hurt": 2, "death": 8}),
     # World 3, haunted
-    "ghost_cat": ((38, 26), {"float": 4, "fade": 4}),
-    "bat": ((22, 16), {"fly": 4, "death": 3}),
+    "ghost_cat": ((38, 32), {"float": 4, "fade": 4, "attack": 3, "hit": 2}),
+    "bat": ((40, 28), {"fly": 4, "attack": 3, "hit": 2, "death": 3}),
+    # The Haunted Meowseum critters (characters/haunted_critters.py, with ghost_cat and bat above)
+    "spirit_ball": ((10, 10), {"fly": 4}),
+    "haunted_portrait": ((36, 36), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
+    "magic_shot": ((12, 8), {"fly": 2}),
+    "cursed_armor": ((56, 50), {"statue": 1, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "candle_cat": ((28, 36), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
+    "fire_orb": ((10, 10), {"fly": 4}),
+    "poltergeist_book": ((36, 28), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
+    "magic_bolt": ((10, 10), {"fly": 2}),
+    "gargoyle_cat": ((46, 46), {"idle": 1, "prepare": 2, "leap": 3, "walk": 4, "hit": 2, "death": 4}),
+    "shadow_cat": ((56, 34), {"idle": 2, "teleport": 4, "attack": 4, "hit": 2, "death": 4}),
     "skeleton_mouse": ((24, 28), {"idle": 2, "throw": 4, "death": 4}),
     "bone": ((10, 10), {"fly": 4}),
     "skull": ((20, 14), {"fly": 4, "death": 3}),
     "bell": ((24, 30), {"idle": 2, "ring": 4}),
     "tombstone": ((20, 26), {"still": 1}),
     "vanish": ((48, 10), {"solid": 1, "fading": 4}),
+    # The haunted world's fog pit and terrain (characters/meowseum.py), the forest contracts
+    "ravine_haunted": ((8, 16), {"still": 1}),
+    "ravine_haunted_b": ((8, 16), {"still": 1}),
+    "ravine_haunted_rim": ((12, 24), {"still": 1}),
+    "ravine_haunted_vines": ((6, 24), {"still": 1}),
+    "ravine_haunted_back": ((16, 16), {"still": 1}),
+    "ravine_haunted_falls": ((16, 16), {"flow": 4}),
+    "ravine_haunted_falls_edge": ((4, 16), {"flow": 4}),
+    "ravine_haunted_lip": ((16, 6), {"flow": 4}),
+    "ravine_haunted_surface": ((16, 8), {"wave": 4}),
+    "ravine_haunted_pool": ((16, 24), {"churn": 4}),
+    "ravine_haunted_splash": ((16, 12), {"splash": 4}),
+    "ravine_haunted_floor": ((16, 16), {"still": 1}),
+    "ravine_haunted_fill": ((8, 48), {"still": 1}),
+    "ravine_haunted_deep": ((16, 16), {"still": 1}),
+    "terrain_haunted_top": ((16, 16), {"still": 1}),
+    "terrain_haunted_edge": ((8, 16), {"still": 1}),
+    "terrain_haunted_wall": ((8, 16), {"still": 1}),
+    "terrain_haunted_fill": ((16, 16), {"still": 1}),
     "boss_phantom": ((84, 126), {"idle": 4, "summon": 6, "teleport": 6, "split": 4, "hurt": 2, "death": 8}),
     # World 4, citadel
     "vent": ((22, 68), {"idle": 1, "warn": 2, "fire": 4}),
@@ -203,7 +233,9 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                                   "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
                                   "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat",
                                   "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
-                                  "ice_hedgehog", "snowman", "icicle_plant", "mini_yeti"])
+                                  "ice_hedgehog", "snowman", "icicle_plant", "mini_yeti",
+                                  "bat", "haunted_portrait", "cursed_armor", "candle_cat", "poltergeist_book",
+                                  "gargoyle_cat", "shadow_cat"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():

@@ -13,6 +13,8 @@ public enum ItemKind: String, Codable, Sendable, CaseIterable {
     case iciclePlant = "icicle_plant", miniYeti = "mini_yeti"
     // World 3 — haunted
     case ghostCat = "ghost_cat", bat, skeletonMouse = "skeleton_mouse", skull, bell, tombstone
+    case hauntedPortrait = "haunted_portrait", cursedArmor = "cursed_armor", candleCat = "candle_cat"
+    case poltergeistBook = "poltergeist_book", gargoyleCat = "gargoyle_cat", shadowCat = "shadow_cat"
     // World 4 — citadel
     case vent, piston, cannon, debris, mechMouse = "mech_mouse", gear, crateWall = "crate_wall"
     // Pickups
@@ -41,6 +43,34 @@ public struct ThrowSpec: Sendable, Equatable {
     public var warning = 0.0
     /// Fires once each time its trap cycle opens (turns active), instead of on `interval`.
     public var onCycleOpen = false
+    /// A lobbed shot that fizzles out where it lands instead of rolling on.
+    public var fades = false
+}
+
+/// Lies dormant (a statue, a perched gargoyle, an unseen shadow) until the hero comes within
+/// `trigger`, warns for `warning` seconds, then wakes: walks at the item's `velocity`, after a leap
+/// or a teleport if it has one. Dormant it is harmless and does not move; yarn bounces off its stone,
+/// or passes straight through if it is unseen (a teleporter).
+public struct WakeSpec: Sendable, Equatable {
+    public var trigger: Double
+    public var warning: Double
+}
+
+/// On waking, a jump in a parabola toward the hero, landing `distance` from where it stood, with its
+/// feet `height` above the take-off at the top (under `Tuning.gravity`). It walks on from the landing.
+public struct LeapSpec: Sendable, Equatable {
+    public var distance: Double
+    public var height: Double
+
+    public func launchSpeed(gravity: Double) -> Double { (2 * gravity * height).squareRoot() }
+    public func duration(gravity: Double) -> Double { 2 * launchSpeed(gravity: gravity) / gravity }
+    public func forwardSpeed(gravity: Double) -> Double { distance / duration(gravity: gravity) }
+}
+
+/// Unseen while dormant; on waking it appears `ahead` of the hero and keeps that place while it
+/// flashes its warning, then walks (dashes) in.
+public struct TeleportSpec: Sendable, Equatable {
+    public var ahead: Double
 }
 
 /// A fixed on/off rhythm read from the world clock, so every copy of the world agrees on it.
@@ -127,6 +157,9 @@ public struct ItemSpec: Sendable {
     public var cycleRole: CycleRole = .trap
     public var fall: FallSpec?
     public var flight: FlightSpec?
+    public var wake: WakeSpec?
+    public var leap: LeapSpec?
+    public var teleport: TeleportSpec?
 }
 
 extension ItemKind {
@@ -235,8 +268,11 @@ extension ItemKind {
                                  minHeroLevel: 3)
         // MARK: haunted
         // Drifts in overhead and down to the ground; it only exists while visible, and yarn passes through.
+        // While visible it also throws a spirit ball at head height, just over a standing kitten.
         case .ghostCat:
             ItemSpec(width: 14, height: 14, baseY: 44, velocity: -20,
+                     throwing: ThrowSpec(projectile: "spirit_ball", interval: 2.4, range: 300, speed: 100, y: 26,
+                                         width: 8, height: 8),
                      cycle: CycleSpec(period: 2.0, activeFor: 1.2, warning: 0.3), cycleRole: .phase,
                      flight: FlightSpec(high: 44, low: 2, diveStart: 150, diveEnd: 80))
         case .bat:
@@ -253,6 +289,35 @@ extension ItemKind {
                      throwing: ThrowSpec(projectile: "soundwave", interval: 2.0, range: 300, speed: 80, y: 0,
                                          width: 8, height: 8))
         case .tombstone: ItemSpec(width: 14, height: 24, solid: true)
+        // A flying frame: hovers over a standing kitten's head, drifting in, firing low magic shots.
+        case .hauntedPortrait:
+            ItemSpec(width: 18, height: 20, baseY: 32, hp: 2, xp: 25, velocity: -12, yarnable: true,
+                     throwing: ThrowSpec(projectile: "magic_shot", interval: 2.2, range: 300, speed: 110, y: 4,
+                                         width: 10, height: 6))
+        // A knight statue: harmless stone until the kitten is close, then it wakes and walks in.
+        case .cursedArmor:
+            ItemSpec(width: 20, height: 28, hp: 3, xp: 45, velocity: -12, yarnable: true, minHeroLevel: 3,
+                     wake: WakeSpec(trigger: 140, warning: 0.5))
+        // The flame on its head burns a stomper; it sends fire orbs along the ground.
+        case .candleCat:
+            ItemSpec(width: 14, height: 16, xp: 15, velocity: -15, yarnable: true,
+                     throwing: ThrowSpec(projectile: "fire_orb", interval: 2.5, range: 300, speed: 80, y: 2,
+                                         width: 8, height: 8))
+        // Floats high, lobbing magic bolts that land ahead of the kitten and fizzle out.
+        case .poltergeistBook:
+            ItemSpec(width: 16, height: 14, baseY: 48, xp: 20, velocity: -8, yarnable: true,
+                     throwing: ThrowSpec(projectile: "magic_bolt", interval: 2.4, range: 220, speed: 70, y: nil,
+                                         width: 8, height: 8, arc: true, fades: true))
+        // Perched stone until the kitten nears, then it leaps down in front of it and walks in.
+        // A landing on it is a safe bounce. The trigger is far enough out that, at world 3's speed,
+        // the leap comes down ahead of the kitten rather than over its head.
+        case .gargoyleCat:
+            ItemSpec(width: 20, height: 24, hp: 2, xp: 35, velocity: -25, stompable: true, yarnable: true,
+                     wake: WakeSpec(trigger: 240, warning: 0.5), leap: LeapSpec(distance: 70, height: 28))
+        // Unseen until close, then it appears ahead of the kitten, flashes and dashes in.
+        case .shadowCat:
+            ItemSpec(width: 16, height: 20, xp: 30, velocity: -120, stompable: true, stompKills: true,
+                     yarnable: true, wake: WakeSpec(trigger: 180, warning: 0.4), teleport: TeleportSpec(ahead: 80))
         // MARK: citadel
         // Traps: the hitbox is the flame column / the slammed piston, and is harmless while inactive.
         case .vent: ItemSpec(width: 12, height: 60, cycle: CycleSpec(period: 2.4, activeFor: 0.8, warning: 0.5))

@@ -309,26 +309,6 @@ def forest_earth(c: Canvas) -> None:
     forest_stones(c, 0, 4, 6)  # continues the ground tile's rows 1, 2, 3
 
 
-def haunted_ground(c: Canvas) -> None:
-    c.rect(0, 0, 31, 47, P.INDIGO)
-    for y in range(8, 48, 8):                                # crypt stones
-        c.line((0, y), (31, y), P.NIGHT)
-        off = 0 if (y // 8) % 2 else 8
-        for x in range(off, 32, 16):
-            c.line((x, y), (x, y + 7), P.NIGHT)
-            c.px(x + 1, y + 1, P.PURPLE_D)
-    rnd = noise(9)
-    for _ in range(10):
-        x, y = int(rnd() * 30), 10 + int(rnd() * 36)
-        c.px(x, y, P.PURPLE_D)
-    c.rect(0, 0, 31, 4, P.PURPLE)
-    c.rect(0, 0, 31, 0, P.VIOLET)
-    for x in range(0, 32, 4):                                # moss over the edge
-        c.rect(x + 1, 5, x + 2, 5 + (x * 3 % 3), P.PURPLE_D)
-    c.px(9, 2, P.SPIRIT)
-    c.px(26, 1, P.LILAC_D)
-
-
 def citadel_ground(c: Canvas) -> None:
     c.rect(0, 0, 31, 47, P.IRON_D)
     for y in range(8, 48, 8):                                # basalt bricks
@@ -521,39 +501,6 @@ def forest() -> list[Sprite]:
         *ground("forest", forest_ground, forest_earth),
         flat("ground_forest_fill", P.EARTH_DD),
         *forest_ravine(),
-    ]
-
-
-def haunted() -> list[Sprite]:
-    far_layer = Canvas(LAYER_W, 140)
-    hills(far_layer, 140, 8, 4, (40, 70), P.INDIGO)
-    castle(far_layer, 170, 140, 1.4, P.NIGHT, P.INDIGO, P.GOLD, P.NIGHT)
-    castle(far_layer, 50, 140, 0.7, P.NIGHT, None, P.GOLD_D, P.NIGHT)
-
-    near_layer = Canvas(LAYER_W, 120)
-    dead_trees(near_layer, 120, 9, 5, P.NIGHT)
-
-    def graves(c, rnd):
-        for k in range(7):
-            x = 15 + k * 46 + rnd() * 10
-            c.poly([(x - 3, 22), (x - 3, 14), (x, 11), (x + 3, 14), (x + 3, 22)], P.PURPLE_D)
-            c.px(x - 1, 14, P.PURPLE)
-        for k in range(12):                                  # glowing toadstools
-            x = rnd() * LAYER_W
-            c.px(x, 18 + rnd() * 3, P.SPIRIT)
-
-    return [
-        *sky("haunted", [P.NIGHT, P.NIGHT, P.INDIGO, P.PURPLE_D]),
-        puffs("haunted", 27, P.PURPLE_D, P.INDIGO, moon=(P.LILAC, P.LILAC_D)),
-        clouds("haunted", 150, 26, P.PURPLE_D, P.INDIGO),
-        single("bg_haunted_far", far_layer),
-        single("bg_haunted_near", near_layer),
-        bushes("haunted", 22, 28, P.INDIGO, P.PURPLE_D, graves),
-        *ground("haunted", haunted_ground),
-        flat("ground_haunted_fill", P.INDIGO),
-        ravine("haunted", P.PURPLE, P.VIOLET, P.INDIGO, P.NIGHT, 15),
-        ravine_fill("haunted", P.NIGHT, P.BLACK),
-        flat("ravine_haunted_deep", P.BLACK),
     ]
 
 
@@ -776,4 +723,4 @@ def menu() -> list[Sprite]:
 
 
 def build() -> list[Sprite]:
-    return [*forest(), *haunted(), *citadel(), *menu()]   # the frost world is in characters/frostpaw.py
+    return [*forest(), *citadel(), *menu()]   # frost: characters/frostpaw.py; haunted: characters/meowseum.py

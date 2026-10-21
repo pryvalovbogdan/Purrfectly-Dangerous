@@ -83,15 +83,25 @@
   }
  },
  "bat": {
-  "width": 22,
-  "height": 16,
-  "anchorX": 0.4773,
-  "anchorY": 0.125,
+  "width": 40,
+  "height": 28,
+  "anchorX": 0.4875,
+  "anchorY": 0.1786,
   "animations": {
    "fly": {
     "frames": 4,
     "fps": 12,
     "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
    },
    "death": {
     "frames": 3,
@@ -1023,6 +1033,39 @@
    }
   }
  },
+ "candle_cat": {
+  "width": 28,
+  "height": 36,
+  "anchorX": 0.5179,
+  "anchorY": 0.0556,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "cannon": {
   "width": 30,
   "height": 20,
@@ -1142,6 +1185,39 @@
    }
   }
  },
+ "cursed_armor": {
+  "width": 56,
+  "height": 50,
+  "anchorX": 0.5982,
+  "anchorY": 0.04,
+  "animations": {
+   "statue": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "debris": {
   "width": 18,
   "height": 22,
@@ -1162,6 +1238,19 @@
     "frames": 4,
     "fps": 14,
     "loop": false
+   }
+  }
+ },
+ "fire_orb": {
+  "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
    }
   }
  },
@@ -1196,6 +1285,44 @@
    }
   }
  },
+ "gargoyle_cat": {
+  "width": 46,
+  "height": 46,
+  "anchorX": 0.5326,
+  "anchorY": 0.0435,
+  "animations": {
+   "idle": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "prepare": {
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+   },
+   "leap": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "gear": {
   "width": 30,
   "height": 30,
@@ -1211,9 +1338,9 @@
  },
  "ghost_cat": {
   "width": 38,
-  "height": 26,
+  "height": 32,
   "anchorX": 0.4868,
-  "anchorY": 0.1154,
+  "anchorY": 0.1875,
   "animations": {
    "float": {
     "frames": 4,
@@ -1222,6 +1349,16 @@
    },
    "fade": {
     "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
     "fps": 10,
     "loop": false
    }
@@ -1380,6 +1517,39 @@
     "frames": 1,
     "fps": 1,
     "loop": true
+   }
+  }
+ },
+ "haunted_portrait": {
+  "width": 36,
+  "height": 36,
+  "anchorX": 0.5417,
+  "anchorY": 0.0833,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
    }
   }
  },
@@ -2160,6 +2330,32 @@
    }
   }
  },
+ "magic_bolt": {
+  "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "magic_shot": {
+  "width": 12,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "mech_mouse": {
   "width": 32,
   "height": 20,
@@ -2440,6 +2636,39 @@
    },
    "bite": {
     "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
+ "poltergeist_book": {
+  "width": 36,
+  "height": 28,
+  "anchorX": 0.5417,
+  "anchorY": 0.1071,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
     "fps": 10,
     "loop": false
    },
@@ -2855,7 +3084,33 @@
  },
  "ravine_haunted": {
   "width": 8,
-  "height": 48,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_b": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_back": {
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2867,14 +3122,40 @@
   }
  },
  "ravine_haunted_deep": {
-  "width": 8,
-  "height": 8,
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
    "still": {
     "frames": 1,
     "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_falls": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_falls_edge": {
+  "width": 4,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
     "loop": true
    }
   }
@@ -2889,6 +3170,130 @@
     "frames": 1,
     "fps": 1,
     "loop": true
+   }
+  }
+ },
+ "ravine_haunted_floor": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_lip": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_pool": {
+  "width": 16,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "churn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_rim": {
+  "width": 12,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_splash": {
+  "width": 16,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "splash": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_surface": {
+  "width": 16,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "wave": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_haunted_vines": {
+  "width": 6,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "shadow_cat": {
+  "width": 56,
+  "height": 34,
+  "anchorX": 0.5268,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "teleport": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
    }
   }
  },
@@ -3223,6 +3628,19 @@
    }
   }
  },
+ "spirit_ball": {
+  "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "spore": {
   "width": 10,
   "height": 10,
@@ -3421,6 +3839,58 @@
   }
  },
  "terrain_frost_wall": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_haunted_edge": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_haunted_fill": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_haunted_top": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_haunted_wall": {
   "width": 8,
   "height": 16,
   "anchorX": 0.5,

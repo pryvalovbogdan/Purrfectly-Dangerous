@@ -13,4 +13,14 @@ run "app builds for the simulator" \
   bash -c 'xcodegen generate >/dev/null && xcodebuild -project PurrfectlyDangerous.xcodeproj -scheme PurrfectlyDangerous -configuration Debug \
     -destination "generic/platform=iOS Simulator" -derivedDataPath .build/xcode build 2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)"; \
     [ "${PIPESTATUS[0]}" = 0 ]'
+# Touch-level regression tests (UITests/) in a simulator; slow (a few minutes), so opt-in:
+#   UITESTS=1 Tools/check.sh            (UITEST_DEVICE="iPhone 17" by default)
+# Afterwards stop the simulator: xcrun simctl shutdown all
+if [ "${UITESTS:-0}" = 1 ]; then
+  run "UI tests: a held jump goes higher than a tap (simulator)" \
+    bash -c 'xcodebuild test -project PurrfectlyDangerous.xcodeproj -scheme PurrfectlyDangerous \
+      -destination "platform=iOS Simulator,name=${UITEST_DEVICE:-iPhone 17}" -derivedDataPath .build/xcode-uitest \
+      -only-testing:PurrfectlyDangerousUITests 2>&1 | grep -E "JUMP-UITEST|error:|TEST (SUCCEEDED|FAILED)"; \
+      [ "${PIPESTATUS[0]}" = 0 ]'
+fi
 exit $FAILED

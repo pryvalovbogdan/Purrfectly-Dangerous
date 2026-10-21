@@ -76,14 +76,24 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | icicle_bolt | 14×7 | fly 2. Horizontal ice bolt about 12×5, point first, with a frost trail |
 | mini_yeti | 60×46 | idle 2, walk 4, attack 4 (arm back, wind up, swipe with a big ice arc, recover), hit 2, death 4. Hunched shaggy white yeti, dark face, golden eyes, ice-rimed fists knuckles-down; feet on row 43, x 22; 30×34 hitbox |
 | boss_icedragon | 190×134 | idle 6, shards 6, breath 8, dive 6, hurt 2, death 8 |
-| ghost_cat | 38×26 | float 4, fade 4 (blinking out) |
-| bat | 22×16 | fly 4, death 3 |
+| ghost_cat | 38×32 | float 4, fade 4 (blinking out, thinner each frame), attack 3 (glare, paw out with a spirit ball forming, thrust), hit 2. See-through white ghost cat with a misty tail, bright magenta outline and a soft violet aura; body bottom on row 25, x 19 (the mist hangs a few rows below); 14×14 hitbox |
+| bat | 40×28 | fly 4, attack 3 (wings up, swept-back dive with a magenta slash, pull up), hit 2, death 3. The Bat Cat: navy cat-faced bat with pink wings and gold eyes; feet on row 22, x 20; 14×10 hitbox |
+| spirit_ball | 10×10 | fly 4. Glowing magenta orb with a dark eye, about 8×8 |
+| haunted_portrait | 36×36 | idle 2, move 4 (tilting ±9°), attack 3 (glare with a violet glow, shot leaves the mouth, settle), hit 2, death 4 (breaks apart). Orange-gold frame round a black cat face with glowing pink eyes; frame bottom on row 32, x 16; 18×20 hitbox |
+| magic_shot | 12×8 | fly 2. Magenta comet about 10×6, head first |
+| cursed_armor | 56×50 | statue 1 (grey, dormant, on its plinth), walk 4, attack 4 (halberd raised twice, swung with a glowing magenta crescent, recover), hit 2, death 4 (crumbles). Armoured knight cat with a cat-eared helm and glowing visor; feet on row 47, x 22; 20×28 hitbox |
+| candle_cat | 28×36 | idle 2, move 4, attack 3 (crouch, paw throws a fire orb, recover), hit 2, death 4 (melts into a violet puddle). White wax cat with a magenta flame on its head; base on row 33, x 13; 14×16 hitbox |
+| fire_orb | 10×10 | fly 4. Magenta fireball about 8×8 with flickering licks behind |
+| poltergeist_book | 36×28 | idle 2 (shut, bobbing), move 4 (covers flapping open and shut), attack 3 (open with glowing pages, bolt flies out, close), hit 2, death 4 (bursts in a magenta flare, pages flutter away). Purple book with gold corners and a cat crest; bottom on row 24, x 16; 16×14 hitbox |
+| magic_bolt | 10×10 | fly 2. Magenta bolt about 8×8 with a short tail |
+| gargoyle_cat | 46×46 | idle 1 (asleep on its pedestal), prepare 2 (crouched, wings lifting, eyes glowing), leap 3 (wings spread mid-air with a magenta trail), walk 4 (on all fours, wings folded), hit 2, death 4 (crumbles). Stone cat with bat wings; feet (or the pedestal) on row 43, x 21; 20×24 hitbox |
+| shadow_cat | 56×34 | idle 2, teleport 4 (smoke and eyes, streaking in, formed), attack 4 (crouch, dash with streaks, slash with a magenta crescent, recover), hit 2, death 4 (dissolves into smoke). Black cat edged in violet with glowing violet eyes and smoke at its feet; feet on row 31, x 26; 16×20 hitbox |
 | skeleton_mouse | 24×28 | idle 2, throw 4, death 4 |
 | bone | 10×10 | fly 4 |
 | skull | 20×14 | fly 4, death 3 |
 | bell | 24×30 | idle 2, ring 4 |
-| tombstone | 20×26 | still 1 |
-| vanish | 48×10 | solid 1, fading 4 |
+| tombstone | 20×26 | still 1. Gothic violet gravestone with cat ears, a glowing magenta cat crest and a candle stub (feet on row 25) |
+| vanish | 48×10 | solid 1, fading 4. Floating stone slab, lit top row = walk surface, candles in niches in its face, magenta glow under it |
 | boss_phantom | 84×126 | idle 4, summon 6, teleport 6, split 4 (the glowing copy), hurt 2, death 8 |
 | vent | 22×68 | idle 1, warn 2, fire 4 (flame about 12×60) |
 | piston | 24×76 | up 1, warn 2, slam 3 (head reaches the ground) |
@@ -194,6 +204,15 @@ because the stretched sky can't hold shapes), the snow-capped ground, the waterf
 the vines' slot and floating ice on the surface) and the terrain blocks (`terrain_frost_*`). The pit and terrain tiling
 rules above apply to them unchanged.
 
+World 3 (`haunted`) is the Haunted Meowseum (`characters/meowseum.py`, after
+`docs/concept/Haunted Meowseum Pixel Art Tileset.png`), again with the forest's names, sizes and contracts: a purple night
+with a huge pink moon (in `bg_haunted_clouds`), a spiky castle and floating islands (`far`), the museum hall with stained
+glass, banners, a portrait, a stone cat statue and chandeliers, its wall top following the arches so the night shows
+above (`near`), and fog with iron fences, gargoyles and candelabras (`bushes`). The ground is a lit stone edge on
+capstones over 6-row brick courses that run on into the earth. The pit is a purple abyss (`ravine_haunted_*`): a fog
+curtain, fog swirls, a violet glow, a dark stone floor, and chained lanterns in the vines' slot. The terrain tops
+(`terrain_haunted_*`) carry a crimson runner, with candle stubs dripping wax at the ends.
+
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 
 The jump buttons (`characters/buttons.py`) follow `docs/concept/Pixel Art Jump Button UI Sheet.png` (top row); the paw is pixel-identical in every button (the pressed ones shift it down 1 px), so swapping states never jumps. The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
@@ -217,7 +236,8 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. The forest critters (`forest_critters.py`) and the frost critters (`frost_critters.py`; slash arcs are glowing ice
+afterwards. The forest critters (`forest_critters.py`), the haunted critters (`haunted_critters.py`; spirits are see-through
+with a bright outline, magic is magenta) and the frost critters (`frost_critters.py`; slash arcs are glowing ice
 crescents laid on after the outline, hits are a white flash then ice sparkles) are built from shaded parts in `critters.py` (`shaded` lights each part's top-left
 rim and darkens the far rim, `face` draws the big cat eyes with a shine, `ear`, `sparkle`). Death frames come from `vanish()` (flash, then sink or rise while fading), `shatter()` (breaks
 into blocks that fly and fall; also used for crumbling platforms) or `topple()`; `see_through()` lowers

@@ -875,6 +875,265 @@ import Testing
         #expect(LevelValidator.botRun(frostLevel(items, length: 3400, entry: 3), boss: nil).finished)
     }
 
+    // MARK: - Haunted creatures (Haunted Meowseum sheet)
+
+    static let hauntedCreatures: [ItemKind] = [.ghostCat, .bat, .hauntedPortrait, .cursedArmor, .candleCat,
+                                               .poltergeistBook, .gargoyleCat, .shadowCat]
+
+    /// A flat test level at world 3's speed.
+    func hauntedLevel(_ items: [PlacedItem], length: Double = 2000, entry: Int = 1) -> LevelDefinition {
+        var level = flatLevel(items: items, length: length, entry: entry, reward: max(entry, 2))
+        level.speed = 130
+        return level
+    }
+
+    func threw(_ events: [GameEvent]) -> Bool {
+        events.contains { if case .threw = $0 { true } else { false } }
+    }
+
+    func bounced(_ events: [GameEvent]) -> Bool {
+        events.contains { if case .yarnBounced = $0 { true } else { false } }
+    }
+
+    func yarnHit(_ events: [GameEvent]) -> Bool {
+        events.contains { if case .enemyHit = $0 { true } else if case .enemyDefeated = $0 { true } else { false } }
+    }
+
+    /// Jumps and fires each ball at the top of a hop, to reach something hovering over a standing kitten.
+    func jumpVolley(at kind: ItemKind, count: Int, from: Double = 260, fireAbove: Double = 30) -> [GameEvent] {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 800, kind: kind)]), boss: nil, stats: hero(2))
+        advance(&world) { gap($0, kind) < from }
+        var events: [GameEvent] = []
+        for _ in 0..<count {
+            events += world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            events += advance(&world, limit: 1, Input(jumpHeld: true)) { $0.heroY > fireAbove }
+            events += world.step(Input(jumpHeld: true, fireHeld: true), dt: dt)
+            events += advance(&world, limit: 2, Input(jumpHeld: true)) { $0.onGround }
+        }
+        return events + world.run(1)
+    }
+
+    @Test func hauntedCreaturesHaveTheirIdsAndHitboxes() throws {
+        let expected: [(ItemKind, String, Double, Double, Int, Int)] = [
+            (.hauntedPortrait, "haunted_portrait", 18, 20, 2, 25), (.cursedArmor, "cursed_armor", 20, 28, 3, 45),
+            (.candleCat, "candle_cat", 14, 16, 1, 15), (.poltergeistBook, "poltergeist_book", 16, 14, 1, 20),
+            (.gargoyleCat, "gargoyle_cat", 20, 24, 2, 35), (.shadowCat, "shadow_cat", 16, 20, 1, 30),
+        ]
+        for (kind, id, width, height, hp, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.hp == hp, "\(id) hp")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+            #expect(kind.spec.yarnable, "\(id) is yarnable")
+        }
+        #expect(ItemKind.cursedArmor.spec.minHeroLevel == 3)
+        // The bat is only restyled.
+        let bat = ItemKind.bat.spec
+        #expect(bat.width == 14 && bat.height == 10 && bat.baseY == 40 && bat.flight?.low == 26)
+        // The ghost cat keeps its phasing.
+        #expect(ItemKind.ghostCat.spec.cycleRole == .phase)
+        let spirit = try #require(ItemKind.ghostCat.spec.throwing)
+        #expect(spirit.projectile == "spirit_ball" && spirit.width == 8 && spirit.height == 8)
+        #expect(spirit.speed == 100 && spirit.interval == 2.4 && spirit.y == 26)
+    }
+
+    @Test func ghostCatOnlyThrowsSpiritBallsWhileVisibleAndOverAStandingKitten() throws {
+        let level = hauntedLevel([.init(at: 700, kind: .ghostCat), .init(at: 1500, kind: .ghostCat, cycleOffset: 1)])
+        var world = RunnerWorld(level: level, boss: nil)
+        var throwCount = 0
+        var seen = Set<Int>()
+        while world.time < 12, !world.isOver {
+            let step = world.step(Input(), dt: dt)
+            for case .threw(let id) in step {
+                throwCount += 1
+                #expect(world.entities.first { $0.id == id }?.state == .active)
+            }
+            for ball in world.hazards where !seen.contains(ball.id) {
+                seen.insert(ball.id)
+                #expect(ball.kind == "spirit_ball")
+                #expect(ball.y >= world.tuning.heroHeight)
+                #expect(ball.vx == -100 && ball.gravity == 0)
+            }
+        }
+        #expect(throwCount >= 1)
+    }
+
+    @Test func hauntedPortraitHoversOverheadAndFiresLowMagicShots() throws {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 800, kind: .hauntedPortrait)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let portrait = try #require(world.entities.first)
+        #expect(portrait.y == 32)
+        #expect(portrait.box.minY > world.tuning.heroHeight)
+        #expect(!ItemKind.hauntedPortrait.spec.stompable)
+        advance(&world) { !$0.hazards.isEmpty }
+        let shot = try #require(world.hazards.first)
+        #expect(shot.kind == "magic_shot" && shot.y == 4 && shot.width == 10 && shot.height == 6)
+        #expect(shot.vx == -110 && shot.gravity == 0)
+        #expect((world.entities.first?.x ?? .infinity) < portrait.x)
+        #expect(hit(world.run(4)))
+        // Out of reach of yarn from the ground; from a hop it takes two.
+        #expect(!yarnHit(volley(at: .hauntedPortrait, count: 2)))
+        #expect(!defeated(jumpVolley(at: .hauntedPortrait, count: 1), .hauntedPortrait))
+        #expect(defeated(jumpVolley(at: .hauntedPortrait, count: 2), .hauntedPortrait))
+    }
+
+    @Test func cursedArmorSleepsAsAStatueThenWakesWalksAndSlashes() throws {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 800, kind: .cursedArmor)]), boss: nil, stats: hero(2))
+        advance(&world) { !$0.entities.isEmpty }
+        let statue = try #require(world.entities.first)
+        #expect(statue.state == .idle && !statue.isTangible)
+        // Asleep it does not move, and yarn bounces off the stone.
+        advance(&world) { gap($0, .cursedArmor) < 250 }
+        var shooter = world
+        let early = shoot(&shooter, flight: 0.9)
+        #expect(bounced(early))
+        #expect(!yarnHit(early))
+        world.run(0.5)
+        #expect(world.entities.first?.x == statue.x)
+
+        let waking = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(waking.contains { if case .waking = $0 { true } else { false } })
+        #expect(gap(world, .cursedArmor) < 140 && gap(world, .cursedArmor) > 120)
+        #expect(world.entities.first?.isTangible == false)
+        let warnedAt = world.time
+        advance(&world, limit: 1) { $0.entities.first?.state == .active }
+        #expect(abs(world.time - warnedAt - 0.5) < 0.05)
+        let woke = try #require(world.entities.first)
+        #expect(woke.isTangible)
+        // Awake: yarn lands, it walks in, and touching it hurts (no stomp).
+        var awake = world
+        let awakeShot = awake.run(0.05, Input(fireHeld: true)) + awake.run(0.4)
+        #expect(yarnHit(awakeShot) && !bounced(awakeShot))
+        world.run(0.25)
+        #expect((world.entities.first?.x ?? .infinity) < woke.x)
+        #expect(hit(world.run(2)))
+        #expect(!ItemKind.cursedArmor.spec.stompable)
+    }
+
+    @Test func candleCatWalksInSendingFireOrbsAlongTheGroundAndBurnsAStomper() throws {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 800, kind: .candleCat)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let start = try #require(world.entities.first?.x)
+        advance(&world) { !$0.hazards.isEmpty }
+        let orb = try #require(world.hazards.first)
+        #expect(orb.kind == "fire_orb" && orb.y == 2 && orb.width == 8 && orb.height == 8 && orb.vx == -80)
+        #expect((world.entities.first?.x ?? start) < start)
+        #expect(stompAttempts(.candleCat).isEmpty)
+        #expect(defeated(volley(at: .candleCat, count: 1), .candleCat))
+    }
+
+    @Test func poltergeistBookLobsBoltsThatFadeWhereTheyLand() throws {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 800, kind: .poltergeistBook)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 48)
+        advance(&world) { !$0.hazards.isEmpty }
+        let bolt = try #require(world.hazards.first)
+        #expect(bolt.kind == "magic_bolt" && bolt.gravity > 0 && bolt.y > 30)
+        var last = bolt
+        var events: [GameEvent] = []
+        while let current = world.hazards.first(where: { $0.id == bolt.id }), world.time < 10 {
+            last = current
+            #expect(!current.rolling)
+            events += world.step(Input(), dt: dt)
+        }
+        #expect(events.contains(.hazardBroke(id: bolt.id)))
+        #expect(last.y < 6)
+        #expect(last.x - world.distance > 20)
+        // Up at 48 it takes yarn thrown near the top of a full jump.
+        #expect(!yarnHit(volley(at: .poltergeistBook, count: 1)))
+        #expect(defeated(jumpVolley(at: .poltergeistBook, count: 1, fireAbove: 42), .poltergeistBook))
+    }
+
+    @Test func gargoyleCatPerchesThenLeapsAheadAndWalksIn() throws {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 900, kind: .gargoyleCat)]), boss: nil, stats: hero(2))
+        advance(&world) { !$0.entities.isEmpty }
+        let perched = try #require(world.entities.first)
+        #expect(!perched.isTangible)
+        advance(&world) { gap($0, .gargoyleCat) < 320 }
+        var shooter = world
+        #expect(bounced(shoot(&shooter, flight: 1.3)))
+        world.run(0.3)
+        #expect(world.entities.first?.x == perched.x)
+
+        let leap = try #require(ItemKind.gargoyleCat.spec.leap)
+        var events = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(events.contains { if case .waking = $0 { true } else { false } })
+        events = advance(&world, limit: 1) { $0.entities.first?.state == .leaping }
+        #expect(events.contains { if case .leapt = $0 { true } else { false } })
+        #expect(world.entities.first?.isTangible == true)
+        var top = 0.0
+        events = []
+        while world.entities.first?.state == .leaping, world.time < 20 {
+            events += world.step(Input(), dt: dt)
+            top = max(top, world.entities.first?.y ?? 0)
+        }
+        #expect(events.contains { if case .leapLanded = $0 { true } else { false } })
+        let landed = try #require(world.entities.first)
+        #expect(landed.state == .active && landed.y == 0)
+        #expect(abs(perched.x - leap.distance - landed.x) < 6)
+        #expect(top > leap.height - 4)
+        // It comes down in front of the kitten and walks in.
+        #expect(landed.x - world.distance > 18)
+        world.run(0.1)
+        #expect((world.entities.first?.x ?? .infinity) < landed.x)
+        #expect(hit(world.run(2)))
+        // A landing on it is a safe bounce that does not break the stone.
+        let landings = stompAttempts(.gargoyleCat, at: 500)
+        #expect(landings.contains { !hit($0) })
+        #expect(landings.allSatisfy { !defeated($0, .gargoyleCat) })
+    }
+
+    @Test func shadowCatIsUnseenThenAppearsAheadFlashesAndDashes() throws {
+        var world = RunnerWorld(level: hauntedLevel([.init(at: 900, kind: .shadowCat)]), boss: nil, stats: hero(2))
+        advance(&world) { !$0.entities.isEmpty }
+        let hidden = try #require(world.entities.first)
+        #expect(hidden.state == .hidden && !hidden.isTangible && !hidden.catchesYarn)
+        let passed = shoot(&world, flight: 0.6)
+        #expect(!bounced(passed) && !yarnHit(passed))
+
+        let events = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(events.contains { if case .teleported = $0 { true } else { false } })
+        let shown = try #require(world.entities.first)
+        #expect(abs(shown.x - world.distance - 80) < 1)
+        #expect(!shown.isTangible)
+        // While it flashes it keeps its place ahead of the runner.
+        world.run(0.2)
+        #expect(abs((world.entities.first?.x ?? 0) - world.distance - 80) < 1)
+        advance(&world, limit: 1) { $0.entities.first?.state == .active }
+        let dashing = try #require(world.entities.first)
+        #expect(dashing.isTangible && dashing.catchesYarn)
+        var standing = world
+        standing.run(0.05)
+        #expect((standing.entities.first?.x ?? .infinity) < dashing.x - 4)
+        #expect(hit(standing.run(1)))
+        // A jump timed off its flash lands on it: a stomp kills.
+        var flashed = RunnerWorld(level: hauntedLevel([.init(at: 900, kind: .shadowCat)]), boss: nil)
+        advance(&flashed) { $0.entities.first?.state == .warning }
+        let stomps = stride(from: 0.0, to: 0.8, by: 0.02).compactMap { delay -> [GameEvent]? in
+            var world = flashed
+            var events = world.run(delay)
+            events += world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            events += world.run(1.5, Input(jumpHeld: true))
+            return events.contains { if case .stomped = $0 { true } else { false } } ? events : nil
+        }
+        #expect(stomps.contains { defeated($0, .shadowCat) && !hit($0) })
+    }
+
+    static let hauntedBotCases: [(ItemKind, Int)] = hauntedCreatures.flatMap { kind in
+        [1, 4].filter { $0 >= kind.spec.minHeroLevel }.map { (kind, $0) }
+    }
+
+    @Test(arguments: MechanicsTests.hauntedBotCases)
+    func botClearsEachHauntedCreatureWithoutAHit(kind: ItemKind, entry: Int) {
+        let level = hauntedLevel([.init(at: 400, kind: kind), .init(at: 850, kind: kind)], length: 1400, entry: entry)
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
+    @Test func botClearsAHauntedRunOfEveryCreature() {
+        let items = Self.hauntedCreatures.enumerated().map { PlacedItem(at: 400 + Double($0.offset) * 320, kind: $0.element) }
+        #expect(LevelValidator.botRun(hauntedLevel(items, length: 3200, entry: 4), boss: nil).finished)
+    }
+
     // MARK: - Bot
 
     @Test func botPouncesThroughCrateWalls() {

@@ -58,6 +58,18 @@ public struct Tuning: Sendable, Equatable {
     /// Height of a full jump from the ground.
     public var jumpApex: Double { jumpVelocity * jumpVelocity / (2 * gravity) }
 
+    /// Height of a tapped jump: full speed for `minJumpHold`, then cut.
+    public var hopApex: Double {
+        let rise = jumpVelocity * minJumpHold - gravity * minJumpHold * minJumpHold / 2
+        let speed = (jumpVelocity - gravity * minJumpHold) * jumpCut
+        return rise + speed * speed / (2 * gravity)
+    }
+
+    /// A step rising more than this above the feet is one a tapped jump can't be trusted to get onto
+    /// (it reaches it already slowing): a jump in front of one is always a full jump. Lower steps
+    /// leave tap and hold their difference.
+    public var hopClearance: Double { hopApex * 0.6 }
+
     /// Height of a full jump followed by a full Double Pounce at its top.
     public var doubleJumpApex: Double {
         let second = jumpVelocity * doubleJumpScale
@@ -90,6 +102,8 @@ public enum EntityState: Sendable, Equatable {
     case hidden
     /// A faller that hit the ground and lies there as shards.
     case landed
+    /// In the air on a leap (see `LeapSpec`).
+    case leaping
 }
 
 public struct Entity: Sendable, Equatable, Identifiable {
@@ -117,6 +131,8 @@ public struct Entity: Sendable, Equatable, Identifiable {
         self.cycleOffset = cycleOffset
         home = x
         timer = kind.spec.throwing?.windup ?? 0.6
+        // A teleporter is not there at all until it wakes.
+        if kind.spec.teleport != nil { state = .hidden }
     }
 
     public var box: AABB {
@@ -132,6 +148,7 @@ public struct Entity: Sendable, Equatable, Identifiable {
     public var isTangible: Bool {
         let spec = kind.spec
         if spec.fall?.walksOnLanding == true { return state == .active || state == .landed }
+        if spec.wake != nil { return state == .active || state == .leaping }
         guard spec.cycle != nil else { return true }
         return state == .active
     }
@@ -139,13 +156,21 @@ public struct Entity: Sendable, Equatable, Identifiable {
     /// Whether yarn can strike it now. A trap's body is always there, firing or not; a phasing ghost
     /// or a creature out of reach on its thread is not.
     public var catchesYarn: Bool {
-        isTangible || (kind.spec.cycle != nil && kind.spec.cycleRole == .trap)
+        // Dormant stone stops yarn (it bounces off, see `isDormant`); an unseen teleporter does not.
+        if kind.spec.wake != nil { return kind.spec.teleport == nil || isTangible }
+        return isTangible || (kind.spec.cycle != nil && kind.spec.cycleRole == .trap)
+    }
+
+    /// Not yet woken (still stone, perched or unseen), or blinking its warning before it wakes.
+    public var isDormant: Bool {
+        kind.spec.wake != nil && (state == .idle || state == .warning || state == .hidden)
     }
 
     /// Moving along the ground now (turns at a rim, a Super Pounce defeats it). A creature that drops
     /// from a thread only walks once it has landed.
     public var walks: Bool {
         if kind.spec.fall?.walksOnLanding == true { return state == .landed && kind.spec.velocity != 0 }
+        if kind.spec.wake != nil { return state == .active && kind.spec.velocity != 0 }
         return kind.walks
     }
 
@@ -182,6 +207,8 @@ public struct Hazard: Sendable, Equatable, Identifiable {
     public var gravity = 0.0
     /// Landed and rolling along the ground: it drops again off a step down.
     public var rolling = false
+    /// Fizzles out where it lands instead of rolling on.
+    public var fades = false
 
     public var isArmed: Bool { arm <= 0 }
     public var box: AABB { AABB(centerX: x, bottom: y, width: width, height: height) }
@@ -251,6 +278,13 @@ public enum GameEvent: Sendable, Equatable {
     case shattered(id: Int)
     /// A creature dropped from its thread, reached the ground and starts walking.
     case droppedDown(id: Int)
+    /// Something dormant (a statue, a perched gargoyle) began its warning before it wakes.
+    case waking(id: Int)
+    /// An unseen creature appeared ahead of the hero; it flashes, then attacks.
+    case teleported(id: Int)
+    /// A creature took off on a leap, and came down from it.
+    case leapt(id: Int)
+    case leapLanded(id: Int)
     /// The hero ran into the face of a step too high to walk onto and is knocked back; once per hit.
     case bumped
     /// A thrown thing ran into the face of a step and broke.
@@ -469,7 +503,7 @@ public struct RunnerWorld: Sendable {
         if isAgainstWall { return true }
         let front = distance + tuning.heroWidth / 2
         let reach = tuning.jumpReach(speed: level.speed) / 2
-        return ground.wall(from: front, to: front + reach, feet: heroY, step: tuning.stepUp) != nil
+        return ground.wall(from: front, to: front + reach, feet: heroY, step: max(tuning.stepUp, tuning.hopClearance)) != nil
     }
 
     public var isBumpedBack: Bool { bumpBackLeft > 0 }
@@ -716,7 +750,8 @@ public struct RunnerWorld: Sendable {
             let spec = entity.kind.spec
             // A curled roller rolls at its own speed; anything hanging on a thread stays put.
             let speed = entity.state == .curled ? (spec.rollSpeed ?? spec.velocity) : spec.velocity
-            let velocity = entity.isHanging ? 0 : (entity.reversed ? -speed : speed)
+            let still = entity.isHanging || entity.isDormant || entity.state == .leaping
+            let velocity = still ? 0 : (entity.reversed ? -speed : speed)
             entity.x += velocity * dt
             if entity.walks {
                 // Stop at a rim or a step (up or down) and head back the other way.
@@ -759,8 +794,13 @@ public struct RunnerWorld: Sendable {
             if let fall = spec.fall {
                 updateFaller(&entity, fall: fall, gap: gap, dt: dt, events: &events)
             }
+            if let wake = spec.wake {
+                updateWaker(&entity, wake: wake, gap: gap, dt: dt, events: &events)
+            }
             if let throwing = spec.throwing, !throwing.onCycleOpen {
-                let inRange = gap > 30 && gap < throwing.range
+                // A phasing ghost only throws while it is there.
+                let present = spec.cycle == nil || spec.cycleRole != .phase || entity.state == .active
+                let inRange = present && gap > 30 && gap < throwing.range
                 if inRange {
                     entity.timer -= dt
                     if entity.timer <= 0 {
@@ -782,8 +822,63 @@ public struct RunnerWorld: Sendable {
                               y: throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y,
                               width: throwing.width, height: throwing.height,
                               vx: -throwing.speed, arm: 0,
-                              gravity: throwing.arc ? tuning.lobGravity : 0))
+                              gravity: throwing.arc ? tuning.lobGravity : 0, fades: throwing.fades))
         events.append(entity.kind == .bell ? .bellRang(id: entity.id) : .threw(id: entity.id))
+    }
+
+    /// Dormant → warning → awake, by way of a leap or a teleport if it has one. Awake it walks.
+    private func updateWaker(_ entity: inout Entity, wake: WakeSpec, gap: Double, dt: Double,
+                             events: inout [GameEvent]) {
+        let spec = entity.kind.spec
+        switch entity.state {
+        case .idle, .hidden:
+            guard gap < wake.trigger else { break }
+            entity.state = .warning
+            entity.timer = wake.warning
+            if let teleport = spec.teleport {
+                entity.x = distance + teleport.ahead
+                entity.y = groundHeight(at: entity.x)
+                events.append(.teleported(id: entity.id))
+            } else {
+                events.append(.waking(id: entity.id))
+            }
+        case .warning:
+            if let teleport = spec.teleport {
+                // Keeps its place ahead of the runner while it flashes.
+                entity.x = distance + teleport.ahead
+                entity.y = groundHeight(at: entity.x)
+            }
+            entity.timer -= dt
+            guard entity.timer <= 0 else { break }
+            if let leap = spec.leap {
+                entity.state = .leaping
+                entity.vy = leap.launchSpeed(gravity: tuning.gravity)
+                // Toward the hero, whichever side it is on.
+                entity.reversed = entity.x < distance
+                events.append(.leapt(id: entity.id))
+            } else {
+                entity.state = .active
+            }
+        case .leaping:
+            guard let leap = spec.leap else { break }
+            let forward = leap.forwardSpeed(gravity: tuning.gravity)
+            entity.x += (entity.reversed ? forward : -forward) * dt
+            entity.vy -= tuning.gravity * dt
+            entity.y += entity.vy * dt
+            let floor = groundHeight(at: entity.x)
+            guard entity.vy < 0, entity.y <= floor else { break }
+            if floor <= 0, groundIsOpen(at: entity.x) {
+                // Came down over a ravine: it drops out of sight.
+                if entity.y < -60 { entity.hp = 0 }
+            } else {
+                entity.y = floor
+                entity.vy = 0
+                entity.state = .active
+                events.append(.leapLanded(id: entity.id))
+            }
+        default:
+            break
+        }
     }
 
     /// Hanging → blinking → dropping → shards on the ground (or, for a creature, walking on).
@@ -843,6 +938,11 @@ public struct RunnerWorld: Sendable {
                 hazard.vy -= hazard.gravity * dt
                 hazard.y += hazard.vy * dt
                 if hazard.y <= floor, !(floor <= 0 && groundIsOpen(at: hazard.x)) {
+                    if hazard.fades {
+                        // A magic bolt fizzles out where it lands.
+                        events.append(.hazardBroke(id: hazard.id))
+                        continue
+                    }
                     // A lobbed acorn lands and rolls on.
                     hazard.y = floor
                     hazard.vy = 0
@@ -882,7 +982,7 @@ public struct RunnerWorld: Sendable {
                 && entity.box.intersects(box)
         }) {
             let entity = entities[index]
-            if entity.kind.spec.deflectsYarn || entity.state == .curled {
+            if entity.kind.spec.deflectsYarn || entity.state == .curled || entity.isDormant {
                 events.append(.yarnBounced(id: entity.id))
             } else {
                 damage(entityAt: index, by: shot.damage, events: &events)

@@ -1,6 +1,9 @@
 import GameCore
 import SpriteKit
 import UIKit
+#if DEBUG
+import os
+#endif
 
 /// Draws a `RunnerWorld` and feeds it touches. All rules live in GameCore; nothing here decides
 /// whether the kitten is hit or an enemy dies.
@@ -554,9 +557,25 @@ final class GameScene: SKScene {
     // The on-screen buttons in the HUD call these; touches elsewhere on the screen do nothing.
 
     func setJump(held: Bool) {
+        #if DEBUG
+        trace.notice("setJump held=\(held, privacy: .public) t=\(CACurrentMediaTime(), format: .fixed(precision: 3), privacy: .public) worldTime=\(self.world.time, format: .fixed(precision: 3), privacy: .public)")
+        #endif
         if held && !jumpHeld { jumpPending = true }
         jumpHeld = held
     }
+
+    #if DEBUG
+    // Jump trace (debug builds only): every press and release from the button, the held state each
+    // step sends to the world when it changes, and each jump's apex. Read it with
+    // `xcrun simctl spawn booted log show --predicate 'category == "jump"'`.
+    private let trace = Logger(subsystem: "com.pryvalov.purrfectlydangerous", category: "jump")
+    private var tracedHeld: Bool?
+    private var jumpBaseY = 0.0
+    private var jumpApex = 0.0
+    private var tracingJump = false
+    /// The hero's height before the current step, so a jump is measured from where it left.
+    private var preStepY = 0.0
+    #endif
 
     func setFire(held: Bool) {
         fireHeld = held
@@ -586,8 +605,20 @@ final class GameScene: SKScene {
                          pawPressed: pawPending, pawHeld: pawHeld)
             jumpPending = false
             pawPending = false
+            #if DEBUG
+            if input.jumpHeld != tracedHeld || input.jumpPressed {
+                tracedHeld = input.jumpHeld
+                trace.notice("step held=\(input.jumpHeld, privacy: .public) pressed=\(input.jumpPressed, privacy: .public) worldTime=\(self.world.time, format: .fixed(precision: 3), privacy: .public) y=\(self.world.heroY, format: .fixed(precision: 1), privacy: .public) vy=\(self.world.heroVY, format: .fixed(precision: 1), privacy: .public)")
+            }
+            #endif
             let moving = world.phase == .running || world.phase == .boss
+            #if DEBUG
+            preStepY = world.heroY
+            #endif
             handle(world.step(input, dt: Self.step))
+            #if DEBUG
+            if tracingJump { jumpApex = max(jumpApex, world.heroY) }
+            #endif
             if moving { scroll += world.runSpeed * Self.step }
         }
         render()
@@ -612,12 +643,15 @@ final class GameScene: SKScene {
         .branchSquirrel: "acorn_thrown", .skeletonMouse: "bone", .cannon: "cannonball", .bell: "hazard_wave",
         .mushroomCat: "spore", .beeCat: "sting", .stumpCat: "leaf",
         .penguinSoldier: "spear", .snowyOwl: "icicle_shot", .snowman: "snowball_shot", .iciclePlant: "icicle_bolt",
+        .ghostCat: "spirit_ball", .hauntedPortrait: "magic_shot", .candleCat: "fire_orb", .poltergeistBook: "magic_bolt",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
     private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
                                            "spore": "spore", "sting": "sting", "leaf": "leaf",
                                            "spear": "spear", "icicle_shot": "icicle_shot",
-                                           "snowball_shot": "snowball_shot", "icicle_bolt": "icicle_bolt"]
+                                           "snowball_shot": "snowball_shot", "icicle_bolt": "icicle_bolt",
+                                           "spirit_ball": "spirit_ball", "magic_shot": "magic_shot",
+                                           "fire_orb": "fire_orb", "magic_bolt": "magic_bolt"]
     /// Hiding animation and the poses held afterwards (first one the sprite has), for things that
     /// curl up or hide in a shell.
     private static let curlAnimation: [ItemKind: (start: String, hold: [String])] = [
@@ -639,6 +673,14 @@ final class GameScene: SKScene {
         for event in events {
             switch event {
             case .jumped(let double):
+                #if DEBUG
+                if !double {
+                    tracingJump = true
+                    jumpBaseY = preStepY
+                    jumpApex = world.heroY
+                }
+                trace.notice("jumped double=\(double, privacy: .public) worldTime=\(self.world.time, format: .fixed(precision: 3), privacy: .public) vy=\(self.world.heroVY, format: .fixed(precision: 1), privacy: .public) held=\(self.jumpHeld, privacy: .public)")
+                #endif
                 play(double ? .doubleJump : .jump)
                 if double {
                     doubleJumping = true
@@ -646,6 +688,15 @@ final class GameScene: SKScene {
                     pawTrail()
                 }
             case .landed:
+                #if DEBUG
+                if tracingJump {
+                    tracingJump = false
+                    let apex = jumpApex - jumpBaseY
+                    hud.debugJumpCount += 1
+                    hud.debugJumpApex = apex
+                    trace.notice("landed apex=\(apex, format: .fixed(precision: 1), privacy: .public) worldTime=\(self.world.time, format: .fixed(precision: 3), privacy: .public)")
+                }
+                #endif
                 doubleJumping = false
                 if wasPouncing {
                     wasPouncing = false
@@ -757,6 +808,18 @@ final class GameScene: SKScene {
                 }
             case .droppedDown(let id):
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.thump) }
+            case .waking(let id):
+                // A statue stirring or a gargoyle shifting on its pedestal.
+                if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.crumble) }
+            case .teleported:
+                play(.dash)
+            case .leapt(let id):
+                if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) { play(.pounce) }
+            case .leapLanded(let id):
+                if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) {
+                    play(.thump)
+                    dust(at: CGPoint(x: screenX(entity.x), y: screenY(entity.y) + 2))
+                }
             case .platformCrumbling(let index):
                 crumbleStart[index] = world.time
                 play(.crumble)
@@ -1024,18 +1087,22 @@ final class GameScene: SKScene {
         .fish: "spin", .yarnBasket: "glow",
     ]
 
-    /// World 2 creatures, drawn from one sheet: what they show while going about their business,
-    /// first one the sprite has.
-    private static let frostRest: [ItemKind: [String]] = [
+    /// Creatures drawn from the world sheets (worlds 2 and 3): what they show while going about
+    /// their business, first one the sprite has. Dormant and teleporting ones are posed in `animate`.
+    private static let sheetRest: [ItemKind: [String]] = [
         .iceSlime: ["move", "walk", "idle"], .snowCat: ["run", "walk", "idle"], .iceBat: ["fly", "idle"],
         .iceGolem: ["walk", "idle"], .penguinSoldier: ["walk", "idle"], .snowyOwl: ["fly", "idle"],
         .iceHedgehog: ["walk", "move", "idle"], .snowman: ["idle", "walk"], .iciclePlant: ["closed", "idle"],
         .miniYeti: ["walk", "idle"],
+        .ghostCat: ["float", "move", "idle"], .hauntedPortrait: ["move", "fly", "idle"],
+        .cursedArmor: ["walk", "move", "idle"], .candleCat: ["move", "walk", "idle"],
+        .poltergeistBook: ["move", "fly", "idle"], .gargoyleCat: ["walk", "move", "idle"],
+        .shadowCat: ["attack", "move", "walk", "idle"],
     ]
 
     /// The resting animation of a kind, best first.
     private static func restAnimation(_ kind: ItemKind) -> [String] {
-        frostRest[kind] ?? [defaultAnimation[kind] ?? "idle", "idle", "still"]
+        sheetRest[kind] ?? [defaultAnimation[kind] ?? "idle", "idle", "still"]
     }
 
     private func renderEntities() {
@@ -1081,13 +1148,39 @@ final class GameScene: SKScene {
             switch entity.state {
             case .hidden:
                 // Blinks out, then only a faint shimmer shows where it drifts.
-                if node.current == "float" { node.play("fade") }
+                if node.current != "fade", node.has("fade") { node.play("fade") }
                 if !node.isBusy { node.alpha = 0.12 }
             case .warning:
                 if node.current == "fade", !node.isBusy { node.play("float") }
                 node.alpha = blink ? 0.6 : 0.25
             default:
-                node.play("float")
+                // Visible: floats, unless it is mid-throw (spirit ball).
+                if !node.isBusy || node.current == "fade" { Self.playAny(node, Self.restAnimation(.ghostCat)) }
+            }
+        case .cursedArmor, .gargoyleCat:
+            let statue = entity.kind == .cursedArmor ? ["statue", "idle"] : ["idle"]
+            switch entity.state {
+            case .idle:
+                Self.playAny(node, statue)
+            case .warning:
+                // Stirring: the gargoyle crouches to spring; both flash so the player sees it coming.
+                Self.playAny(node, entity.kind == .gargoyleCat ? ["prepare", "idle"] : statue)
+                node.color = .white
+                node.colorBlendFactor = blink ? 0.6 : 0
+            case .leaping:
+                Self.playAny(node, ["leap", "attack", "idle"])
+            default:
+                if !node.isBusy { Self.playAny(node, Self.restAnimation(entity.kind)) }
+            }
+        case .shadowCat:
+            switch entity.state {
+            case .hidden:
+                node.alpha = 0
+            case .warning:
+                Self.playAny(node, ["teleport", "idle"])
+                node.alpha = blink ? 1 : 0.4
+            default:
+                if !node.isBusy { Self.playAny(node, Self.restAnimation(.shadowCat)) }
             }
         case .hedgehog, .snailCat, .iceHedgehog:
             // Normally started by the `curled` event; this catches a node made after it fired.
@@ -1145,7 +1238,7 @@ final class GameScene: SKScene {
     private func makeEntityNode(_ entity: Entity) -> ActorNode {
         let node = ActorNode(sprite: entity.kind.rawValue, library: library)
         node.zPosition = entity.kind == .yarnBasket ? 1 : (entity.kind == .crateWall ? 4 : 3)
-        Self.playAny(node, Self.frostRest[entity.kind] ?? [Self.defaultAnimation[entity.kind] ?? "still"])
+        Self.playAny(node, Self.sheetRest[entity.kind] ?? [Self.defaultAnimation[entity.kind] ?? "still"])
         actors.addChild(node)
         entityNodes[entity.id] = node
         return node

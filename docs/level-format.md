@@ -76,12 +76,18 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | frost | `snowman` | Stands, 30 tall; lobs `snowball_shot` hazards from 28 up that land ahead of the hero and roll on; stomp is a safe bounce; 2 HP |
 | frost | `icicle_plant` | Trap on the world clock: open (24 high, hurts) for 0.6 s of every 2.4 s, opening as a warning 0.5 s before, shut and harmless otherwise (`cycleOffset` shifts it); each time it opens in range it fires an `icicle_bolt` along the ground at 4; no stomp; yarn hits it any time, 2 HP |
 | frost | `mini_yeti` | Very slow walker (6/s), 30×34; no stomp; 4 HP; needs hero level 3 |
-| haunted | `ghost_cat` | Drifts in high and down to the ground; visible 1.2 s of every 2 s and harmless otherwise; yarn passes through |
+| haunted | `ghost_cat` | Drifts in high and down to the ground; visible 1.2 s of every 2 s and harmless otherwise; yarn passes through. While visible and in range it throws a `spirit_ball` every 2.4 s, straight at 26 (just over a standing kitten) |
 | haunted | `bat` | Flies at 40, swoops to 26 (just over a standing kitten) as it nears |
 | haunted | `skeleton_mouse` | Stands and throws low `bone` hazards; stomp kills; 2 HP |
 | haunted | `skull` | Flies straight in at 26, just over a standing kitten |
 | haunted | `bell` | Hangs 56 up, harmless; every 2 s in range it sends a low `soundwave` hazard along the ground |
 | haunted | `tombstone` | Static, tall |
+| haunted | `haunted_portrait` | Hovers 32 up (just over a standing kitten), drifting in at 12/s; every 2.2 s in range fires a `magic_shot` along the ground at 4; no stomp; 2 HP |
+| haunted | `cursed_armor` | 20×28 statue: harmless and still, yarn bounces off, until the hero is within 140; flashes 0.5 s, then walks in at 12/s; awake it hurts to touch (no stomp); 3 HP; needs hero level 3 |
+| haunted | `candle_cat` | Slow walker (15/s); every 2.5 s in range sends a `fire_orb` along the ground at 2; no stomp (its flame burns) |
+| haunted | `poltergeist_book` | Floats 48 up, drifting in at 8/s; every 2.4 s within 220 lobs a `magic_bolt` that lands ahead of the hero and fizzles out (no rolling) |
+| haunted | `gargoyle_cat` | Perched (harmless, still, yarn bounces off) until the hero is within 240; flashes 0.5 s, leaps 70 toward the hero (28 high, ~0.5 s), lands ahead of it on the local ground and walks in at 25/s; stomp is a safe bounce; 2 HP. Leave flat ground in front of it: a leap that comes down over a ravine is lost |
+| haunted | `shadow_cat` | Unseen and intangible (yarn passes) until the hero is within 180; then appears 80 ahead of the hero, flashes 0.4 s keeping that distance, and dashes in at 120/s as a walker; a stomp kills. Where it appears is wherever the hero is plus 80, so leave ground there (no ravine or step) |
 | citadel | `vent` | Flame column (60 high) for 0.8 s of every 2.4 s, blinking 0.5 s before; harmless otherwise |
 | citadel | `piston` | Slams (70 high) for 0.6 s of every 2 s, blinking 0.4 s before; harmless otherwise |
 | citadel | `cannon` | Mounted 24 up, fires `cannonball` hazards at 20 (just over a standing kitten); 2 HP |

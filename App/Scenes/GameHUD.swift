@@ -44,4 +44,8 @@ final class GameHUD {
     /// An ability just won, shown as an award card for a moment.
     var award: Ability?
     var isPaused = false
+    /// Debug builds only (the jump trace): how many jumps have landed, and the last one's apex above
+    /// where it started, in world units. Read by the jump-height UI test.
+    var debugJumpCount = 0
+    var debugJumpApex = 0.0
 }

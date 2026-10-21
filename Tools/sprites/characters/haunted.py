@@ -1,5 +1,5 @@
-"""World 3, the haunted museum: ghost cats, bats, skeleton mice and their bones, flying skulls, the
-cursed bell, gravestones and the vanishing platform."""
+"""World 3, the haunted museum: skeleton mice and their bones, flying skulls, the cursed bell, gravestones
+and the vanishing platform. The ghost cat, bat and the other museum critters are in `haunted_critters.py`."""
 from __future__ import annotations
 
 import math
@@ -7,69 +7,8 @@ import math
 from PIL import Image
 
 import palette as P
-from characters.hero import CatPose, Coat, cat
-from draw import Canvas, see_through, shatter, tint, vanish
+from draw import Canvas, see_through, shatter, tint
 from sprite import Sprite, single
-
-GHOST = Coat(fur=P.LILAC, fur_l=P.WHITE, fur_d=P.LILAC_D, stripe=P.VIOLET, belly=P.WHITE, belly_d=P.LILAC_D,
-             nose=P.VIOLET, eye=P.INDIGO, shine=P.SPIRIT, inner_ear=P.VIOLET)
-
-
-def ghost_cat_frame(step: int) -> Image.Image:
-    """A see-through cat drifting forward, forepaws reaching, its back half trailing off in wisps."""
-    size, cx, gy = (38, 26), 19, 22
-    bob = (0, -1, -1, 0)[step]
-    c = Canvas(*size)
-    cat(c, CatPose(front_near=(70, 80), front_far=(60, 70), back_near=(-80, -95), back_far=(-70, -90), stretch=1,
-                   tilt=1, tail=20 + step * 6, curl=6, eye="wide"), cx=cx, ground=gy + bob, coat=GHOST)
-    for k in range(4):                                     # wispy hem under the body
-        x = cx - 7 + k * 3
-        c.line((x, gy - 3 + bob), (x - 2 - (step + k) % 2, gy + 1 + bob), P.LILAC_D)
-    c.outline(P.PURPLE)
-    return see_through(c.img, 205)
-
-
-def ghost_cat() -> Sprite:
-    sprite = Sprite("ghost_cat", (38, 26), faces_left=True, cx=19, ground=22)
-    floating = [ghost_cat_frame(i) for i in range(4)]
-    sprite.add("float", floating, fps=6)
-    # Blinking out: thinner and thinner (the game shows it as harmless while faded).
-    sprite.add("fade", [see_through(floating[0], a) for a in (150, 100, 60, 30)], fps=10, loop=False)
-    return sprite
-
-
-def bat_frame(wing: float, eye: str = "open") -> Canvas:
-    """`wing` from -1 (down) to 1 (up)."""
-    c = Canvas(22, 16)
-    cx, cy = 11, 8
-    tip = cy - wing * 6
-    for side in (-1, 1):
-        x0 = cx + side * 2
-        pts = [(x0, cy - 1), (cx + side * 6, tip - 1), (cx + side * 10, tip + 1), (cx + side * 8, cy + 1 - wing),
-               (cx + side * 6, cy + 2 - wing * 0.5), (cx + side * 4, cy + 1), (x0, cy + 2)]
-        c.poly(pts, P.PURPLE_D)
-        c.line((x0, cy - 1), (cx + side * 9, tip + 0.5), P.PURPLE)
-    c.ellipse(cx, cy, 3, 3.5, P.PURPLE)
-    c.poly([(cx - 2.5, cy - 2), (cx - 2, cy - 6), (cx - 0.5, cy - 3)], P.PURPLE)
-    c.poly([(cx + 0.5, cy - 3), (cx + 2, cy - 6), (cx + 2.5, cy - 2)], P.PURPLE)
-    if eye == "x":
-        c.px(cx - 1, cy - 1, P.BLACK)
-        c.px(cx + 1, cy - 1, P.BLACK)
-    else:
-        c.px(cx - 1, cy - 1, P.YELLOW)
-        c.px(cx + 1, cy - 1, P.YELLOW)
-    c.px(cx - 0.5, cy + 2, P.WHITE)
-    c.px(cx + 0.5, cy + 2, P.WHITE)
-    return c.outline()
-
-
-def bat() -> Sprite:
-    sprite = Sprite("bat", (22, 16), faces_left=True, cx=11, ground=13)
-    fly = [bat_frame(w).img for w in (1, 0.3, -0.8, 0.3)]
-    sprite.add("fly", fly, fps=12)
-    sprite.add("death", [vanish(bat_frame(-0.3, "x").img, t / 2, depth=4) for t in range(3)], fps=10, loop=False)
-    return sprite
-
 
 def skeleton_mouse_frame(arm: float, holding: bool, bob: float = 0, step: int = 0) -> Canvas:
     """An upright mouse skeleton, about 18px tall: round-eared skull, ribs, a long bony tail."""
@@ -210,43 +149,64 @@ def bell() -> Sprite:
 
 
 def tombstone() -> Sprite:
-    """A gravestone, tall (about 14x22), with a paw print carved in it."""
+    """A gothic violet gravestone (about 14x22): a pointed top with two cat ears, a glowing magenta cat crest,
+    a stepped plinth and a candle stub at its foot."""
     c = Canvas(20, 26)
-    c.poly([(3, 24), (3, 7), (6, 3), (10, 2), (14, 3), (17, 7), (17, 24)], P.GREY)
-    c.poly([(3, 24), (3, 7), (6, 3), (7, 3), (5, 8), (5, 24)], P.GREY_D)
-    c.rect(1, 23, 19, 25, P.SLATE)
-    c.ellipse(10, 13.5, 2.4, 1.8, P.SLATE)                  # carved paw print
-    for dx, dy in ((-3, -2), (-1, -4), (1.5, -4), (3.5, -2)):
-        c.rect(10 + dx - 0.5, 13 + dy - 0.5, 10 + dx, 13 + dy, P.SLATE)
-    c.line((7, 18), (15, 18), P.SLATE)
-    c.line((8, 20), (14, 20), P.SLATE)
-    c.line((14, 4), (12, 8), P.GREY_D)                      # crack
-    for x, h in ((2, 2), (4, 3), (16, 2), (18, 3)):         # dead grass at the foot
-        c.line((x, 24), (x + 1, 24 - h), P.PURPLE_D)
-    c.rect(4, 20, 6, 22, P.MOSS)
-    c.px(7, 22, P.MOSS)
-    return single("tombstone", c.outline(), ground=25)
+    c.poly([(3, 23), (3, 9), (6, 5), (10, 2), (14, 5), (17, 9), (17, 23)], P.HM_STONE)
+    c.poly([(5, 6), (4, 1), (8, 4)], P.HM_STONE)              # ears
+    c.poly([(15, 6), (16, 1), (12, 4)], P.HM_STONE_D)
+    c.poly([(3, 23), (3, 9), (6, 5), (7, 5), (5, 10), (5, 23)], P.HM_STONE_L)   # lit side
+    c.poly([(15, 9), (17, 9), (17, 23), (15, 23)], P.HM_STONE_D)
+    c.ellipse(10, 12, 3.5, 3, P.HM_GLASS_D)                   # the crest: a glowing cat face
+    c.ellipse(10, 12, 2.5, 2, P.HM_GLASS)
+    c.poly([(7, 11), (7.5, 8), (9, 10)], P.HM_GLASS)
+    c.poly([(13, 11), (12.5, 8), (11, 10)], P.HM_GLASS)
+    c.px(9, 12, P.HM_GLASS_L)
+    c.px(11, 12, P.HM_GLASS_L)
+    c.line((7, 17), (13, 17), P.HM_STONE_D)                   # carved lines
+    c.line((8, 19), (12, 19), P.HM_STONE_D)
+    c.line((14, 6), (13, 9), P.HM_STONE_D)                    # crack
+    c.rect(1, 22, 19, 25, P.HM_STONE_D)                       # plinth
+    c.rect(1, 22, 19, 22, P.HM_STONE_L)
+    c.rect(2, 24, 18, 24, P.HM_STONE_DD)
+    c.rect(16, 19, 17, 21, P.HM_WAX)                          # a candle stub at the foot, small and calm
+    c.px(16, 18, P.HM_FLAME)
+    c.px(18, 21, P.HM_WAX_D)
+    return single("tombstone", c.outline(P.HM_STONE_DD), ground=25)
 
 
 def vanish_platform() -> Sprite:
+    """48x10 floating stone slab (walk surface = the lit top row): bricks with two candles set in niches in its
+    face, and a rocky underside glowing magenta. It fades out with a pink spirit flicker."""
     w, h = 48, 10
     c = Canvas(w, h)
-    c.rect(0, 1, w - 1, 7, P.INDIGO)
-    c.rect(0, 1, w - 1, 1, P.LILAC_D)
-    for x in range(0, w, 12):                               # stone blocks with a glowing rune each
-        c.line((x, 1), (x, 7), P.NIGHT)
-        c.px(x + 5, 4, P.SPIRIT)
-        c.px(x + 6, 3, P.SPIRIT)
-        c.px(x + 7, 4, P.SPIRIT)
-    for x in (6, 20, 30, 42):
-        c.rect(x, 8, x + 1, 8 + (x % 3 == 0), P.PURPLE_D)
-    still = c.outline(P.NIGHT).img
+    c.poly([(2, 6), (46, 6), (40, 8), (30, 9), (24, 9), (12, 8)], P.HM_STONE_D)    # rocky underside
+    for x, d in ((9, 1), (16, 2), (23, 3), (31, 2), (38, 1)):
+        c.poly([(x - 2, 7), (x + 2, 7), (x, 7 + d)], P.HM_STONE_DD)
+        c.px(x, 7, P.HM_GLASS_D)
+    for k, x in enumerate(range(0, w, 12)):                    # the slab's bricks
+        x1 = min(x + 11, w - 1)
+        c.rect(x, 1, x1, 5, P.HM_STONE)
+        c.rect(x, 1, x1, 1, P.HM_STONE_L)
+        c.rect(x, 5, x1, 5, P.HM_STONE_D)
+        c.rect(x1, 1, x1, 5, P.HM_STONE_DD)
+    c.rect(0, 0, w - 1, 0, P.HM_STONE_TOP)                     # lit walk surface
+    for x in (7, 39):                                         # candles in niches in the face
+        c.rect(x - 2, 2, x + 2, 5, P.HM_STONE_DD)
+        c.rect(x - 1, 4, x, 5, P.HM_WAX)
+        c.px(x - 1, 3, P.HM_FLAME)
+        c.px(x, 3, P.HM_FLAME_D)
+    slab = c.outline(P.HM_STONE_DD).img
+    under = Canvas(w, h)                                      # the magenta glow under it, blended behind
+    under.ellipse(24, 8, 22, 2.5, (P.HM_GLASS[0], P.HM_GLASS[1], P.HM_GLASS[2], 70))
+    under.paste(slab)
+    still = under.img
     sprite = Sprite("vanish", still.size)
     sprite.add("solid", [still], fps=1)
-    sprite.add("fading", [see_through(still, 255), see_through(tint(still, P.SPIRIT, 0.4), 190),
-                          see_through(still, 120), see_through(tint(still, P.SPIRIT, 0.4), 60)], fps=8)
+    sprite.add("fading", [see_through(still, 255), see_through(tint(still, P.HM_GLASS_L, 0.4), 190),
+                          see_through(still, 120), see_through(tint(still, P.HM_GLASS_L, 0.4), 60)], fps=8)
     return sprite
 
 
 def build() -> list[Sprite]:
-    return [ghost_cat(), bat(), skeleton_mouse(), bone(), skull(), bell(), tombstone(), vanish_platform()]
+    return [skeleton_mouse(), bone(), skull(), bell(), tombstone(), vanish_platform()]

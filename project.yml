@@ -15,6 +15,10 @@ targets:
       - path: App
     dependencies:
       - package: GameCore
+    # The shared scheme also runs the UI tests (`xcodebuild test`); a plain build ignores them.
+    scheme:
+      testTargets:
+        - PurrfectlyDangerousUITests
     settings:
       base:
         # Must match the App ID registered in the Apple Developer account and App Store Connect.
@@ -23,7 +27,7 @@ targets:
         DEVELOPMENT_TEAM: Q8URUD52A2
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
@@ -36,3 +40,20 @@ targets:
         # Label under the home-screen icon. iOS cuts it off after about 12 characters, so this is a
         # short form of "game.title" in App/Resources/Lore.json.
         INFOPLIST_KEY_CFBundleDisplayName: Purrfectly
+  # Touch-level regression tests driving the debug build in the simulator (see UITests/).
+  PurrfectlyDangerousUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: PurrfectlyDangerous
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pryvalov.purrfectlydangerous.uitests
+        DEVELOPMENT_TEAM: Q8URUD52A2
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: PurrfectlyDangerous
