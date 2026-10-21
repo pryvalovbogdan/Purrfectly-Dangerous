@@ -95,6 +95,14 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | citadel | `mech_mouse` | Fast chaser, 2 HP; stomp is a safe bounce |
 | citadel | `gear` | Static, tall |
 | citadel | `crate_wall` | 120 high: only a Super Pounce breaks it (needs hero level 5); yarn bounces off |
+| citadel | `lava_slime` | Walker (14/s), no stomp; every 2.4 s in range lobs a `lava_glob` from 12 up that lands ahead and becomes a `lava_puddle` (18×4) for 1 s |
+| citadel | `fire_imp` | Hovers 40 up; once 140 from the hero it keeps that distance for 3 s, then drifts in at 20/s; every 2.2 s in range fires a `fireball_shot` along the ground at 4 |
+| citadel | `stone_guard` | 26×32 walker (8/s); stomp is a safe bounce; within 60 it throws a short `magma_blast` (12×8) at 8; 4 HP; needs hero level 3 |
+| citadel | `hell_hound` | A chase: unseen until the hero reaches the spot it is placed at; 0.6 s warning, then it runs in from 120 behind the hero at the level speed + 130, past it and on out of sight (over ravines and steps); hurts on any touch; 2 HP. Place it where the hero has flat ground for a jump about 1–1.5 s after reaching that spot |
+| citadel | `ember_bat` | Like `ice_bat`: flies at 42, swoops to 28 |
+| citadel | `flame_archer` | 16×24, stands; every 2 s in range fires a `flame_arrow` (12×4) at 6; a stomp kills; 2 HP. Put it on a ledge (terrain) for its intended look |
+| citadel | `chainsaw_cat` | 26×30 walker (10/s) with a 20×24 blade zone in front of its body that hurts too; no stomp; 5 HP; needs hero level 5 (a Super Pounce through it defeats it) |
+| citadel | `fire_wisp` | Floats 20 up, drifting in at 40/s; within 50 it flashes 0.5 s keeping that gap, then bursts into a `fire_ring` (40×10) on the ground for 0.4 s; yarn (from a hop) defeats it first |
 | any | `fish` | +5 XP and +1 fish |
 | any | `yarn_basket` | Raises the hero to `shrineLevel` |
 

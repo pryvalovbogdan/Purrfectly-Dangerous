@@ -1115,6 +1115,39 @@
    }
   }
  },
+ "chainsaw_cat": {
+  "width": 70,
+  "height": 48,
+  "anchorX": 0.6786,
+  "anchorY": 0.0417,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "confetti_blue": {
   "width": 8,
   "height": 8,
@@ -1241,8 +1274,123 @@
    }
   }
  },
+ "ember_bat": {
+  "width": 50,
+  "height": 34,
+  "anchorX": 0.49,
+  "anchorY": 0.1765,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "fire_imp": {
+  "width": 44,
+  "height": 38,
+  "anchorX": 0.5341,
+  "anchorY": 0.1316,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "fire_orb": {
   "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
+ "fire_ring": {
+  "width": 48,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0.0,
+  "animations": {
+   "burn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "fire_wisp": {
+  "width": 50,
+  "height": 54,
+  "anchorX": 0.49,
+  "anchorY": 0.3704,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "fireball_shot": {
+  "width": 12,
   "height": 10,
   "anchorX": 0.5,
   "anchorY": 0,
@@ -1262,6 +1410,52 @@
   "animations": {
    "spin": {
     "frames": 6,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "flame_archer": {
+  "width": 46,
+  "height": 36,
+  "anchorX": 0.6413,
+  "anchorY": 0.0556,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
+ "flame_arrow": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
     "fps": 10,
     "loop": true
    }
@@ -1815,6 +2009,39 @@
    }
   }
  },
+ "hell_hound": {
+  "width": 58,
+  "height": 34,
+  "anchorX": 0.6121,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "run": {
+    "frames": 6,
+    "fps": 12,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "hero": {
   "width": 44,
   "height": 36,
@@ -2278,6 +2505,65 @@
    }
   }
  },
+ "lava_glob": {
+  "width": 10,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "lava_puddle": {
+  "width": 22,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0.0,
+  "animations": {
+   "burn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "lava_slime": {
+  "width": 36,
+  "height": 30,
+  "anchorX": 0.5139,
+  "anchorY": 0.0667,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "leaf": {
   "width": 10,
   "height": 8,
@@ -2352,6 +2638,19 @@
    "fly": {
     "frames": 2,
     "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "magma_blast": {
+  "width": 14,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
     "loop": true
    }
   }
@@ -2681,7 +2980,33 @@
  },
  "ravine_citadel": {
   "width": 8,
-  "height": 48,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_b": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_back": {
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2693,8 +3018,8 @@
   }
  },
  "ravine_citadel_deep": {
-  "width": 8,
-  "height": 8,
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2705,9 +3030,126 @@
    }
   }
  },
+ "ravine_citadel_falls": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_falls_edge": {
+  "width": 4,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "ravine_citadel_fill": {
   "width": 8,
   "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_floor": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_lip": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_pool": {
+  "width": 16,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "churn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_rim": {
+  "width": 12,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_splash": {
+  "width": 16,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "splash": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_surface": {
+  "width": 16,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "wave": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_citadel_vines": {
+  "width": 6,
+  "height": 24,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -3698,6 +4140,39 @@
    }
   }
  },
+ "stone_guard": {
+  "width": 60,
+  "height": 46,
+  "anchorX": 0.625,
+  "anchorY": 0.0435,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "stump": {
   "width": 22,
   "height": 26,
@@ -3737,6 +4212,58 @@
  "sunburst": {
   "width": 160,
   "height": 160,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_citadel_edge": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_citadel_fill": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_citadel_top": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_citadel_wall": {
+  "width": 8,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {

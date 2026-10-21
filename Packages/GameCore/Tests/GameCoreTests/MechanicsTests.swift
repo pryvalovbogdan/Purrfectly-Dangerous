@@ -1226,6 +1226,233 @@ import Testing
         #expect(touch(.snailCat, .curled, above: true) == .bounce)
     }
 
+    // MARK: - Citadel creatures (Cataclysm Citadel sheet)
+
+    static let citadelCreatures: [ItemKind] = [.lavaSlime, .fireImp, .stoneGuard, .hellHound, .emberBat,
+                                               .flameArcher, .chainsawCat, .fireWisp]
+
+    /// A flat test level at world 4's speed.
+    func citadelLevel(_ items: [PlacedItem], length: Double = 2000, entry: Int = 5) -> LevelDefinition {
+        var level = flatLevel(items: items, length: length, entry: entry, reward: max(entry, 2))
+        level.speed = 140
+        return level
+    }
+
+    @Test func citadelCreaturesHaveTheirIdsAndHitboxes() {
+        let expected: [(ItemKind, String, Double, Double, Int, Int)] = [
+            (.lavaSlime, "lava_slime", 20, 14, 1, 15), (.fireImp, "fire_imp", 18, 18, 1, 25),
+            (.stoneGuard, "stone_guard", 26, 32, 4, 50), (.hellHound, "hell_hound", 26, 18, 2, 35),
+            (.emberBat, "ember_bat", 18, 14, 1, 15), (.flameArcher, "flame_archer", 16, 24, 2, 30),
+            (.chainsawCat, "chainsaw_cat", 26, 30, 5, 80), (.fireWisp, "fire_wisp", 14, 14, 1, 20),
+        ]
+        for (kind, id, width, height, hp, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.hp == hp, "\(id) hp")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+            #expect(kind.spec.yarnable, "\(id) is yarnable")
+        }
+        #expect(ItemKind.stoneGuard.spec.minHeroLevel == 3)
+        #expect(ItemKind.chainsawCat.spec.minHeroLevel == 5)
+        // The original citadel set is still there.
+        for id in ["vent", "piston", "cannon", "debris", "mech_mouse", "gear", "crate_wall"] {
+            #expect(ItemKind(rawValue: id) != nil)
+        }
+    }
+
+    @Test func lavaSlimeSpitsGlobsThatLeaveABriefBurningPuddle() throws {
+        var world = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .lavaSlime)]), boss: nil)
+        advance(&world) { $0.hazards.contains { $0.kind == "lava_glob" } }
+        let glob = try #require(world.hazards.first)
+        #expect(glob.gravity > 0 && glob.y > 6)
+        advance(&world, limit: 2) { $0.hazards.first?.kind == "lava_puddle" }
+        let puddle = try #require(world.hazards.first { $0.id == glob.id })
+        #expect(puddle.kind == "lava_puddle" && puddle.y == 0 && puddle.vx == 0)
+        #expect(puddle.width == 18 && puddle.height == 4)
+        #expect(puddle.x - world.distance > 30)
+        // It burns about a second, then is gone.
+        let landedAt = world.time
+        advance(&world, limit: 2) { !$0.hazards.contains { $0.id == glob.id } }
+        #expect(abs(world.time - landedAt - 1.0) < 0.1)
+        // Molten: no stomp. One yarn puts it out.
+        #expect(!ItemKind.lavaSlime.spec.stompable)
+        #expect(stompAttempts(.lavaSlime).isEmpty)
+        #expect(takesYarn(.lavaSlime, 1))
+    }
+
+    @Test func fireImpKeepsItsDistanceThenDriftsInFiringLowFireballs() throws {
+        let keep = try #require(ItemKind.fireImp.spec.keepAhead)
+        var world = RunnerWorld(level: citadelLevel([.init(at: 800, kind: .fireImp)]), boss: nil)
+        advance(&world) { gap($0, .fireImp) <= keep.distance + 0.5 }
+        #expect(world.entities.first?.y == 40)
+        let heldFrom = world.time
+        var balls: [Hazard] = []
+        while world.time - heldFrom < keep.duration - 0.05 {
+            let known = Set(world.hazards.map(\.id))
+            let step = world.step(Input(), dt: dt)
+            if threw(step) { balls += world.hazards.filter { !known.contains($0.id) } }
+            #expect(abs(gap(world, .fireImp) - keep.distance) < 0.5)
+        }
+        let ball = try #require(balls.first)
+        #expect(ball.kind == "fireball_shot" && ball.y == 4 && ball.gravity == 0)
+        world.run(0.5)
+        #expect(gap(world, .fireImp) < keep.distance - 60)
+        // Up at 40 it takes yarn from a hop; on the ground the fireballs must be jumped.
+        #expect(defeated(jumpVolley(at: .fireImp, count: 1, from: 200, fireAbove: 34), .fireImp))
+        var standing = RunnerWorld(level: citadelLevel([.init(at: 800, kind: .fireImp)]), boss: nil)
+        #expect(hit(standing.run(6)))
+    }
+
+    @Test func stoneGuardIsASafeBounceAndThrowsAShortMagmaBlast() throws {
+        let landings = cleanLandings(stompAttempts(.stoneGuard))
+        #expect(!landings.isEmpty)
+        for events in landings {
+            #expect(!hit(events))
+            #expect(!defeated(events, .stoneGuard))
+        }
+        var world = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .stoneGuard)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        var blasts: [Double] = []
+        while world.time < 8, !world.isOver, world.entities.contains(where: { $0.kind == .stoneGuard }) {
+            let step = world.step(Input(), dt: dt)
+            if threw(step) { blasts.append(gap(world, .stoneGuard)) }
+        }
+        #expect(!blasts.isEmpty)
+        #expect(blasts.allSatisfy { $0 <= 60 })
+        var blaster = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .stoneGuard)]), boss: nil)
+        advance(&blaster) { !$0.hazards.isEmpty }
+        let blast = try #require(blaster.hazards.first)
+        #expect(blast.kind == "magma_blast" && blast.y == 8 && blast.gravity == 0)
+        #expect(takesYarn(.stoneGuard, 4))
+    }
+
+    @Test func hellHoundWarnsThenRunsInFromBehindAndOvertakes() throws {
+        let chase = try #require(ItemKind.hellHound.spec.chase)
+        var world = RunnerWorld(level: citadelLevel([.init(at: 600, kind: .hellHound)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let lurking = try #require(world.entities.first)
+        #expect(lurking.state == .hidden && !lurking.isTangible && !lurking.catchesYarn)
+        // When the kitten reaches its spot, a warning (the app shows an arrow behind the kitten).
+        let warned = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(warned.contains { if case .chaseWarning = $0 { true } else { false } })
+        #expect(world.distance >= 600 - chase.trigger - 1)
+        #expect(world.entities.first?.isTangible == false)
+        advance(&world, limit: 2) { $0.entities.first?.state == .active }
+        let hound = try #require(world.entities.first)
+        #expect(hound.x < world.distance - chase.behind + 4)
+        #expect(hound.isTangible)
+        // Faster than the kitten: it catches up and passes.
+        var standing = world
+        let before = standing.distance - hound.x
+        standing.run(0.2)
+        let after = standing.distance - (standing.entities.first?.x ?? -.infinity)
+        #expect(before - after > 0.2 * chase.overtake - 2)
+        #expect(hit(standing.run(2)))
+        // A jump timed off its appearance clears it (it is not stompable: only over it).
+        let clean = stride(from: 0.0, to: 1.2, by: 0.04).contains { delay in
+            var jumper = world
+            var events = jumper.run(delay)
+            events += jumper.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            events += jumper.run(2, Input(jumpHeld: true))
+            return !hit(events)
+        }
+        #expect(clean)
+        #expect(!ItemKind.hellHound.spec.stompable)
+    }
+
+    @Test func emberBatSwoopsButNeverLowEnoughToHitAStandingKitten() {
+        var world = RunnerWorld(level: citadelLevel([.init(at: 500, kind: .emberBat)]), boss: nil)
+        var lowest = Double.infinity
+        var events: [GameEvent] = []
+        while world.time < 6 {
+            events += world.step(Input(), dt: dt)
+            if let bat = world.entities.first(where: { $0.kind == .emberBat }) { lowest = min(lowest, bat.y) }
+        }
+        #expect(lowest >= 28)
+        #expect(!hit(events))
+    }
+
+    @Test func flameArcherStandsAndShootsLowArrowsAndAStompKillsIt() throws {
+        var world = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .flameArcher)]), boss: nil)
+        advance(&world) { !$0.hazards.isEmpty }
+        let arrow = try #require(world.hazards.first)
+        #expect(arrow.kind == "flame_arrow" && arrow.y == 6 && arrow.gravity == 0)
+        #expect(world.entities.first?.x == 700)
+        #expect(stompAttempts(.flameArcher).contains { defeated($0, .flameArcher) })
+        #expect(takesYarn(.flameArcher, 2))
+    }
+
+    @Test func chainsawCatsBladeReachesAheadOfItsBodyAndASuperPounceCutsThrough() throws {
+        let reach = try #require(ItemKind.chainsawCat.spec.reach)
+        var world = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .chainsawCat)]), boss: nil)
+        var firstHitGap: Double?
+        while world.time < 8, firstHitGap == nil, !world.isOver {
+            if hit(world.step(Input(), dt: dt)) { firstHitGap = gap(world, .chainsawCat) }
+        }
+        let bodyTouch = ItemKind.chainsawCat.spec.width / 2 + world.tuning.heroWidth / 2
+        #expect((firstHitGap ?? 0) > bodyTouch + reach.width / 2)
+        #expect(!ItemKind.chainsawCat.spec.stompable)
+        #expect(takesYarn(.chainsawCat, 5))
+        // The blade faces the way it walks.
+        var entity = Entity(id: 1, kind: .chainsawCat, x: 100, y: 0, hp: 5)
+        #expect((entity.reachBox?.maxX ?? .infinity) <= entity.box.minX)
+        entity.reversed = true
+        #expect((entity.reachBox?.minX ?? -.infinity) >= entity.box.maxX)
+        // A Super Pounce through blade and body defeats it.
+        let pounces = stride(from: 40.0, to: 90, by: 4).map { pounce(into: .chainsawCat, releaseAt: $0) }
+        #expect(pounces.contains { defeated($0, .chainsawCat) && !hit($0) })
+    }
+
+    @Test func fireWispFlashesKeepsItsDistanceThenBurstsIntoARing() throws {
+        let fuse = try #require(ItemKind.fireWisp.spec.fuse)
+        var world = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .fireWisp)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 20)
+        let lit = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(lit.contains { if case .fuseLit = $0 { true } else { false } })
+        let litGap = gap(world, .fireWisp)
+        #expect(litGap <= fuse.trigger && litGap > fuse.trigger - 5)
+        world.run(fuse.warning / 2)
+        #expect(abs(gap(world, .fireWisp) - litGap) < 0.5)
+        let burst = advance(&world, limit: 1) { !$0.hazards.isEmpty }
+        #expect(burst.contains { if case .exploded = $0 { true } else { false } })
+        #expect(!defeated(burst, .fireWisp))
+        #expect(!world.entities.contains { $0.kind == .fireWisp })
+        let ring = try #require(world.hazards.first)
+        #expect(ring.kind == "fire_ring" && ring.y == 0 && ring.width == fuse.ringWidth && ring.vx == 0)
+        // Running on is burned; a hop over the ring, or a Ghost Dash through it, is not.
+        var runner = world
+        #expect(hit(runner.run(1)))
+        var hopper = world
+        #expect(!hit(hopper.step(Input(jumpPressed: true, jumpHeld: true), dt: dt) + hopper.run(1, Input(jumpHeld: true))))
+        var dashed = RunnerWorld(level: citadelLevel([.init(at: 700, kind: .fireWisp)]), boss: nil, stats: hero(4))
+        // Dashed as the kitten reaches the ring's near edge.
+        advance(&dashed) { world in
+            world.hazards.first.map { $0.box.minX - world.heroBox.maxX < 3 } ?? false
+        }
+        #expect(!hit(dashed.step(Input(pawPressed: true), dt: dt) + dashed.run(0.4)))
+        // The ring burns out.
+        world.run(fuse.ringLife + 0.1)
+        #expect(!world.hazards.contains { $0.kind == "fire_ring" })
+        // Shot down (from a hop) before it blows, it is defeated.
+        #expect(defeated(jumpVolley(at: .fireWisp, count: 1, from: 200, fireAbove: 14), .fireWisp))
+    }
+
+    static let citadelBotCases: [(ItemKind, Int)] = citadelCreatures.flatMap { kind in
+        [3, 5].filter { $0 >= kind.spec.minHeroLevel }.map { (kind, $0) }
+    }
+
+    @Test(arguments: MechanicsTests.citadelBotCases)
+    func botClearsEachCitadelCreatureWithoutAHit(kind: ItemKind, entry: Int) {
+        let level = citadelLevel([.init(at: 400, kind: kind), .init(at: 900, kind: kind)], length: 1500, entry: entry)
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
+    @Test func botClearsACitadelRunOfEveryCreature() {
+        let items = Self.citadelCreatures.enumerated().map { PlacedItem(at: 400 + Double($0.offset) * 380, kind: $0.element) }
+        #expect(LevelValidator.botRun(citadelLevel(items, length: 3800), boss: nil).finished)
+    }
+
     // MARK: - Bot
 
     @Test func botPouncesThroughCrateWalls() {

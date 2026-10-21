@@ -101,6 +101,20 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | cannonball | 16×10 | fly 4 |
 | debris | 18×22 | hang 2, fall 2, shatter 4 |
 | mech_mouse | 32×20 | run 4, death 4 |
+| lava_slime | 36×30 | idle 2, move 4, attack 3 (puff, spit a lava glob, settle), hit 2, death 4 (melts flat). Molten cat-eared dome with a black crust on its crown and a lava pool at its foot; feet on row 27, x 17; 20×14 hitbox |
+| lava_glob | 10×10 | fly 4. Molten ball about 8×8 |
+| fire_imp | 44×38 | fly 4, attack 3 (wind up, throw a fireball, recover), hit 2, death 4 (burns away). Horned black cat with flame wings, glowing belly and a flame-tipped tail; feet on row 32, x 20; 18×18 hitbox |
+| fireball_shot | 12×10 | fly 4. Fireball about 10×8 with a tapering flame tail |
+| stone_guard | 60×46 | idle 2, walk 4, attack 4 (draw back, magma forming at the fist, punch with a magma blast, recover), hit 2, death 4. Cat-eared golem of black stone plates with glowing lava seams and molten knuckles; feet on row 43, x 22; 26×32 hitbox |
+| magma_blast | 14×12 | fly 4. Big molten ball about 12×10 with a tail |
+| hell_hound | 58×34 | idle 2, run 6 (gallop), attack 4 (crouch, lunge, bite with a fire breath, recover), hit 2, death 4. Lean black hound-cat with a flaming mane, lava spots and glowing jaws; feet on row 31, x 22; 26×18 hitbox |
+| ember_bat | 50×34 | fly 4, attack 3 (wings up, swept-back dive with a fire trail, pull up), hit 2, death 3. Black cat-faced bat with ember-orange wings; feet on row 27, x 25; 18×14 hitbox |
+| flame_archer | 46×36 | idle 2, walk 4, attack 4 (draw, full draw, loose the flame arrow, recover), hit 2, death 4. Hooded cultist cat in a charcoal robe with a red sash and cape, a glowing face and a recurve bow; feet on row 33, x 16; 16×24 hitbox |
+| flame_arrow | 16×6 | fly 2. Arrow about 14×4 with a burning head, point first |
+| chainsaw_cat | 70×48 | idle 2, walk 4, attack 4 (saw raised, swept level reaching about 33 px ahead of the anchor with fire and embers, twice, then lowered), hit 2, death 4. Horned executioner cat in black armour with a red cape and a glowing chainsaw (held angled down at rest); feet on row 45, x 22; 26×30 hitbox |
+| fire_wisp | 50×54 | idle 2, move 4, attack 4 (swells twice, then a burst ring of flames about 24 and then 40 wide round it), hit 2, death 4 (gutters out into embers). A floating flame with a cat face, flame ears and crown, fire licks streaming behind; body bottom on row 33, x 25 (the ring reaches below it); 14×14 hitbox |
+| lava_puddle | 22×8 | burn 4 @8fps. Lingering hazard: a glowing molten puddle about 20×6 with a crusted rim and bubbles that swell and pop; centred, bottom row (7) on the ground; 18×4 hitbox |
+| fire_ring | 48×16 | burn 4 @8fps. Lingering hazard: a ring of low flames on the ground seen from the side, about 42×12 (far half lower and darker, near half in front) over glowing ground; centred, bottom row (15) on the ground; 40×10 hitbox |
 | gear | 30×30 | spin 4 |
 | crate_wall | 24×124 | still 1, break 5 |
 | boss_mecha | 168×124 | idle 4, rockets 6, tail 6, core 4 (chest open), hurt 2, death 8 |
@@ -213,6 +227,16 @@ capstones over 6-row brick courses that run on into the earth. The pit is a purp
 curtain, fog swirls, a violet glow, a dark stone floor, and chained lanterns in the vines' slot. The terrain tops
 (`terrain_haunted_*`) carry a crimson runner, with candle stubs dripping wax at the ends.
 
+World 4 (`citadel`) is the Cataclysm Citadel (`characters/cataclysm.py`, after
+`docs/concept/Cataclysm Citadel Tileset Showcase.png`), again with the forest's names, sizes and contracts: a crimson
+sky with smoke and the black eclipse ringed in red (in `bg_citadel_clouds`), volcanic mountains and the spiky citadel
+with its cat crest (`far`), arched bridges between brazier towers with banners, chains and lavafalls (`near`), and rock
+and spikes over an ember glow (`bushes`). The ground is charred cobbles with lava dripping from the cap edge. The pit is
+a lava pit (`ravine_citadel_*`): a lavafall, a crusted molten surface with bubbles, a bright pool, a dark rock floor and
+chains in the vines' slot. The terrain blocks (`terrain_citadel_*`) are charred slabs with lava seeping from under the
+cap. The props (`vent`, `piston`, `gear`, `crate_wall`, `cannon` and `debris`) were restyled to match, with their sizes,
+frames and anchors unchanged.
+
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 
 The jump buttons (`characters/buttons.py`) follow `docs/concept/Pixel Art Jump Button UI Sheet.png` (top row); the paw is pixel-identical in every button (the pressed ones shift it down 1 px), so swapping states never jumps. The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
@@ -236,7 +260,8 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. The forest critters (`forest_critters.py`), the haunted critters (`haunted_critters.py`; spirits are see-through
+afterwards. The forest critters (`forest_critters.py`), the citadel critters (`citadel_critters.py`; black stone with an ember
+rim from `critters.rim`, lava ramping to a white-hot core), the haunted critters (`haunted_critters.py`; spirits are see-through
 with a bright outline, magic is magenta) and the frost critters (`frost_critters.py`; slash arcs are glowing ice
 crescents laid on after the outline, hits are a white flash then ice sparkles) are built from shaded parts in `critters.py` (`shaded` lights each part's top-left
 rim and darkens the far rim, `face` draws the big cat eyes with a shine, `ear`, `sparkle`). Death frames come from `vanish()` (flash, then sink or rise while fading), `shatter()` (breaks

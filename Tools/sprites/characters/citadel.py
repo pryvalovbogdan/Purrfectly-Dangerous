@@ -21,8 +21,12 @@ def flame_column(c: Canvas, cx: float, bottom: float, height: float, step: int, 
         c.rect(cx - half * 0.65 + wobble, y, cx + half * 0.65 + wobble, y, P.LAVA)
         if t < 0.75:
             c.rect(cx - half * 0.3 + wobble, y, cx + half * 0.3 + wobble, y, P.LAVA_L)
+        if t < 0.35:
+            c.rect(cx - half * 0.12 + wobble, y, cx + half * 0.12 + wobble, y, P.CC_LAVA_W)
     for _ in range(4):
         c.px(cx + (rnd() - 0.5) * width * 2.5, bottom - height - rnd() * 5, P.LAVA_L)
+    for _ in range(3):                                      # embers along the sides
+        c.px(cx + (rnd() - 0.5) * width * 3, bottom - rnd() * height, P.CC_EMBER)
 
 
 def vent() -> Sprite:
@@ -31,12 +35,14 @@ def vent() -> Sprite:
 
     def grate(glow) -> Canvas:
         c = Canvas(*size)
-        c.rect(1, gy - 4, 20, gy, P.IRON)
-        c.rect(1, gy - 4, 20, gy - 4, P.IRON_L)
+        c.rect(1, gy - 4, 20, gy, P.CC_STONE)                # charred stone housing
+        c.rect(1, gy - 4, 20, gy - 4, P.CC_STONE_TOP)
+        c.rect(1, gy, 20, gy, P.CC_STONE_D)
+        c.rect(3, gy - 3, 18, gy - 1, P.IRON_D)              # iron grate over the glow
         for x in range(4, 19, 3):
             c.rect(x, gy - 3, x + 1, gy - 1, glow)
-        c.px(2, gy - 2, P.IRON_L)
-        c.px(19, gy - 2, P.IRON_L)
+        for x in (2, 19):                                   # rivets
+            c.px(x, gy - 2, P.CC_STONE_L)
         return c
 
     sprite = Sprite("vent", size, cx=cx, ground=gy)
@@ -65,13 +71,19 @@ def piston() -> Sprite:
     def frame(head_bottom: float, light, dust: int = 0, shake: float = 0) -> Image.Image:
         c = Canvas(*size)
         top = head_bottom - 11
-        c.rect(cx - 3 + shake, 0, cx + 2 + shake, top, P.GREY)        # shaft
-        c.rect(cx - 3 + shake, 0, cx - 2 + shake, top, P.GREY_L)
+        c.rect(cx - 3 + shake, 0, cx + 2 + shake, top, P.IRON)        # shaft
+        c.rect(cx - 3 + shake, 0, cx - 2 + shake, top, P.IRON_L)
         for y in range(3, int(top), 6):
-            c.rect(cx - 3 + shake, y, cx + 2 + shake, y, P.GREY_D)
-        c.rect(cx - 6 + shake, top - 3, cx + 5 + shake, top, P.IRON)   # collar
-        c.rect(2 + shake, top, 21 + shake, head_bottom, P.IRON)        # head
-        c.rect(2 + shake, top, 21 + shake, top + 1, P.IRON_L)
+            c.rect(cx - 3 + shake, y, cx + 2 + shake, y, P.IRON_D)
+        c.rect(cx - 6 + shake, top - 3, cx + 5 + shake, top, P.CC_STONE)   # collar
+        c.rect(2 + shake, top, 21 + shake, head_bottom, P.CC_STONE)        # charred iron head
+        c.rect(2 + shake, top, 21 + shake, top + 1, P.CC_STONE_TOP)
+        c.rect(2 + shake, top + 2, 2 + shake, head_bottom - 5, P.CC_STONE_L)
+        c.rect(3 + shake, top + 6, 20 + shake, top + 6, P.CC_LAVA_D)       # a glowing seam
+        c.px(8 + shake, top + 6, P.LAVA)
+        c.px(16 + shake, top + 6, P.LAVA)
+        for rx in (4, 19):                                                 # rivets
+            c.px(rx + shake, top + 3, P.CC_STONE_L)
         for k in range(5):                                  # hazard stripes
             x = 3 + k * 4 + shake
             c.poly([(x, head_bottom - 3), (x + 2, head_bottom - 3), (x + 4, head_bottom), (x + 2, head_bottom)],
@@ -97,9 +109,13 @@ def cannon_body(c: Canvas, recoil: float = 0, flash: int = 0) -> None:
     gy = 19
     c.rect(2, gy - 5, 16, gy - 1, P.IRON_D)                 # carriage
     c.rect(2, gy - 5, 16, gy - 5, P.IRON)
-    for wx in (5, 13):                                      # wheels
-        c.ellipse(wx, gy - 2, 2.5, 2.5, P.BROWN)
-        c.px(wx, gy - 2, P.BROWN_D)
+    for wx in (5, 13):                                      # iron wheels
+        c.ellipse(wx, gy - 2, 2.5, 2.5, P.CC_STONE)
+        c.px(wx, gy - 2, P.CC_STONE_DD)
+        c.px(wx - 1, gy - 3, P.CC_STONE_L)
+    c.px(9, gy - 4, P.CC_BANNER)                            # a red cat crest on the carriage
+    c.px(8, gy - 5, P.CC_BANNER)
+    c.px(10, gy - 5, P.CC_BANNER)
     bx = 3 - recoil
     c.poly([(bx, gy - 12), (bx + 15, gy - 12.5), (bx + 15, gy - 7.5), (bx, gy - 7)], P.IRON)   # barrel
     c.rect(bx, gy - 12, bx + 15, gy - 12, P.IRON_L)
@@ -161,14 +177,14 @@ def debris() -> Sprite:
         c = Canvas(*size)
         if chain:
             for y in range(0, 8, 2):
-                c.rect(8.5 + sway * y / 8, y, 9.5 + sway * y / 8, y + 0.5, P.IRON_L)
+                c.rect(8.5 + sway * y / 8, y, 9.5 + sway * y / 8, y + 0.5, P.IRON if (y // 2) % 2 else P.IRON_L)
         c.poly([(3 + sway, 9), (14 + sway, 8), (16 + sway, 14), (13 + sway, 20), (5 + sway, 21), (2 + sway, 15)],
-               P.IRON)
-        c.poly([(3 + sway, 9), (14 + sway, 8), (13 + sway, 11), (4 + sway, 12)], P.IRON_L)
-        c.line((8 + sway, 12), (10 + sway, 17), P.IRON_D)
-        c.line((10 + sway, 17), (7 + sway, 20), P.IRON_D)
-        c.rect(12 + sway, 14, 13 + sway, 15, P.MAROON)
-        c.px(5 + sway, 16, P.LAVA)                           # an ember stuck in a crack
+               P.CC_STONE)
+        c.poly([(3 + sway, 9), (14 + sway, 8), (13 + sway, 11), (4 + sway, 12)], P.CC_STONE_L)
+        c.line((8 + sway, 12), (10 + sway, 17), P.LAVA)                 # a glowing crack through the chunk
+        c.line((10 + sway, 17), (7 + sway, 20), P.CC_LAVA_D)
+        c.px(9 + sway, 14, P.LAVA_L)
+        c.rect(12 + sway, 14, 13 + sway, 15, P.CC_STONE_D)
         return c.outline().img
 
     sprite.add("hang", [chunk(-0.5), chunk(0.5)], fps=3)
@@ -230,14 +246,15 @@ def gear() -> Sprite:
     teeth = 8
     for i in range(4):
         c = Canvas(*size)
-        c.rect(cx - 2, cy, cx + 2, gy - 2, P.IRON_D)        # post and foot
-        c.rect(cx - 7, gy - 2, cx + 7, gy, P.IRON)
-        c.rect(cx - 7, gy - 2, cx + 7, gy - 2, P.IRON_L)
+        c.rect(cx - 2, cy, cx + 2, gy - 2, P.IRON_D)        # post and a charred stone foot
+        c.rect(cx - 7, gy - 2, cx + 7, gy, P.CC_STONE)
+        c.rect(cx - 7, gy - 2, cx + 7, gy - 2, P.CC_STONE_TOP)
         offset = i / 4 * math.tau / teeth
         for k in range(teeth):
             a = offset + k * math.tau / teeth
             c.line((cx + math.cos(a) * 8, cy + math.sin(a) * 8), (cx + math.cos(a) * 10.5, cy + math.sin(a) * 10.5),
-                   P.GOLD_D, 3)
+                   P.IRON, 3)
+            c.px(cx + math.cos(a) * 10.5, cy + math.sin(a) * 10.5, P.CC_EMBER)   # teeth glowing hot
         c.ellipse(cx, cy, 9, 9, P.GOLD_D)
         c.ellipse(cx, cy, 7, 7, P.GOLD)
         for k in range(4):                                  # spokes
@@ -251,11 +268,18 @@ def gear() -> Sprite:
     return sprite
 
 
-def crate(c: Canvas, x: float, y: float, w: float, h: float) -> None:
-    c.rect(x, y, x + w - 1, y + h - 1, P.BROWN)
+def crate(c: Canvas, x: float, y: float, w: float, h: float, crest: bool = False) -> None:
+    c.rect(x, y, x + w - 1, y + h - 1, P.BARK_D)            # scorched planks
     for k in range(1, 3):
-        c.line((x, y + k * h / 3), (x + w - 1, y + k * h / 3), P.BROWN_D)
-    c.line((x + 1, y + 1), (x + w - 2, y + h - 2), P.BROWN_L, 2)                # brace
+        c.line((x, y + k * h / 3), (x + w - 1, y + k * h / 3), P.BARK_DD)
+    c.line((x + 1, y + 1), (x + w - 2, y + h - 2), P.BARK, 2)                   # brace
+    if crest:                                              # a red cat crest painted on it
+        mx, my = x + w / 2, y + h / 2
+        c.ellipse(mx, my, 3, 2.5, P.CC_BANNER)
+        c.poly([(mx - 3, my - 1), (mx - 2.5, my - 5), (mx - 0.5, my - 2)], P.CC_BANNER)
+        c.poly([(mx + 3, my - 1), (mx + 2.5, my - 5), (mx + 0.5, my - 2)], P.CC_BANNER)
+        c.px(mx - 1, my, P.CC_BANNER_D)
+        c.px(mx + 1, my, P.CC_BANNER_D)
     c.rect(x, y, x + w - 1, y + 1, P.IRON)                  # iron bands
     c.rect(x, y + h - 2, x + w - 1, y + h - 1, P.IRON)
     for cx in (x + 1, x + w - 2):
@@ -268,10 +292,10 @@ def crate_wall() -> Sprite:
     size, gy = (24, 124), 123
     c = Canvas(*size)
     for k in range(6):                                       # six crates, slightly staggered
-        crate(c, 3 + (k % 2), gy - 19 - k * 20, 18, 20)
+        crate(c, 3 + (k % 2), gy - 19 - k * 20, 18, 20, crest=k in (1, 4))
     for x, y in ((8, 14), (10, 52), (7, 93)):                # paw-scratch marks
         for k in range(3):
-            c.line((x + k * 2, y), (x + k * 2 + 2, y + 4), P.SAND)
+            c.line((x + k * 2, y), (x + k * 2 + 2, y + 4), P.CC_EMBER)
     wall = c.outline().img
     sprite = Sprite("crate_wall", size, ground=gy)
     sprite.add("still", [wall], fps=1)

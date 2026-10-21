@@ -125,8 +125,7 @@ The creature roster follows the expanded concept, `docs/concept/Purrfectly_Dange
 | `mini_yeti` | mini yeti | slow bruiser with a wide swipe (a wide hitbox), 4 HP; can't be stomped. Needs kitten level 3 | Double Pounce over it, or 4 yarn |
 | `ice_ledge` | crumbling ice platform (platform) | crumbles 0.4 s after landing | keep moving |
 
-§9 of the expanded concept also lists a creature roster for world 4; that is future work and not in
-the game yet (the table for world 4 below is what the game builds).
+The rosters of worlds 3 and 4 likewise follow §9 of the expanded concept.
 
 Wide ravines (needing Double Pounce) appear here. Boss `boss_icedragon` — **Glacipurr**,
 vulnerable only while recovering, 24 HP.
@@ -161,6 +160,10 @@ Boss `boss_phantom` — **The Phantom Cat Queen**, always vulnerable, 26 HP, sum
 3. Splits into three copies; only the glowing one takes damage (others let yarn pass through).
 
 ### 4 — citadel (speed 140, Expert)
+The creature roster follows the expanded concept §9 (World 4 — The Cataclysm Citadel) and its sheet
+`docs/concept/Cataclysm Citadel Enemy Sprite Sheet.png`. The kitten enters at level 5, with every
+ability. The concept's mini-boss, the Iron Bulldog, is future work (no mini-bosses yet).
+
 | Id | Role | Behaviour | Beat it by |
 | --- | --- | --- | --- |
 | `vent` | flame vent | fires a column of flame on a fixed on/off cycle, blinking before it fires | pass while off |
@@ -170,6 +173,14 @@ Boss `boss_phantom` — **The Phantom Cat Queen**, always vulnerable, 26 HP, sum
 | `mech_mouse` | mechanical mouse | fast chaser; stomp is a safe bounce only | jump, yarn (2 HP), Super Pounce |
 | `gear` | moving gear | static tall obstacle that spins (looks only) | jump |
 | `crate_wall` | breakable wall | blocks the whole path up to jump height; only Super Pounce breaks it | Super Pounce |
+| `lava_slime` | lava slime | slow walker; spits lava globs that land ahead and burn as a puddle for about a second. Molten: no stomp | hop the puddle and it; yarn |
+| `fire_imp` | fire imp | hovers above a standing kitten (40) and keeps 140 ahead of it for 3 s, firing low fireballs, then drifts in | jump the fireballs; yarn from a hop |
+| `stone_guard` | stone guard cat | slow armoured walker, 4 HP; landing on it is a safe bounce. Close up (within 60) it punches out a short, low magma blast. Needs kitten level 3 | jump or bounce over it early; 4 yarn |
+| `hell_hound` | hell hound cat | a chase: when the kitten reaches its spot it is heard coming (it flashes at the left edge), then it runs in from behind, 130 faster than the kitten, past it and away. Burns on any touch, 2 HP | jump it as it passes; Super Pounce |
+| `ember_bat` | ember bat | swoops like the ice bat, never lower than just over a standing kitten (28), trailing sparks | stay down; yarn |
+| `flame_archer` | flame archer cat | stands (on ledges) and shoots low flame arrows; 2 HP, a stomp kills | jump the arrows; stomp or 2 yarn |
+| `chainsaw_cat` | chainsaw cat | slow elite walker, 5 HP; its chainsaw reaches 20 in front of its body and hurts like it. No stomp. Needs kitten level 5 | Super Pounce through it, or 5 yarn |
+| `fire_wisp` | fire wisp | floats in low (20); within 50 it flashes for 0.5 s, keeping that distance, then bursts into a ring of fire on the ground (40 wide) for 0.4 s | hop the ring, Ghost Dash through it, or yarn it from a hop first |
 
 Lava ravines everywhere. Boss `boss_mecha` — **The Mecha-Mouser**, 30 HP. Armored: until its HP is
 at or below 40% it is hit only while recovering; then the core is exposed and phase 3 is fast.

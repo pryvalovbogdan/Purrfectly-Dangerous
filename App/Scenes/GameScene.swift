@@ -700,6 +700,7 @@ final class GameScene: SKScene {
         .mushroomCat: "spore", .beeCat: "sting", .stumpCat: "leaf",
         .penguinSoldier: "spear", .snowyOwl: "icicle_shot", .snowman: "snowball_shot", .iciclePlant: "icicle_bolt",
         .ghostCat: "spirit_ball", .hauntedPortrait: "magic_shot", .candleCat: "fire_orb", .poltergeistBook: "magic_bolt",
+        .lavaSlime: "lava_glob", .fireImp: "fireball_shot", .stoneGuard: "magma_blast", .flameArcher: "flame_arrow",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
     private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
@@ -707,7 +708,10 @@ final class GameScene: SKScene {
                                            "spear": "spear", "icicle_shot": "icicle_shot",
                                            "snowball_shot": "snowball_shot", "icicle_bolt": "icicle_bolt",
                                            "spirit_ball": "spirit_ball", "magic_shot": "magic_shot",
-                                           "fire_orb": "fire_orb", "magic_bolt": "magic_bolt"]
+                                           "fire_orb": "fire_orb", "magic_bolt": "magic_bolt",
+                                           "lava_glob": "lava_glob", "fireball_shot": "fireball_shot",
+                                           "magma_blast": "magma_blast", "flame_arrow": "flame_arrow",
+                                           "lava_puddle": "lava_puddle", "fire_ring": "fire_ring"]
     /// Hiding animation and the poses held afterwards (first one the sprite has), for things that
     /// curl up or hide in a shell.
     private static let curlAnimation: [ItemKind: (start: String, hold: [String])] = [
@@ -880,6 +884,21 @@ final class GameScene: SKScene {
                 if let entity = world.entities.first(where: { $0.id == id }), isOnScreen(entity.x) {
                     play(.thump)
                     dust(at: CGPoint(x: screenX(entity.x), y: screenY(entity.y) + 2))
+                }
+            case .chaseWarning:
+                // Something is coming from behind: the hound flashes at the left edge (see `animate`).
+                play(.dash)
+            case .fuseLit:
+                break
+            case .exploded(let id):
+                play(.flame)
+                if let node = entityNodes.removeValue(forKey: id) {
+                    burst("spark_ember", count: 8, radius: 22, at: CGPoint(x: node.position.x, y: node.position.y + 6))
+                    if node.has("attack") {
+                        node.play("attack", restart: true) { [weak node] in node?.removeFromParent() }
+                    } else {
+                        node.run(.sequence([.fadeOut(withDuration: 0.15), .removeFromParent()]))
+                    }
                 }
             case .platformCrumbling(let index):
                 crumbleStart[index] = world.time
@@ -1159,6 +1178,9 @@ final class GameScene: SKScene {
         .cursedArmor: ["walk", "move", "idle"], .candleCat: ["move", "walk", "idle"],
         .poltergeistBook: ["move", "fly", "idle"], .gargoyleCat: ["walk", "move", "idle"],
         .shadowCat: ["attack", "move", "walk", "idle"],
+        .lavaSlime: ["move", "walk", "idle"], .fireImp: ["fly", "idle"], .stoneGuard: ["walk", "idle"],
+        .hellHound: ["run", "walk", "idle"], .emberBat: ["fly", "idle"], .flameArcher: ["idle", "walk"],
+        .chainsawCat: ["walk", "idle"], .fireWisp: ["move", "idle"],
     ]
 
     /// The resting animation of a kind, best first.
@@ -1266,7 +1288,25 @@ final class GameScene: SKScene {
             } else if !node.isBusy {
                 Self.playAny(node, Self.restAnimation(entity.kind))
             }
-        case .snowCat, .iceGolem, .miniYeti:
+        case .hellHound where entity.state != .active:
+            if entity.state == .warning {
+                // Coming from behind: flash it at the left edge of the screen, at the kitten's height.
+                node.position = CGPoint(x: node.size.width / 2 + 4, y: screenY(world.groundHeight(at: world.distance)))
+                node.alpha = blink ? 0.9 : 0.2
+                Self.playAny(node, Self.restAnimation(.hellHound))
+            } else {
+                node.alpha = 0
+            }
+        case .fireWisp where entity.state == .warning:
+            // The fuse is lit: it flashes.
+            node.color = .white
+            node.colorBlendFactor = blink ? 0.7 : 0
+        case .emberBat:
+            // A cosmetic fiery trail.
+            if Int(world.time * 60) % 8 == 0 {
+                burst("spark_ember", count: 1, radius: 6, at: CGPoint(x: node.position.x + 6, y: node.position.y + 6))
+            }
+        case .snowCat, .iceGolem, .miniYeti, .chainsawCat, .hellHound:
             // Melee: swing once in reach (looks only; the hitbox decides the hit).
             let reach = entity.kind.spec.width / 2 + world.tuning.heroWidth / 2 + 14
             if abs(entity.x - world.distance) < reach, node.has("attack") {
@@ -1339,20 +1379,33 @@ final class GameScene: SKScene {
         }
     }
 
+    /// A node for `hazard`: the sprite of what threw it, or of its own kind; lingering ones (a lava
+    /// puddle, a ring of fire) burn, the rest fly.
+    private func makeHazardNode(_ hazard: Hazard) -> ActorNode {
+        let lingering = hazard.life != nil ? Self.projectileSprite[hazard.kind] : nil
+        let sprite = lingering ?? thrownSprite[hazard.id] ?? Self.projectileSprite[hazard.kind] ?? "hazard_\(hazard.kind)"
+        let node = ActorNode(sprite: sprite, library: library)
+        node.zPosition = 4
+        Self.playAny(node, lingering != nil ? ["burn", "fly", "idle", "still"] : ["fly", "idle", "still"])
+        actors.addChild(node)
+        hazardNodes[hazard.id] = node
+        return node
+    }
+
     private func renderHazards() {
         var seen = Set<Int>()
         for hazard in world.hazards {
             seen.insert(hazard.id)
-            let node: ActorNode
+            var node: ActorNode
             if let existing = hazardNodes[hazard.id] {
                 node = existing
             } else {
-                let sprite = thrownSprite[hazard.id] ?? Self.projectileSprite[hazard.kind] ?? "hazard_\(hazard.kind)"
-                node = ActorNode(sprite: sprite, library: library)
-                node.zPosition = 4
-                node.play("fly")
-                actors.addChild(node)
-                hazardNodes[hazard.id] = node
+                node = makeHazardNode(hazard)
+            }
+            if hazard.life != nil, let sprite = Self.projectileSprite[hazard.kind], node.spriteName != sprite {
+                // A lava glob that landed became a puddle: draw the puddle instead.
+                node.removeFromParent()
+                node = makeHazardNode(hazard)
             }
             node.position = CGPoint(x: screenX(hazard.x), y: screenY(hazard.y))
             // A hazard that is still arming is only a warning: faint and blinking.

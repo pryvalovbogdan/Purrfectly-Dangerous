@@ -150,8 +150,42 @@ SPEC = {
     "cannonball": ((16, 10), {"fly": 4}),
     "debris": ((18, 22), {"hang": 2, "fall": 2, "shatter": 4}),
     "mech_mouse": ((32, 20), {"run": 4, "death": 4}),
+    # The Cataclysm Citadel critters (characters/citadel_critters.py)
+    "lava_slime": ((36, 30), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
+    "lava_glob": ((10, 10), {"fly": 4}),
+    "fire_imp": ((44, 38), {"fly": 4, "attack": 3, "hit": 2, "death": 4}),
+    "fireball_shot": ((12, 10), {"fly": 4}),
+    "stone_guard": ((60, 46), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "magma_blast": ((14, 12), {"fly": 4}),
+    "hell_hound": ((58, 34), {"idle": 2, "run": 6, "attack": 4, "hit": 2, "death": 4}),
+    "ember_bat": ((50, 34), {"fly": 4, "attack": 3, "hit": 2, "death": 3}),
+    "flame_archer": ((46, 36), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "flame_arrow": ((16, 6), {"fly": 2}),
+    "chainsaw_cat": ((70, 48), {"idle": 2, "walk": 4, "attack": 4, "hit": 2, "death": 4}),
+    "fire_wisp": ((50, 54), {"idle": 2, "move": 4, "attack": 4, "hit": 2, "death": 4}),
+    "lava_puddle": ((22, 8), {"burn": 4}),
+    "fire_ring": ((48, 16), {"burn": 4}),
     "gear": ((30, 30), {"spin": 4}),
     "crate_wall": ((24, 124), {"still": 1, "break": 5}),
+    # The citadel's lava pit and terrain (characters/cataclysm.py), the forest contracts
+    "ravine_citadel": ((8, 16), {"still": 1}),
+    "ravine_citadel_b": ((8, 16), {"still": 1}),
+    "ravine_citadel_rim": ((12, 24), {"still": 1}),
+    "ravine_citadel_vines": ((6, 24), {"still": 1}),
+    "ravine_citadel_back": ((16, 16), {"still": 1}),
+    "ravine_citadel_falls": ((16, 16), {"flow": 4}),
+    "ravine_citadel_falls_edge": ((4, 16), {"flow": 4}),
+    "ravine_citadel_lip": ((16, 6), {"flow": 4}),
+    "ravine_citadel_surface": ((16, 8), {"wave": 4}),
+    "ravine_citadel_pool": ((16, 24), {"churn": 4}),
+    "ravine_citadel_splash": ((16, 12), {"splash": 4}),
+    "ravine_citadel_floor": ((16, 16), {"still": 1}),
+    "ravine_citadel_fill": ((8, 48), {"still": 1}),
+    "ravine_citadel_deep": ((16, 16), {"still": 1}),
+    "terrain_citadel_top": ((16, 16), {"still": 1}),
+    "terrain_citadel_edge": ((8, 16), {"still": 1}),
+    "terrain_citadel_wall": ((8, 16), {"still": 1}),
+    "terrain_citadel_fill": ((16, 16), {"still": 1}),
     "boss_mecha": ((168, 124), {"idle": 4, "rockets": 6, "tail": 6, "core": 4, "hurt": 2, "death": 8}),
     # Pickups and award art
     "fish": ((16, 12), {"spin": 6}),
@@ -235,7 +269,9 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                                   "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
                                   "ice_hedgehog", "snowman", "icicle_plant", "mini_yeti",
                                   "bat", "haunted_portrait", "cursed_armor", "candle_cat", "poltergeist_book",
-                                  "gargoyle_cat", "shadow_cat"])
+                                  "gargoyle_cat", "shadow_cat",
+                                  "lava_slime", "fire_imp", "stone_guard", "hell_hound", "ember_bat", "flame_archer",
+                                  "chainsaw_cat", "fire_wisp"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():

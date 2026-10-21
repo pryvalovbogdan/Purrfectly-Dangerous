@@ -17,6 +17,8 @@ public enum ItemKind: String, Codable, Sendable, CaseIterable {
     case poltergeistBook = "poltergeist_book", gargoyleCat = "gargoyle_cat", shadowCat = "shadow_cat"
     // World 4 — citadel
     case vent, piston, cannon, debris, mechMouse = "mech_mouse", gear, crateWall = "crate_wall"
+    case lavaSlime = "lava_slime", fireImp = "fire_imp", stoneGuard = "stone_guard", hellHound = "hell_hound"
+    case emberBat = "ember_bat", flameArcher = "flame_archer", chainsawCat = "chainsaw_cat", fireWisp = "fire_wisp"
     // Pickups
     case fish, yarnBasket = "yarn_basket"
 }
@@ -45,6 +47,51 @@ public struct ThrowSpec: Sendable, Equatable {
     public var onCycleOpen = false
     /// A lobbed shot that fizzles out where it lands instead of rolling on.
     public var fades = false
+    /// A lobbed shot that lands as something else that lingers a while (a burning puddle).
+    public var linger: LingerSpec?
+}
+
+/// What a landed lob becomes: a still hazard of `kind` and this size, gone after `seconds`.
+public struct LingerSpec: Sendable, Equatable {
+    public var kind: String
+    public var seconds: Double
+    public var width: Double
+    public var height: Double
+}
+
+/// Keeps its distance: once it comes within `distance` of the hero it stays that far ahead, moving
+/// with it, for `duration` seconds; then it drifts in at the item's `velocity`.
+public struct KeepAheadSpec: Sendable, Equatable {
+    public var distance: Double
+    public var duration: Double
+}
+
+/// A chase from behind. Unseen until the hero is within `trigger` of where it is placed (0: the hero
+/// reaches that spot); then a `warning` (the app shows it coming), and it appears `behind` the hero
+/// on the ground, running `overtake` faster than the level, past the hero and away ahead.
+public struct ChaseSpec: Sendable, Equatable {
+    public var trigger: Double
+    public var warning: Double
+    public var behind: Double
+    public var overtake: Double
+}
+
+/// A harmful zone `width` wide and `height` tall just in front of the body, on the side it walks
+/// toward (a blade). It hurts like the body; yarn and stomps only see the body.
+public struct ReachSpec: Sendable, Equatable {
+    public var width: Double
+    public var height: Double
+}
+
+/// Burns a fuse: once within `trigger` of the hero it flashes for `warning` seconds, keeping that
+/// gap, then bursts into a `ring` hazard on the ground (`ringWidth` × `ringHeight`, `ringLife` s).
+public struct FuseSpec: Sendable, Equatable {
+    public var trigger: Double
+    public var warning: Double
+    public var ring = "fire_ring"
+    public var ringWidth: Double
+    public var ringHeight: Double
+    public var ringLife: Double
 }
 
 /// Lies dormant (a statue, a perched gargoyle, an unseen shadow) until the hero comes within
@@ -160,6 +207,10 @@ public struct ItemSpec: Sendable {
     public var wake: WakeSpec?
     public var leap: LeapSpec?
     public var teleport: TeleportSpec?
+    public var keepAhead: KeepAheadSpec?
+    public var chase: ChaseSpec?
+    public var reach: ReachSpec?
+    public var fuse: FuseSpec?
 }
 
 extension ItemKind {
@@ -334,6 +385,45 @@ extension ItemKind {
         case .gear: ItemSpec(width: 20, height: 26, solid: true)
         case .crateWall: ItemSpec(width: 16, height: 120, deflectsYarn: true, solid: true, breakable: true,
                                   minHeroLevel: 5)
+        // Molten: no stomp. Spits lava globs that land ahead and burn as a puddle for a second.
+        case .lavaSlime:
+            ItemSpec(width: 20, height: 14, xp: 15, velocity: -14, yarnable: true,
+                     throwing: ThrowSpec(projectile: "lava_glob", interval: 2.4, range: 300, speed: 60, y: 12,
+                                         width: 8, height: 8, arc: true,
+                                         linger: LingerSpec(kind: "lava_puddle", seconds: 1.0, width: 18, height: 4)))
+        // Hovers over a standing kitten, keeping 140 ahead for 3 s, then drifts in; low fireballs.
+        case .fireImp:
+            ItemSpec(width: 18, height: 18, baseY: 40, xp: 25, velocity: -20, yarnable: true,
+                     throwing: ThrowSpec(projectile: "fireball_shot", interval: 2.2, range: 300, speed: 110, y: 4,
+                                         width: 10, height: 6),
+                     keepAhead: KeepAheadSpec(distance: 140, duration: 3.0))
+        // Slow and armoured: a safe bounce on top; close up it punches out a short magma blast.
+        case .stoneGuard:
+            ItemSpec(width: 26, height: 32, hp: 4, xp: 50, velocity: -8, stompable: true, yarnable: true,
+                     minHeroLevel: 3,
+                     throwing: ThrowSpec(projectile: "magma_blast", interval: 1.0, range: 60, speed: 120, y: 8,
+                                         width: 12, height: 8, windup: 0.1, warning: 0.1))
+        // Comes from behind: a warning, then it runs in past the kitten (jump it). Burns on any touch.
+        case .hellHound:
+            ItemSpec(width: 26, height: 18, hp: 2, xp: 35, yarnable: true,
+                     chase: ChaseSpec(trigger: 0, warning: 0.6, behind: 120, overtake: 130))
+        // Like the ice bat: swoops to just over a standing kitten's head (24), never lower.
+        case .emberBat:
+            ItemSpec(width: 18, height: 14, baseY: 42, xp: 15, velocity: -50, yarnable: true,
+                     flight: FlightSpec(high: 42, low: 28, diveStart: 150, diveEnd: 70))
+        // Stands (on ledges) and shoots low flame arrows.
+        case .flameArcher:
+            ItemSpec(width: 16, height: 24, hp: 2, xp: 30, stompable: true, stompKills: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "flame_arrow", interval: 2.0, range: 300, speed: 120, y: 6,
+                                         width: 12, height: 4))
+        // Slow elite with a chainsaw reaching 20 ahead of its body. No stomp; a Super Pounce cuts through.
+        case .chainsawCat:
+            ItemSpec(width: 26, height: 30, hp: 5, xp: 80, velocity: -10, yarnable: true, minHeroLevel: 5,
+                     reach: ReachSpec(width: 20, height: 24))
+        // Drifts in low; close up it flashes and bursts into a ring of fire on the ground.
+        case .fireWisp:
+            ItemSpec(width: 14, height: 14, baseY: 20, xp: 20, velocity: -40, yarnable: true,
+                     fuse: FuseSpec(trigger: 50, warning: 0.5, ringWidth: 40, ringHeight: 10, ringLife: 0.4))
         // MARK: pickups
         case .fish: ItemSpec(width: 10, height: 10, baseY: 14, xp: 5, hurtsOnTouch: false)
         case .yarnBasket: ItemSpec(width: 16, height: 400, hurtsOnTouch: false)

@@ -121,6 +121,9 @@ public struct Entity: Sendable, Equatable, Identifiable {
     public let home: Double
     var timer: Double
     var vy = 0.0
+    /// Seconds it has kept its distance ahead (see `KeepAheadSpec`), and the gap a lit fuse holds.
+    var heldFor = 0.0
+    var holdGap = 0.0
 
     init(id: Int, kind: ItemKind, x: Double, y: Double, hp: Int, cycleOffset: Double = 0) {
         self.id = id
@@ -132,7 +135,7 @@ public struct Entity: Sendable, Equatable, Identifiable {
         home = x
         timer = kind.spec.throwing?.windup ?? 0.6
         // A teleporter is not there at all until it wakes.
-        if kind.spec.teleport != nil { state = .hidden }
+        if kind.spec.teleport != nil || kind.spec.chase != nil { state = .hidden }
     }
 
     public var box: AABB {
@@ -149,6 +152,7 @@ public struct Entity: Sendable, Equatable, Identifiable {
         let spec = kind.spec
         if spec.fall?.walksOnLanding == true { return state == .active || state == .landed }
         if spec.wake != nil { return state == .active || state == .leaping }
+        if spec.chase != nil { return state == .active }
         guard spec.cycle != nil else { return true }
         return state == .active
     }
@@ -158,7 +162,16 @@ public struct Entity: Sendable, Equatable, Identifiable {
     public var catchesYarn: Bool {
         // Dormant stone stops yarn (it bounces off, see `isDormant`); an unseen teleporter does not.
         if kind.spec.wake != nil { return kind.spec.teleport == nil || isTangible }
+        if kind.spec.chase != nil { return isTangible }
         return isTangible || (kind.spec.cycle != nil && kind.spec.cycleRole == .trap)
+    }
+
+    /// The blade zone in front of the body, on the side it walks toward (see `ReachSpec`).
+    public var reachBox: AABB? {
+        guard let reach = kind.spec.reach else { return nil }
+        let half = kind.spec.width / 2
+        let center = reversed ? x + half + reach.width / 2 : x - half - reach.width / 2
+        return AABB(centerX: center, bottom: y, width: reach.width, height: reach.height)
     }
 
     /// Not yet woken (still stone, perched or unseen), or blinking its warning before it wakes.
@@ -219,11 +232,11 @@ public struct Projectile: Sendable, Equatable, Identifiable {
 
 public struct Hazard: Sendable, Equatable, Identifiable {
     public let id: Int
-    public let kind: String
+    public internal(set) var kind: String
     public var x: Double
     public var y: Double
-    public let width: Double
-    public let height: Double
+    public internal(set) var width: Double
+    public internal(set) var height: Double
     public var vx: Double
     /// Seconds left as a harmless warning.
     public var arm: Double
@@ -234,6 +247,10 @@ public struct Hazard: Sendable, Equatable, Identifiable {
     public var rolling = false
     /// Fizzles out where it lands instead of rolling on.
     public var fades = false
+    /// Seconds left before it burns out; nil lasts until it leaves the screen.
+    public var life: Double?
+    /// What it becomes where it lands, if it lingers (a lava glob's puddle).
+    public var linger: LingerSpec?
 
     public var isArmed: Bool { arm <= 0 }
     public var box: AABB { AABB(centerX: x, bottom: y, width: width, height: height) }
@@ -310,6 +327,11 @@ public enum GameEvent: Sendable, Equatable {
     /// A creature took off on a leap, and came down from it.
     case leapt(id: Int)
     case leapLanded(id: Int)
+    /// A chaser is about to come in from behind the hero (the app shows where from).
+    case chaseWarning(id: Int)
+    /// A fuse was lit (it flashes), and it burst into a ring of fire.
+    case fuseLit(id: Int)
+    case exploded(id: Int)
     /// The hero ran into the face of a step too high to walk onto and is knocked back; once per hit.
     case bumped
     /// A thrown thing ran into the face of a step and broke.
@@ -817,6 +839,18 @@ public struct RunnerWorld: Sendable {
             if let wake = spec.wake {
                 updateWaker(&entity, wake: wake, gap: gap, dt: dt, events: &events)
             }
+            if let keep = spec.keepAhead, entity.heldFor < keep.duration, entity.x - distance <= keep.distance {
+                // Keeping its distance, moving with the hero, until its time is up.
+                entity.x = distance + keep.distance
+                entity.y = groundHeight(at: entity.x) + spec.baseY
+                entity.heldFor += dt
+            }
+            if let chase = spec.chase {
+                updateChaser(&entity, chase: chase, gap: gap, dt: dt, events: &events)
+            }
+            if let fuse = spec.fuse {
+                updateFuse(&entity, fuse: fuse, gap: gap, dt: dt, events: &events)
+            }
             if let throwing = spec.throwing, !throwing.onCycleOpen {
                 // A phasing ghost only throws while it is there.
                 let present = spec.cycle == nil || spec.cycleRole != .phase || entity.state == .active
@@ -842,8 +876,58 @@ public struct RunnerWorld: Sendable {
                               y: throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y,
                               width: throwing.width, height: throwing.height,
                               vx: -throwing.speed, arm: 0,
-                              gravity: throwing.arc ? tuning.lobGravity : 0, fades: throwing.fades))
+                              gravity: throwing.arc ? tuning.lobGravity : 0, fades: throwing.fades,
+                              linger: throwing.linger))
         events.append(entity.kind == .bell ? .bellRang(id: entity.id) : .threw(id: entity.id))
+    }
+
+    /// Unseen → warning (the hero reached its spot) → running in from behind, past the hero.
+    private func updateChaser(_ entity: inout Entity, chase: ChaseSpec, gap: Double, dt: Double,
+                              events: inout [GameEvent]) {
+        switch entity.state {
+        case .hidden:
+            guard gap <= chase.trigger else { break }
+            entity.state = .warning
+            entity.timer = chase.warning
+            events.append(.chaseWarning(id: entity.id))
+        case .warning:
+            entity.timer -= dt
+            guard entity.timer <= 0 else { break }
+            entity.state = .active
+            entity.x = distance - chase.behind
+            entity.y = groundHeight(at: entity.x)
+        case .active:
+            // Runs along the ground (it bounds over ravines and up and down steps).
+            entity.x += (level.speed + chase.overtake) * dt
+            entity.y = groundHeight(at: entity.x)
+        default:
+            break
+        }
+    }
+
+    /// Drifting → lit (flashing, holding its gap) → a ring of fire on the ground where it was.
+    private mutating func updateFuse(_ entity: inout Entity, fuse: FuseSpec, gap: Double, dt: Double,
+                                     events: inout [GameEvent]) {
+        switch entity.state {
+        case .idle:
+            guard gap < fuse.trigger else { break }
+            entity.state = .warning
+            entity.timer = fuse.warning
+            entity.holdGap = gap
+            events.append(.fuseLit(id: entity.id))
+        case .warning:
+            entity.x = distance + entity.holdGap
+            entity.y = groundHeight(at: entity.x) + entity.kind.spec.baseY
+            entity.timer -= dt
+            guard entity.timer <= 0 else { break }
+            entity.hp = 0
+            hazards.append(Hazard(id: takeID(), kind: fuse.ring, x: entity.x, y: groundHeight(at: entity.x),
+                                  width: fuse.ringWidth, height: fuse.ringHeight, vx: 0, arm: 0,
+                                  life: fuse.ringLife))
+            events.append(.exploded(id: entity.id))
+        default:
+            break
+        }
     }
 
     /// Dormant → warning → awake, by way of a leap or a teleport if it has one. Awake it walks.
@@ -937,6 +1021,11 @@ public struct RunnerWorld: Sendable {
     private mutating func moveHazards(dt: Double, events: inout [GameEvent]) {
         var kept: [Hazard] = []
         for var hazard in hazards {
+            if let life = hazard.life {
+                // A puddle or a ring of fire burns out.
+                hazard.life = life - dt
+                if life - dt <= 0 { continue }
+            }
             hazard.x += hazard.vx * dt
             hazard.arm = max(0, hazard.arm - dt)
             // Anything low enough to run into the face of a step breaks on it.
@@ -961,6 +1050,20 @@ public struct RunnerWorld: Sendable {
                     if hazard.fades {
                         // A magic bolt fizzles out where it lands.
                         events.append(.hazardBroke(id: hazard.id))
+                        continue
+                    }
+                    if let linger = hazard.linger {
+                        // A lava glob lands as a burning puddle that stays put for a while.
+                        hazard.kind = linger.kind
+                        hazard.width = linger.width
+                        hazard.height = linger.height
+                        hazard.y = floor
+                        hazard.vx = 0
+                        hazard.vy = 0
+                        hazard.gravity = 0
+                        hazard.life = linger.seconds
+                        hazard.linger = nil
+                        kept.append(hazard)
                         continue
                     }
                     // A lobbed acorn lands and rolls on.
@@ -1047,7 +1150,8 @@ public struct RunnerWorld: Sendable {
     private mutating func collideHero(previousBottom: Double, events: inout [GameEvent]) {
         let hero = heroBox
         let ghost = dashTime > 0
-        for index in entities.indices where entities[index].hp > 0 && entities[index].box.intersects(hero) {
+        for index in entities.indices where entities[index].hp > 0
+            && (entities[index].box.intersects(hero) || entities[index].reachBox?.intersects(hero) == true) {
             let entity = entities[index]
             let spec = entity.kind.spec
             switch entity.kind {
@@ -1072,7 +1176,7 @@ public struct RunnerWorld: Sendable {
                     events.append(.wallBroken(id: entity.id))
                     continue
                 }
-                if pouncing, entity.walks {
+                if pouncing, entity.walks || spec.chase != nil {
                     damage(entityAt: index, by: entity.hp, events: &events)
                     continue
                 }
@@ -1124,7 +1228,9 @@ public struct RunnerWorld: Sendable {
 
     private mutating func cleanUp() {
         let left = distance - tuning.despawnBehind
-        entities.removeAll { $0.hp <= 0 || $0.x < left }
+        // A chaser that ran on ahead out of sight is gone for good.
+        let farAhead = distance + tuning.spawnAhead
+        entities.removeAll { $0.hp <= 0 || $0.x < left || ($0.kind.spec.chase != nil && $0.x > farAhead) }
         hazards.removeAll { $0.x < left || $0.y < -60 }
     }
 

@@ -151,3 +151,28 @@ def sparkle(c: Canvas, x: float, y: float, colour=P.YELLOW, centre=P.WHITE, big:
     if big:
         for dx, dy in ((2, 0), (-2, 0), (0, 2), (0, -2)):
             c.px(x + dx, y + dy, colour)
+
+
+def rim(c: Canvas, colours) -> None:
+    """Lights the 1-px inner edge of everything drawn so far: each pixel next to empty space takes `colours`
+    (one colour, or a dict from base colour to its lighter one; colours not in the dict stay). Run it before
+    the outline."""
+    img = c.img
+    px = img.load()
+    w, h = img.size
+    edge = []
+    for y in range(h):
+        for x in range(w):
+            if not px[x, y][3]:
+                continue
+            for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                if not (0 <= nx < w and 0 <= ny < h) or not px[nx, ny][3]:
+                    edge.append((x, y))
+                    break
+    for x, y in edge:
+        if isinstance(colours, dict):
+            new = colours.get(px[x, y][:3] + (255,))
+            if new:
+                px[x, y] = new
+        else:
+            px[x, y] = colours
