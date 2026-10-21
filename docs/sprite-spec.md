@@ -58,9 +58,9 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | snowball | 16×16 | roll 4, death 4 |
 | penguin | 36×16 | slide 4, death 4 |
 | icicle | 12×22 | hang 2, fall 2, shatter 4 (frame top = ceiling end) |
-| snowdrift | 24×11 | still 1 |
-| ice | 32×6 | still 1 (as `milk`) |
-| ice_ledge | 48×14 | still 1, crumble 4 |
+| snowdrift | 24×11 | still 1. Low snow mound outlined in navy, with an ice crystal |
+| ice | 32×6 | still 1 (as `milk`): glossy blue ice with a pale rim |
+| ice_ledge | 48×14 | still 1, crumble 4. Faceted blue ice slab under lumpy snow with icicles (walk surface = top row) |
 | boss_icedragon | 190×134 | idle 6, shards 6, breath 8, dive 6, hurt 2, death 8 |
 | ghost_cat | 38×26 | float 4, fade 4 (blinking out) |
 | bat | 22×16 | fly 4, death 3 |
@@ -172,6 +172,13 @@ Positions are node positions with anchor (0, 0); "top on y" means node y = y −
 10. `ravine_forest_rim` at x0 and mirrored at [x1 − 12, x1), top on `G`.
 With `P` = `G` − 40 the whole pit is 88 deep: 40 of falls, 32 of water, 16 of floor. The rim, walls and edges are opaque.
 Pits are at least 28 wide.
+
+World 2 (`frost`) is the Frostpaw Mountains at night (`characters/frostpaw.py`, after
+`docs/concept/Frostpaw Mountains Pixel Tileset Sheet.png`). Its sprites have the same names, sizes and contracts as the
+forest's, with `frost` in place of `forest`: the parallax layers (the moon and the aurora are in `bg_frost_clouds`,
+because the stretched sky can't hold shapes), the snow-capped ground, the waterfall pit (`ravine_frost_*`, with icicles in
+the vines' slot and floating ice on the surface) and the terrain blocks (`terrain_frost_*`). The pit and terrain tiling
+rules above apply to them unchanged.
 
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 

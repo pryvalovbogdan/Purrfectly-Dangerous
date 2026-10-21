@@ -7,7 +7,7 @@ import math
 from PIL import Image
 
 import palette as P
-from characters.forest import platform, rolling, slick
+from characters.forest import platform, rolling
 from draw import Canvas, noise, shatter, vanish
 from sprite import Sprite, single
 
@@ -110,35 +110,66 @@ def icicle() -> Sprite:
 
 
 def snowdrift() -> Sprite:
-    """A low snow mound (about 22x9)."""
+    """A low snow mound (about 22x9) in the Frostpaw night palette, outlined in navy so it reads on the white cap."""
     c = Canvas(24, 11)
     for x, y, rx, ry in ((6, 7, 5, 3.5), (12, 5.5, 7, 4.5), (18, 7, 5, 3.5)):
-        c.ellipse(x, y, rx, ry, P.ICE_L)
-    c.rect(1, 8, 22, 10, P.ICE_L)
-    for x, y, rx, ry in ((5, 6, 2.5, 1.5), (11, 4, 3.5, 2), (17, 6, 2.5, 1.5)):
-        c.ellipse(x, y, rx, ry, P.WHITE)
-    c.line((3, 9), (20, 9), P.BLUE_L)
-    c.px(15, 8, P.BLUE_L)
-    c.px(8, 8, P.BLUE_L)
-    c.px(13, 2, P.CYAN)
-    return single("snowdrift", c.outline(P.ICE_D), ground=10)
+        c.ellipse(x, y, rx, ry, P.SNOW)
+    c.rect(1, 8, 22, 10, P.SNOW)
+    for x, y, rx, ry in ((5, 6, 3, 2), (11, 4.5, 4.5, 2.6), (17, 6, 3, 2)):
+        c.ellipse(x, y, rx, ry, P.SNOW_L)
+    for x, y in ((10, 2), (11, 2), (4, 5), (16, 5)):
+        c.px(x, y, P.WHITE)
+    c.line((3, 9), (20, 9), P.SNOW_D)
+    c.px(15, 8, P.SNOW_D)
+    c.px(8, 8, P.SNOW_D)
+    c.poly([(19, 7), (20, 3), (21, 7)], P.FR_ICE_L)          # an ice crystal poking out
+    c.px(20, 4, P.FR_ICE_GLOW)
+    return single("snowdrift", c.outline(P.FR_ROCK_DD), ground=10)
+
+
+def ice_patch() -> Sprite:
+    """32x6 slick zone (tiles every 32 px; bottom 3 rows sit in the snow): glossy blue ice with a pale rim and
+    white glints."""
+    c = Canvas(32, 6)
+    for x in range(32):
+        top = 2 + round(math.sin(x / 32 * math.tau * 2) * 0.6 + math.sin(x / 32 * math.tau * 3 + 1) * 0.4)
+        c.rect(x, top, x, 5, P.FR_ICE_L)
+        c.px(x, top, P.FR_ICE_GLOW)
+        c.px(x, 5, P.FR_ICE)
+        c.px(x, top - 1, P.SNOW_D)
+    rnd = noise(95)
+    for _ in range(4):
+        x, y = int(rnd() * 27), 3 + int(rnd() * 2)
+        c.rect(x, y, x + 2 + int(rnd() * 3), y, P.WHITE)
+    c.px(9, 4, P.FR_ICE)
+    c.px(24, 3, P.FR_ICE)
+    return single("ice", c, ground=3)
 
 
 def ice_ledge() -> Sprite:
+    """48x14 icy platform (walk surface = top row): a slab of faceted blue ice under lumpy snow, icicles
+    hanging below, outlined in deep ice blue. Crumbles like the forest bridge."""
     w, h = 48, 14
     c = Canvas(w, h)
-    c.rect(0, 2, w - 1, 8, P.BLUE_L)
-    c.rect(0, 6, w - 1, 8, P.CYAN)
-    for x in range(0, w, 8):
-        c.line((x + 2, 3), (x + 4, 7), P.ICE_L)
-    for x, length in ((4, 4), (10, 2), (17, 5), (26, 3), (33, 5), (41, 3)):   # icicles under the slab
-        c.poly([(x - 1.5, 9), (x + 1.5, 9), (x, 9 + length)], P.BLUE_L)
+    c.rect(0, 2, w - 1, 9, P.FR_ICE_L)
+    c.rect(0, 7, w - 1, 9, P.FR_ICE)
+    c.rect(0, 9, w - 1, 9, P.FR_ICE_D)
+    for x in range(0, w, 8):                                 # facets
+        c.line((x + 1, 3), (x + 5, 8), P.FR_ICE_GLOW)
+        c.line((x + 6, 3), (x + 7, 5), P.WHITE)
+        c.line((x + 7, 2), (x + 7, 9), P.FR_ICE)
+    for x, length in ((4, 4), (10, 2), (17, 5), (26, 3), (33, 4), (41, 3)):     # icicles under the slab
+        c.poly([(x - 1.5, 10), (x + 1.5, 10), (x, 10 + length)], P.FR_ICE_L)
+        c.line((x, 10), (x, 9 + length), P.FR_ICE_GLOW)
     rnd = noise(91)
-    for x in range(w):                                    # lumpy snow on top
+    for x in range(w):                                       # lumpy snow on top
         top = 1 if rnd() > 0.35 else 0
-        c.rect(x, top, x, 2, P.WHITE)
-    return platform("ice_ledge", c.outline(P.ICE_D), "crumble", 93)
+        c.rect(x, top, x, 3, P.SNOW_L)
+        c.px(x, top, P.WHITE)
+        if rnd() > 0.6:
+            c.px(x, 4, P.SNOW)
+    return platform("ice_ledge", c.outline(P.FR_ICE_DD), "crumble", 93)
 
 
 def build() -> list[Sprite]:
-    return [snowball(), penguin(), icicle(), snowdrift(), slick("ice", P.CYAN, P.ICE_L, P.WHITE, 95), ice_ledge()]
+    return [snowball(), penguin(), icicle(), snowdrift(), ice_patch(), ice_ledge()]

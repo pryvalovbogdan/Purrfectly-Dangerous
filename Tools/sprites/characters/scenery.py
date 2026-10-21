@@ -309,26 +309,6 @@ def forest_earth(c: Canvas) -> None:
     forest_stones(c, 0, 4, 6)  # continues the ground tile's rows 1, 2, 3
 
 
-def frost_ground(c: Canvas) -> None:
-    c.rect(0, 0, 31, 47, P.BLUE_L)
-    for y in range(10, 48, 8):                               # packed ice blocks
-        c.line((0, y), (31, y), P.BLUE)
-        off = 0 if (y // 8) % 2 else 8
-        for x in range(off, 32, 16):
-            c.line((x, y), (x, y + 7), P.BLUE)
-        c.line((0, y + 1), (31, y + 1), P.ICE_L)
-    rnd = noise(6)
-    for _ in range(8):
-        x, y = int(rnd() * 30), 12 + int(rnd() * 34)
-        c.px(x, y, P.WHITE)
-    c.rect(0, 0, 31, 6, P.WHITE)
-    for x in range(0, 32, 4):                                # snow drifting over the edge
-        c.rect(x, 7, x + 2, 7 + (x * 5 % 3), P.WHITE)
-    c.rect(0, 5, 31, 5, P.ICE_L)
-    c.px(7, 2, P.CYAN)
-    c.px(23, 3, P.CYAN)
-
-
 def haunted_ground(c: Canvas) -> None:
     c.rect(0, 0, 31, 47, P.INDIGO)
     for y in range(8, 48, 8):                                # crypt stones
@@ -532,33 +512,6 @@ def forest() -> list[Sprite]:
         *ground("forest", forest_ground, forest_earth),
         flat("ground_forest_fill", P.EARTH_DD),
         *forest_ravine(),
-    ]
-
-
-def frost() -> list[Sprite]:
-    far_layer = Canvas(LAYER_W, 150)
-    hills(far_layer, 150, 7, 5, (80, 140), P.BLUE, P.WHITE, P.BLUE_L)
-    castle(far_layer, 120, 150, 1.1, P.ICE_L, P.WHITE, P.CYAN, P.BLUE_L)
-
-    def crystals(c, rnd):
-        for k in range(8):
-            x = 20 + k * 40 + rnd() * 16
-            c.poly([(x - 2, 20), (x, 10 + rnd() * 4), (x + 2, 20)], P.CYAN)
-            c.poly([(x + 1, 20), (x + 4, 14), (x + 5, 20)], P.BLUE_L)
-            c.px(x, 14, P.WHITE)
-
-    return [
-        *sky("frost", [P.BLUE_D, P.BLUE_D, P.BLUE, P.BLUE_L]),
-        puffs("frost", 24, P.WHITE, P.BLUE_L),
-        clouds("frost", 160, 23, P.ICE_L, P.BLUE_L),
-        single("bg_frost_far", far_layer),
-        pines("frost", "near", 130, 5, 8, P.FOREST, P.MOSS, P.WHITE, P.BROWN_D),
-        bushes("frost", 20, 25, P.BLUE, P.BLUE_L, crystals),
-        *ground("frost", frost_ground),
-        flat("ground_frost_fill", P.BLUE_L),
-        ravine("frost", P.WHITE, P.WHITE, P.BLUE, P.ICE_D, 14),
-        ravine_fill("frost", P.ICE_D, P.NAVY),
-        flat("ravine_frost_deep", P.NAVY),
     ]
 
 
@@ -822,4 +775,4 @@ def menu() -> list[Sprite]:
 
 
 def build() -> list[Sprite]:
-    return [*forest(), *frost(), *haunted(), *citadel(), *menu()]
+    return [*forest(), *haunted(), *citadel(), *menu()]   # the frost world is in characters/frostpaw.py

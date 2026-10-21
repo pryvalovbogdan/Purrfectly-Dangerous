@@ -2421,7 +2421,33 @@
  },
  "ravine_frost": {
   "width": 8,
-  "height": 48,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_b": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_back": {
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2433,8 +2459,8 @@
   }
  },
  "ravine_frost_deep": {
-  "width": 8,
-  "height": 8,
+  "width": 16,
+  "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2445,9 +2471,126 @@
    }
   }
  },
+ "ravine_frost_falls": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_falls_edge": {
+  "width": 4,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "ravine_frost_fill": {
   "width": 8,
   "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_floor": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_lip": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_pool": {
+  "width": 16,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "churn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_rim": {
+  "width": 12,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_splash": {
+  "width": 16,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "splash": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_surface": {
+  "width": 16,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "wave": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_frost_vines": {
+  "width": 6,
+  "height": 24,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -2854,6 +2997,58 @@
   }
  },
  "terrain_forest_wall": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_frost_edge": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_frost_fill": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_frost_top": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_frost_wall": {
   "width": 8,
   "height": 16,
   "anchorX": 0.5,
