@@ -80,6 +80,25 @@ import Testing
         #expect(world.heroY == 40)
     }
 
+    /// Level 1's opening: a 16 step, then a bush. A jump pressed while dropping off the step is meant
+    /// for the bush; it must not fire the moment the feet land, which would come down on the bush.
+    @Test func aPressWhileDroppingOffAStepDoesNotFireOnLanding() {
+        var world = RunnerWorld(level: level([Terrain(at: 240, width: 80, height: 16)],
+                                             items: [.init(at: 430, kind: .bush)]), boss: nil)
+        advance(&world) { 240 - $0.distance < 30 }
+        _ = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        advance(&world, Input(jumpHeld: true)) { $0.onGround && $0.heroY == 16 }
+        advance(&world) { !$0.onGround }                      // ran off the end of the step
+        let early = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        let landing = advance(&world) { $0.onGround }
+        #expect(!(early + landing + world.step(Input(), dt: dt)).contains(.jumped(double: false)))
+        // Pressed again in good time, the bush is cleared.
+        advance(&world) { 430 - $0.distance < 35 }
+        var events = world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+        events += advance(&world, Input(jumpHeld: true)) { $0.distance > 470 }
+        #expect(!hit(events))
+    }
+
     /// Runs into the face at 300 (40 high) and returns the events up to and including the hit.
     func runIntoWall(_ world: inout RunnerWorld) -> [GameEvent] {
         advance(&world) { $0.isAgainstWall }

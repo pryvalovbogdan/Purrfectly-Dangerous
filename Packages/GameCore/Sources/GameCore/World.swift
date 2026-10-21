@@ -11,6 +11,8 @@ public struct Tuning: Sendable, Equatable {
     public var doubleJumpScale = 0.9
     /// A jump pressed this long before landing still triggers.
     public var jumpBuffer = 0.1
+    /// The same, for a press on the way down from a jump (a quick second tap).
+    public var fallJumpBuffer = 0.3
     /// The kitten's hitbox: body and head of the 32×32 caped cat (ears and cape do not count).
     public var heroWidth = 16.0
     public var heroHeight = 24.0
@@ -317,6 +319,8 @@ public struct RunnerWorld: Sendable {
     private var jumpCutDone = false
     /// Seconds since the last jump left the ground.
     private var jumpRise = 0.0
+    /// In the air because the ground ran out (off a ledge, step or rim), not because of a jump.
+    private var offEdge = false
     private var jumpBuffer = 0.0
     private var yarnCooldown = 0.0
     private var wasFireHeld = false
@@ -515,10 +519,16 @@ public struct RunnerWorld: Sendable {
     }
 
     private mutating func moveHero(_ input: Input, dt: Double, events: inout [GameEvent]) {
-        // A press on the way down is kept until the feet touch down, so a quick second tap is never
-        // dropped; one on the way up only lasts the usual buffer.
-        let falling = !onGround && heroVY <= 0
-        jumpBuffer = input.jumpPressed ? tuning.jumpBuffer : falling ? jumpBuffer : max(0, jumpBuffer - dt)
+        // A press on the way down from a jump is kept a little longer, so tapping twice in a row hops
+        // again on landing. Dropping off a ledge keeps the usual buffer: a press there is meant for
+        // what comes next, and firing it on touchdown would jump far too early.
+        if heroVY > 0 { offEdge = false }
+        let fallingFromJump = !onGround && heroVY <= 0 && !offEdge
+        if input.jumpPressed {
+            jumpBuffer = fallingFromJump ? tuning.fallJumpBuffer : tuning.jumpBuffer
+        } else {
+            jumpBuffer = max(0, jumpBuffer - dt)
+        }
         advance(dt: dt, events: &events)
 
         if onGround {
@@ -526,6 +536,7 @@ public struct RunnerWorld: Sendable {
                 if !platforms[index].spans(distance) || !platformHolds(index) {
                     // Off the end of the ledge, or it gave way: falling, with only a Double Pounce left.
                     onGround = false
+                    offEdge = true
                     standingOn = nil
                     jumpsUsed = 1
                 }
@@ -533,6 +544,7 @@ public struct RunnerWorld: Sendable {
                 if floor < heroY - tuning.stepUp {
                     // Off the edge of a step: falling, with only a Double Pounce left, as off a ledge.
                     onGround = false
+                    offEdge = true
                     jumpsUsed = 1
                 } else {
                     heroY = floor
@@ -540,6 +552,7 @@ public struct RunnerWorld: Sendable {
             } else {
                 // Ran off the rim: nothing to push off from, so no jump can save this.
                 onGround = false
+                offEdge = true
                 jumpsUsed = 2
             }
         }
