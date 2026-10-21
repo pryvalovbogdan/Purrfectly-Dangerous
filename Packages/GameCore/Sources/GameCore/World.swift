@@ -467,7 +467,10 @@ public struct RunnerWorld: Sendable {
     }
 
     private mutating func moveHero(_ input: Input, dt: Double, events: inout [GameEvent]) {
-        jumpBuffer = input.jumpPressed ? tuning.jumpBuffer : max(0, jumpBuffer - dt)
+        // A press on the way down is kept until the feet touch down, so a quick second tap is never
+        // dropped; one on the way up only lasts the usual buffer.
+        let falling = !onGround && heroVY <= 0
+        jumpBuffer = input.jumpPressed ? tuning.jumpBuffer : falling ? jumpBuffer : max(0, jumpBuffer - dt)
         advance(dt: dt, events: &events)
 
         if onGround {

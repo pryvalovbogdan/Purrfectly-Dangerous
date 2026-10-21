@@ -23,6 +23,27 @@ import Testing
         #expect(hold > ItemKind.stump.spec.height)
     }
 
+    /// Tapping jump twice in a row: a second tap in the falling half of a hop is kept until the feet
+    /// touch down, so the next hop starts on landing instead of being dropped.
+    @Test func aSecondTapWhileFallingJumpsAgainOnLanding() {
+        func steps(_ world: RunnerWorld, _ condition: (RunnerWorld) -> Bool) -> Int {
+            var world = world, n = 0
+            while !condition(world) { _ = world.step(Input(), dt: dt); n += 1 }
+            return n
+        }
+        var world = RunnerWorld(level: flatLevel(), boss: nil)
+        _ = world.run(0.5)
+        _ = world.step(Input(jumpPressed: true), dt: dt)
+        let untilLanding = steps(world) { $0.onGround }
+        let untilApex = steps(world) { $0.heroVY <= 0 }
+        // Tap again just after the top of the hop.
+        for _ in 0..<(untilApex + 1) { _ = world.step(Input(), dt: dt) }
+        var events = world.step(Input(jumpPressed: true), dt: dt)
+        for _ in 0..<(untilLanding - untilApex + 2) { events += world.step(Input(), dt: dt) }
+        #expect(events.contains(.jumped(double: false)))
+        #expect(!world.onGround)
+    }
+
     @Test func doubleJumpNeedsTheAbility() {
         func jumps(level: Int) -> Int {
             var world = RunnerWorld(level: flatLevel(), boss: nil, stats: HeroStats(xp: Progression.xp(forLevel: level)))

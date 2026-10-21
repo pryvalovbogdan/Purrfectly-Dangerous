@@ -14,7 +14,7 @@ The kitten runs automatically; the level scrolls toward it at the level's speed.
 
 | Input | Action |
 | --- | --- |
-| Jump button (bottom right) | Jump. Hold for higher, release early for a short hop. Even a tap rises for 0.12 s first (about 30 units), and a jump taken against a step's face, or with a step in reach ahead, is always full height. |
+| Jump button (bottom right) | Jump. Hold for higher, release early for a short hop. Even a tap rises for 0.12 s first (about 30 units), and a jump taken against a step's face, or with a step in reach ahead, is always full height. A press on the way down is kept until landing, so tapping twice in a row hops again at once. |
 | Jump again in the air | **Double Pounce** (kitten level 3+): a second, full-height jump. |
 | Throw button (bottom left) | **Yarn Shot** (kitten level 2+): a ball of yarn thrown forward. |
 | Paw button (above throw), tap | **Ghost Dash** (kitten level 4+): ~0.35 s intangible to enemies, projectiles and hazards (not to ravines). Cooldown ~1.5 s. |
