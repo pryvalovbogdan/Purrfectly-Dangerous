@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import math
 
+from PIL import Image
+
 import palette as P
 from bosskit import acorn, crystal, flame, part, tube
 from draw import Canvas, noise, see_through
@@ -337,51 +339,59 @@ def sakura() -> list[Sprite]:
 
 
 def toad() -> list[Sprite]:
-    """The Lantern Toad's attacks. Frames are 2 px larger than the Bosses.json hitboxes for the outline: lantern shots
-    (10x10, low and high), a falling slam rock (12x12), a slam wave of dust and pink energy (16x10) and the long tongue
-    lashing along the ground (40x10), its sticky tip leading on the left."""
+    """The Sakura Toad Guardian's attacks, after the effects on docs/concept/Sakura Toad Guardian Sprite Sheet.png.
+    Frames are 2 px larger than the Bosses.json hitboxes for the outline: a red paper lantern with a white blossom
+    crest (10x10; the high one trails a pink glow), a dark mossy rock with pink energy (12x12), a low burst of pink
+    energy spikes and petals (16x10) and the long pink tongue with its pink lantern-ball tip leading on the left
+    (40x10)."""
     from characters.boss_kitsune import blossom, petal
-    from characters.boss_toad import EDGE, lantern_ball, rock
+    from characters.boss_toad import EDGE, ball, paper_lantern, rock
 
-    def shot(i: int, high: bool) -> Canvas:
+    def shot(i: int, high: bool) -> Image.Image:
         c = Canvas(12, 12)
-        lantern_ball(c, 5.5, 6, i, halo=False)
-        c.px(10 + (i % 2), 5 + (i % 2), P.TD_FIRE)                   # embers trailing behind
-        if high:
-            c.px(1 + i % 3, 1, P.WHITE)
-        return c.outline(EDGE)
+        if high:                                                 # a pink glow trailing behind (right)
+            trail = Canvas(12, 12)
+            for k in range(3):
+                trail.ellipse(9 + k, 6, 2.2 - k * 0.5, 1.6 - k * 0.3, P.SK_PINK if k else P.SK_PINK_L)
+            c.paste(see_through(trail.img, 170 + (i % 2) * 40))
+        paper_lantern(c, 5.5, 6, 0.9, glow_on=False)
+        c.rect(5, 0.5, 6, 1, P.TD_HAT_D)                          # the hanging loop
+        c.outline(EDGE)
+        return c.img
 
     low = [shot(i, False) for i in range(4)]
     high = [shot(i, True) for i in range(4)]
 
-    rocks = []                                                   # a mossy rock dropping, pink energy trailing above
+    rocks = []                                                   # a dark mossy rock dropping, pink energy above it
     for i in range(4):
         c = Canvas(14, 14)
+        energy = Canvas(14, 14)
         for k in range(3):
-            c.px(7 + (k - 1) * 3, 1 + k + (i + k) % 2, P.SK_PINK_L if k != 1 else P.SK_PINK)
+            energy.ellipse(7 + (k - 1) * 3, 2.5 + (i + k) % 2, 1.2, 2, P.SK_PINK if k != 1 else P.SK_PINK_L)
         rock(c, 7, 8.5, 4.2, i)
-        rocks.append(c.outline(EDGE))
+        c.outline(EDGE)
+        c.paste(see_through(energy.img, 220))
+        rocks.append(c)
 
-    wave = []                                                    # a burst of dust and pink energy along the ground
+    wave = []                                                    # a low burst of pink energy spikes with petals
     for i in range(3):
         c = Canvas(18, 12)
-        for k in range(5):
-            x = 3 + k * 3.2
-            h = (9, 7, 5, 4, 3)[k] - (i + k) % 2
-            c.ellipse(x, 11 - h / 2, 2.2, h / 2, (P.TD_STONE_L, P.SK_PINK, P.SK_PINK_L, P.TD_STONE, P.SK_PINK)[k])
-        blossom(c, 4, 3, 2.5, i)
-        petal(c, 10 + i, 2 + i % 2, i)
-        wave.append(c.outline(EDGE))
+        for k, (x, h) in enumerate(((3, 6), (7, 10), (11, 8), (15, 5))):
+            hh = h - (i + k) % 2 * 2
+            c.poly([(x - 2.5, 11), (x, 11 - hh), (x + 2.5, 11)], P.KT_MAGENTA)
+            c.poly([(x - 1.2, 11), (x, 12 - hh), (x + 1.2, 11)], P.SK_PINK_L)
+        c.rect(0, 10, 17, 11, P.SK_PINK)
+        petal(c, 2 + i, 2, i)
+        petal(c, 13 - i, 1 + i % 2, i + 1)
+        wave.append(c.outline(P.KT_MAGENTA_D))
 
-    tongue = []                                                  # the long tongue, sticky tip first (left)
+    tongue = []                                                  # the long tongue, its pink lantern-ball tip first
     for i in range(2):
         c = Canvas(42, 12)
         with part(c, {P.TD_TONGUE: (P.SK_PINK_L, P.TD_TONGUE_D)}, EDGE, up=1, down=1, left=1, right=1) as k:
-            tube(k, [(40, 6, 2.6), (24, 6 + (i * 2 - 1) * 0.8, 2.4), (8, 6, 2.6)], P.TD_TONGUE)
-            k.ellipse(5.5, 6, 4.5, 4.2, P.TD_TONGUE)
-        c.px(4, 4, P.WHITE)
-        c.line((10, 6), (38, 6), P.TD_TONGUE_D)                   # the groove down its middle
-        tongue.append(c)
+            tube(k, [(41, 6, 2.2), (24, 6 + (i * 2 - 1) * 0.6, 2.0), (9, 6, 2.2)], P.TD_TONGUE)
+        ball(c, 5.5, 6, 1.0, i)
+        tongue.append(c.outline(EDGE))
     return [hazard("lantern_shot", low, fps=12), hazard("lantern_shot_high", high, fps=12),
             hazard("slam_rock", rocks, fps=12), hazard("slam_wave", wave, fps=12), hazard("toad_tongue", tongue, fps=8)]
 

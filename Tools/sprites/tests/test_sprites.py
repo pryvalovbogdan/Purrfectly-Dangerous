@@ -297,7 +297,8 @@ SPEC = {
     "portal": ((26, 36), {"open": 4, "close": 4}),
     # Sakura route boss
     "boss_kitsune": ((150, 120), {"idle": 4, "walk": 6, "claw": 6, "bloom": 6, "summon": 6, "hurt": 2, "death": 8}),
-    "boss_toad": ((150, 120), {"idle": 4, "tongue": 6, "lanterns": 6, "slam": 8, "hurt": 2, "death": 8}),
+    "boss_toad": ((160, 136), {"idle": 4, "walk": 4, "prepare": 3, "tongue": 6, "lanterns": 6, "slam": 8, "hurt": 2,
+                               "death": 8}),
     # Pickups and award art
     "fish": ((16, 12), {"spin": 6}),
     "yarn_basket": ((28, 28), {"glow": 4}),

@@ -1178,15 +1178,25 @@
   }
  },
  "boss_toad": {
-  "width": 150,
-  "height": 120,
-  "anchorX": 0.5567,
-  "anchorY": 0.025,
+  "width": 160,
+  "height": 136,
+  "anchorX": 0.5219,
+  "anchorY": 0.0221,
   "animations": {
    "idle": {
     "frames": 4,
     "fps": 5,
     "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "prepare": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
    },
    "tongue": {
     "frames": 6,
