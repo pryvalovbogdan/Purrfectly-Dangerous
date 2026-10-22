@@ -169,6 +169,20 @@ SPEC = {
     "fire_wisp": ((50, 54), {"idle": 2, "move": 4, "attack": 4, "hit": 2, "death": 4}),
     "lava_puddle": ((22, 8), {"burn": 4}),
     "fire_ring": ((48, 16), {"burn": 4}),
+    # The Void critters (characters/void_critters.py)
+    "void_slime": ((36, 30), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
+    "void_orb": ((12, 12), {"fly": 4}),
+    "void_bat": ((50, 34), {"fly": 4, "attack": 3, "hit": 2, "death": 3}),
+    "void_sentinel": ((60, 46), {"idle": 2, "move": 4, "charge": 3, "attack": 3, "hit": 2, "death": 4}),
+    "void_laser": ((16, 4), {"fly": 2}),
+    "rift_hound": ((58, 34), {"idle": 2, "run": 6, "attack": 4, "hit": 2, "death": 4}),
+    "void_mage": ((50, 46), {"idle": 2, "walk": 4, "summon": 4, "attack": 4, "hit": 2, "death": 4}),
+    "void_bolt": ((14, 10), {"fly": 4}),
+    "rift_turret": ((44, 44), {"idle": 2, "charge": 4, "attack": 3, "hit": 2, "death": 4}),
+    "crystal_shot": ((16, 6), {"fly": 2}),
+    "void_wisp": ((50, 54), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
+    "homing_orb": ((14, 12), {"fly": 4}),
+    "mini_void_cat": ((56, 34), {"idle": 2, "teleport": 4, "attack": 4, "hit": 2, "death": 4}),
     "gear": ((30, 30), {"spin": 4}),
     "crate_wall": ((24, 124), {"still": 1, "break": 5}),
     # The citadel's lava pit and terrain (characters/cataclysm.py), the forest contracts
@@ -190,7 +204,32 @@ SPEC = {
     "terrain_citadel_edge": ((8, 16), {"still": 1}),
     "terrain_citadel_wall": ((8, 16), {"still": 1}),
     "terrain_citadel_fill": ((16, 16), {"still": 1}),
+    # World 5, the void (characters/voidrealm.py), the forest contracts
+    "ravine_void": ((8, 16), {"still": 1}),
+    "ravine_void_b": ((8, 16), {"still": 1}),
+    "ravine_void_rim": ((12, 24), {"still": 1}),
+    "ravine_void_vines": ((6, 24), {"still": 1}),
+    "ravine_void_back": ((16, 16), {"still": 1}),
+    "ravine_void_falls": ((16, 16), {"flow": 4}),
+    "ravine_void_falls_edge": ((4, 16), {"flow": 4}),
+    "ravine_void_lip": ((16, 6), {"flow": 4}),
+    "ravine_void_surface": ((16, 8), {"wave": 4}),
+    "ravine_void_pool": ((16, 24), {"churn": 4}),
+    "ravine_void_splash": ((16, 12), {"splash": 4}),
+    "ravine_void_floor": ((16, 16), {"still": 1}),
+    "ravine_void_fill": ((8, 48), {"still": 1}),
+    "ravine_void_deep": ((16, 16), {"still": 1}),
+    "terrain_void_top": ((16, 16), {"still": 1}),
+    "terrain_void_edge": ((8, 16), {"still": 1}),
+    "terrain_void_wall": ((8, 16), {"still": 1}),
+    "terrain_void_fill": ((16, 16), {"still": 1}),
+    "island_void": ((48, 24), {"still": 1}),
+    "bridge_void": ((48, 12), {"still": 1, "crumble": 4}),
     "boss_mecha": ((168, 124), {"idle": 4, "rockets": 6, "tail": 6, "core": 4, "hurt": 2, "death": 8}),
+    # Final world
+    "boss_voidcat": ((170, 140), {"idle": 4, "paws": 8, "stars": 6, "portal": 6, "phase": 6, "swipe": 6, "hurt": 2,
+                                  "death": 10}),
+    "portal": ((26, 36), {"open": 4, "close": 4}),
     # Pickups and award art
     "fish": ((16, 12), {"spin": 6}),
     "yarn_basket": ((28, 28), {"glow": 4}),
@@ -273,7 +312,7 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
 
 
 @pytest.mark.parametrize("name", ["hero", *(f"hero_{skin}" for skin in HERO_SKINS), "boss_squirrel",
-                                  "boss_icedragon", "boss_phantom", "boss_mecha",
+                                  "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat",
                                   "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
                                   "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat",
                                   "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
@@ -281,7 +320,9 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                                   "bat", "haunted_portrait", "cursed_armor", "candle_cat", "poltergeist_book",
                                   "gargoyle_cat", "shadow_cat",
                                   "lava_slime", "fire_imp", "stone_guard", "hell_hound", "ember_bat", "flame_archer",
-                                  "chainsaw_cat", "fire_wisp"])
+                                  "chainsaw_cat", "fire_wisp",
+                                  "void_slime", "void_bat", "void_sentinel", "rift_hound", "void_mage", "rift_turret",
+                                  "void_wisp", "mini_void_cat"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():
@@ -316,7 +357,7 @@ def test_output_is_deterministic(sprites):
 
 def test_animation_actually_moves(sprites):
     for name in ("hero", "squirrel", "hedgehog", "penguin", "ghost_cat", "mech_mouse", "boss_squirrel",
-                 "boss_icedragon", "boss_phantom", "boss_mecha"):
+                 "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat"):
         anim = next(iter(sprites[name].anims.values()))
         assert len({frame.tobytes() for frame in anim.frames}) > 1, f"{name}: all frames identical"
 
@@ -368,3 +409,24 @@ def test_hero_skins_match_the_hero(sprites, skin):
     differs = sum(a.tobytes() != b.tobytes() for name in hero.anims
                   for a, b in zip(hero.anims[name].frames, other.anims[name].frames))
     assert differs > 0, f"hero_{skin} looks exactly like the hero"
+
+
+THEMES = ("forest", "frost", "haunted", "citadel", "void")
+THEME_LAYERS = ("sky", "sky_top", "puffs", "clouds", "far", "near", "bushes")
+PIT_PIECES = ("", "_b", "_rim", "_vines", "_back", "_falls", "_falls_edge", "_lip", "_surface", "_pool", "_splash", "_floor",
+              "_fill", "_deep")
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_every_theme_has_its_whole_set(sprites, theme):
+    """Each world draws the same pieces under its own name, so the renderer picks them up by theme; the parallax
+    strips share their sizes so they tile and stand on the ground line alike."""
+    names = [f"bg_{theme}_{layer}" for layer in THEME_LAYERS]
+    names += [f"ground_{theme}", f"ground_{theme}_earth", f"ground_{theme}_fill"]
+    names += [f"ravine_{theme}{piece}" for piece in PIT_PIECES]
+    names += [f"terrain_{theme}_{piece}" for piece in ("top", "edge", "wall", "fill")]
+    assert [n for n in names if n not in sprites] == []
+    assert sprites[f"bg_{theme}_sky"].size == (16, 200)
+    for layer in ("puffs", "clouds", "far", "near", "bushes"):
+        assert sprites[f"bg_{theme}_{layer}"].size[0] == 320, f"bg_{theme}_{layer} must tile at 320"
+    assert sprites[f"ground_{theme}"].size == (32, 48) and sprites[f"ground_{theme}_earth"].size == (32, 36)

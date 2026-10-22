@@ -37,8 +37,8 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | milk | 32×6 | still 1 (tiles horizontally; its bottom 3 rows sit on the turf) |
 | bridge | 48×12 | still 1, crumble 4 (walk surface = top row) |
 | island | 48×24 | still 1. Floating island: grassy top (walk surface = top row, placed like `bridge`: frame top on the platform's y), rounded earth-and-rock underside, vines to row 23. One per platform, not tiled |
-| island_frost, island_haunted, island_citadel | 48×24 | still 1. Themed versions of `island` (same size, anchor and walk row): a snow-capped icy rock with icicles; a violet masonry chunk with candles in niches and a purple glow; a charred rock with glowing cracks and lava drips. The renderer uses `<kind>_<theme>` when it exists |
-| bridge_citadel | 48×12 | still 1, crumble 4. The citadel's `bridge`: charred planks on an iron girder, an iron post wrapped in chain, chains hanging in swags (walk surface = top row) |
+| island_frost, island_haunted, island_citadel, island_void | 48×24 | still 1. Themed versions of `island` (same size, anchor and walk row): a snow-capped icy rock with icicles; a violet masonry chunk with candles in niches and a purple glow; a charred rock with glowing cracks and lava drips. The renderer uses `<kind>_<theme>` when it exists |
+| bridge_citadel, bridge_void | 48×12 | still 1, crumble 4. The citadel's and the void's `bridge` (the void's: stone slabs, gold trim and gold chains);: charred planks on an iron girder, an iron post wrapped in chain, chains hanging in swags (walk surface = top row) |
 | terrain_forest_top | 16×16 | still 1. Raised/sunken ground surface; tiles horizontally; walk surface = top row; opaque |
 | terrain_forest_edge | 8×16 | still 1. Left end cap (mirror for the right); top row level with `terrain_forest_top`'s |
 | terrain_forest_wall | 8×16 | still 1. Left side face below the cap (mirror for the right); tiles vertically |
@@ -118,9 +118,24 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | fire_wisp | 50×54 | idle 2, move 4, attack 4 (swells twice, then a burst ring of flames about 24 and then 40 wide round it), hit 2, death 4 (gutters out into embers). A floating flame with a cat face, flame ears and crown, fire licks streaming behind; body bottom on row 33, x 25 (the ring reaches below it); 14×14 hitbox |
 | lava_puddle | 22×8 | burn 4 @8fps. Lingering hazard: a glowing molten puddle about 20×6 with a crusted rim and bubbles that swell and pop; centred, bottom row (7) on the ground; 18×4 hitbox |
 | fire_ring | 48×16 | burn 4 @8fps. Lingering hazard: a ring of low flames on the ground seen from the side, about 42×12 (far half lower and darker, near half in front) over glowing ground; centred, bottom row (15) on the ground; 40×10 hitbox |
+| void_slime | 36×30 | idle 2, move 4, attack 3 (puff, spit a void orb, settle), hit 2, death 4 (melts flat). Near-black violet cat-eared dome with starlight inside, bright magenta rim and eyes, a pool of void at its foot; feet on row 27, x 17; 20×14 hitbox |
+| void_orb | 12×12 | fly 4. Magenta ring of light round a dark heart, about 10×10 (fired by the slime and the bat) |
+| void_bat | 50×34 | fly 4, attack 3 (wings up, dive, fires a void orb), hit 2, death 3. The ember bat's build in void colours: near-black violet with magenta wings; feet on row 27, x 25; 18×14 hitbox |
+| void_sentinel | 60×46 | idle 2, move 4 (bobbing), charge 3 (the eye brightening), attack 3 (laser reaching out, full beam, cool), hit 2, death 4. A one-eyed cat bust of violet stone on a carved slab over a crystal-studded rock, four crystals orbiting; slab-rock bottom on row 40, x 20; 20×22 hitbox |
+| void_laser | 16×4 | fly 2. Beam segment that tiles end to end: magenta edge, white-hot core line, running sparkles |
+| rift_hound | 58×34 | idle 2, run 6, attack 4, hit 2, death 4 (fades into the void). The hell hound's build in void colours with a violet-flame mane; feet on row 31, x 22; 26×18 hitbox |
+| void_mage | 50×46 | idle 2, walk 4, summon 4 (a portal ring opens on the ground in front and a pillar of light rises), attack 4 (staff raised, glowing, void bolt flies, recover), hit 2, death 4. Hooded cultist cat in a dark violet robe with a magenta stole and a crescent staff; feet on row 42, x 16; 16×24 hitbox |
+| void_bolt | 14×10 | fly 4. Void orb about 12×8 with a wavering tail |
+| rift_turret | 44×44 | idle 2, charge 4 (core brightening, shards drawing in), attack 3 (flash, shot leaves, settle), hit 2, death 4. Floating violet crystal with a glowing core and four crystal shards orbiting on a dotted ring; crystal tip on row 35, x 21 (the shards orbit a few rows below it); 16×20 hitbox |
+| crystal_shot | 16×6 | fly 2. Crystal arrowhead about 14×6 with a dotted trail |
+| void_wisp | 50×54 | idle 2, move 4, attack 3 (swell, launch a homing orb, recover), hit 2, death 4 (rises and fades). The fire wisp's build as a pink-white spirit flame with a cat face; body bottom on row 33, x 25; 14×14 hitbox |
+| homing_orb | 14×12 | fly 4. Bright orb about 10×10 with a curling trail |
+| mini_void_cat | 56×34 | idle 2, teleport 4, attack 4 (crouch, dash, big magenta crescent slash, recover), hit 2, death 4. The shadow cat's build in void colours: black cat with a magenta rim, glowing eyes and violet smoke; feet on row 31, x 26; 18×20 hitbox |
 | gear | 30×30 | spin 4 |
 | crate_wall | 24×124 | still 1, break 5 |
 | boss_mecha | 168×124 | idle 4, rockets 6, tail 6, core 4 (chest open), hurt 2, death 8 |
+| boss_voidcat | 170×140 | idle 4, paws 8 (both paws rear up, then slam down one after the other with shadow smoke bursting on the ground), stars 6 (right paw raised, stars gathering round it and streaking up), portal 6 (the chest portal yawns open, small portals open on the ground at its sides), phase 6 (the final phase: the body flares bright, the eyes blaze; loops), swipe 6 (one big claw swipe across: paw raised, raked down through a magenta crescent; not looping), hurt 2, death 10 (dissolves into stars drifting up). The final boss, after the giant cat in `docs/concept/Void Cat Final Boss Tileset.png`: a front-facing cat of black-violet smoke with a starfield inside, blazing white-violet slanted eyes, two huge paws with crescent claws and a magenta portal in its chest; a 1 px magenta rim and a violet glow so it reads on the dark purple backdrop. Ground row 136, x 85; suggested hitbox 60×90 on the ground (baseY 0): the body column from the feet to the eyes, the paws and ears stick out |
+| portal | 26×36 | open 4 (loop; a swirling magenta portal, an upright oval about 16×28, 20×32 with its glow, standing on its bottom row, centred), close 4 (not looping; shrinks down onto its bottom row to a last spark). The boss portals the engine draws; uses the Void Cat's `ring` drawing |
 | fish | 16×12 | spin 6 |
 | yarn_basket | 28×28 | glow 4 |
 | medal | 32×32 | bronze 1, silver 1, gold 1 |
@@ -168,7 +183,10 @@ Also generated: an `ability_<id>` icon (24×24) for `yarnShot`, `doublePounce`,
 `ghostDash` and `superPounce`; `spark_star|ember|feather` for the burst around the kitten (ember is a curl of
 yarn); and a `hazard_<kind>` sprite with a `fly` animation for every hazard kind in `Bosses.json` — `acorn`,
 `acorn_high`, `breath`, `shard`, `ice_spike`, `wave`, `wisp`, `burning_patch`, `tail`, `claw` — plus
-`giant_acorn`, `shockwave` and `rocket` for the attacks the design describes. Hazards lead with their left edge
+`giant_acorn`, `shockwave` and `rocket` for the attacks the design describes; for the Void Cat, `shadow_paw`
+(40×14, a smoky paw raking low along the ground, claws first, 4 frames), `falling_star` (12×16, a star with its
+trail above it, 4), `portal_ring` (24×24, a swirling magenta ring, 4), `void_wave` (20×10, a low smoke wave with a
+lit crest, 3) and `star_shard` (12×8, a white-violet shard flying point first, 2). Hazards lead with their left edge
 (they travel toward the kitten) and their frame bottom is the hitbox bottom.
 
 Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, stretched across the screen) and
@@ -240,6 +258,18 @@ chains in the vines' slot. The terrain blocks (`terrain_citadel_*`) are charred 
 cap. The props (`vent`, `piston`, `gear`, `crate_wall`, `cannon` and `debris`) were restyled to match, with their sizes,
 frames and anchors unchanged.
 
+World 5 (`void`, the final level against the Void Cat) is drawn in `characters/voidrealm.py`, after
+`docs/concept/Void Cat Final Boss Tileset.png`, with the same names, sizes and contracts. The sky has stars, nebula
+streaks, a spiral galaxy, a ringed planet and the magenta black-hole portal (in `bg_void_clouds`). The `far` layer has
+the Void Cat looming, its eyes glowing above the ruins, with floating rock islands and ruined towers either side. The
+`near` layer has a ruined gothic wall with stained glass, brazier pillars and chained floating platforms, and `bushes`
+has dark rocks with violet crystals. The ground is violet bricks with a gold trim and glowing cracks. The pit is a
+cosmic abyss (`ravine_void_*`): a void-energy curtain, a swirling surface, a twinkling starfield pool, and gold chains
+in the vines' slot. The terrain (`terrain_void_*`) has crystal undersides, and `island_void` / `bridge_void` follow the
+`island` / `bridge` contracts. The level card and next-level screen use the same `bg_void_*` and ground sprites
+(MenuScene builds `LevelBackdrop` for the level's theme), so they need no extra art.
+`test_every_theme_has_its_whole_set` checks that every theme has the whole set.
+
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 
 The jump buttons (`characters/buttons.py`) follow `docs/concept/Pixel Art Jump Button UI Sheet.png` (top row); the paw is pixel-identical in every button (the pressed ones shift it down 1 px), so swapping states never jumps. The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
@@ -263,7 +293,8 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. The forest critters (`forest_critters.py`), the citadel critters (`citadel_critters.py`; black stone with an ember
+afterwards. The forest critters (`forest_critters.py`), the void critters (`void_critters.py`; the bat, hound, wisp and mini
+void cat recolour the citadel and museum builds colour-for-colour), the citadel critters (`citadel_critters.py`; black stone with an ember
 rim from `critters.rim`, lava ramping to a white-hot core), the haunted critters (`haunted_critters.py`; spirits are see-through
 with a bright outline, magic is magenta) and the frost critters (`frost_critters.py`; slash arcs are glowing ice
 crescents laid on after the outline, hits are a white flash then ice sparkles) are built from shaded parts in `critters.py` (`shaded` lights each part's top-left

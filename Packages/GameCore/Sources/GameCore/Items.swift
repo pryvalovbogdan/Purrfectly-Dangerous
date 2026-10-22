@@ -19,6 +19,9 @@ public enum ItemKind: String, Codable, Sendable, CaseIterable {
     case vent, piston, cannon, debris, mechMouse = "mech_mouse", gear, crateWall = "crate_wall"
     case lavaSlime = "lava_slime", fireImp = "fire_imp", stoneGuard = "stone_guard", hellHound = "hell_hound"
     case emberBat = "ember_bat", flameArcher = "flame_archer", chainsawCat = "chainsaw_cat", fireWisp = "fire_wisp"
+    // World 5 — void
+    case voidSlime = "void_slime", voidBat = "void_bat", voidSentinel = "void_sentinel", riftHound = "rift_hound"
+    case voidMage = "void_mage", riftTurret = "rift_turret", voidWisp = "void_wisp", miniVoidCat = "mini_void_cat"
     // Pickups
     case fish, yarnBasket = "yarn_basket"
 }
@@ -49,6 +52,23 @@ public struct ThrowSpec: Sendable, Equatable {
     public var fades = false
     /// A lobbed shot that lands as something else that lingers a while (a burning puddle).
     public var linger: LingerSpec?
+    /// A homing shot: while still ahead of the hero it steers its height toward the hero's middle,
+    /// at most this many units per second (so a late jump or a Ghost Dash leaves it behind).
+    public var homing: Double?
+    /// Every other throw (the first, third, …) summons this creature `summonAhead` in front of the
+    /// hero instead of throwing.
+    public var alternateSummon: ItemKind?
+    public var summonAhead = 80.0
+}
+
+/// Moves in bursts on the world clock: `walk` seconds moving, then `pause` seconds still.
+public struct BurstSpec: Sendable, Equatable {
+    public var walk: Double
+    public var pause: Double
+
+    public func isMoving(at time: Double) -> Bool {
+        time.truncatingRemainder(dividingBy: walk + pause) < walk
+    }
 }
 
 /// What a landed lob becomes: a still hazard of `kind` and this size, gone after `seconds`.
@@ -118,6 +138,8 @@ public struct LeapSpec: Sendable, Equatable {
 /// flashes its warning, then walks (dashes) in.
 public struct TeleportSpec: Sendable, Equatable {
     public var ahead: Double
+    /// Times it appears ahead again once its dash has carried it past the hero.
+    public var repeats = 0
 }
 
 /// A fixed on/off rhythm read from the world clock, so every copy of the world agrees on it.
@@ -211,6 +233,7 @@ public struct ItemSpec: Sendable {
     public var chase: ChaseSpec?
     public var reach: ReachSpec?
     public var fuse: FuseSpec?
+    public var burst: BurstSpec?
 }
 
 extension ItemKind {
@@ -424,6 +447,48 @@ extension ItemKind {
         case .fireWisp:
             ItemSpec(width: 14, height: 14, baseY: 20, xp: 20, velocity: -40, yarnable: true,
                      fuse: FuseSpec(trigger: 50, warning: 0.5, ringWidth: 40, ringHeight: 10, ringLife: 0.4))
+        // MARK: void
+        // Lurches in short bursts and spits void orbs along the ground; its body burns, so no stomp.
+        case .voidSlime:
+            ItemSpec(width: 20, height: 14, xp: 20, velocity: -30, yarnable: true,
+                     throwing: ThrowSpec(projectile: "void_orb", interval: 2.2, range: 300, speed: 90, y: 2,
+                                         width: 8, height: 8),
+                     burst: BurstSpec(walk: 0.5, pause: 0.5))
+        // Swoops to just over a standing kitten and fires orbs at head height: staying down is safe.
+        case .voidBat:
+            ItemSpec(width: 18, height: 14, baseY: 42, xp: 20, velocity: -45, yarnable: true,
+                     throwing: ThrowSpec(projectile: "void_orb", interval: 2.0, range: 300, speed: 100, y: 30,
+                                         width: 8, height: 8),
+                     flight: FlightSpec(high: 42, low: 28, diveStart: 150, diveEnd: 70))
+        // Floats at 36; charges 0.8 s (a visible warning), then a long low laser.
+        case .voidSentinel:
+            ItemSpec(width: 20, height: 22, baseY: 36, hp: 3, xp: 40, yarnable: true,
+                     throwing: ThrowSpec(projectile: "void_laser", interval: 2.6, range: 300, speed: 170, y: 4,
+                                         width: 30, height: 4, windup: 0.8, warning: 0.8))
+        // A faster hell hound with less warning.
+        case .riftHound:
+            ItemSpec(width: 26, height: 18, hp: 2, xp: 40, yarnable: true,
+                     chase: ChaseSpec(trigger: 0, warning: 0.45, behind: 120, overtake: 170))
+        // Stands; every 3 s it summons a void wisp ahead of the kitten, or fires a low void bolt, by turns.
+        case .voidMage:
+            ItemSpec(width: 16, height: 24, hp: 3, xp: 45, stompable: true, stompKills: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "void_bolt", interval: 3.0, range: 300, speed: 120, y: 6,
+                                         width: 10, height: 6, alternateSummon: .voidWisp))
+        // A crystal hovering at 20 (jump it); charges 1 s, visibly, then a fast low shot.
+        case .riftTurret:
+            ItemSpec(width: 16, height: 20, baseY: 20, hp: 2, xp: 35, yarnable: true,
+                     throwing: ThrowSpec(projectile: "crystal_shot", interval: 2.8, range: 300, speed: 200, y: 4,
+                                         width: 10, height: 4, windup: 1.0, warning: 1.0))
+        // Floats over a standing kitten, drifting in; its orbs home in on the kitten's height, slowly.
+        case .voidWisp:
+            ItemSpec(width: 14, height: 14, baseY: 30, xp: 20, velocity: -30, yarnable: true,
+                     throwing: ThrowSpec(projectile: "homing_orb", interval: 2.5, range: 300, speed: 100, y: nil,
+                                         width: 8, height: 8, homing: 40))
+        // A shadow cat that, once its dash has passed the kitten, appears ahead once more and dashes again.
+        case .miniVoidCat:
+            ItemSpec(width: 18, height: 20, xp: 50, velocity: -120, stompable: true, stompKills: true,
+                     yarnable: true, wake: WakeSpec(trigger: 180, warning: 0.4),
+                     teleport: TeleportSpec(ahead: 80, repeats: 1))
         // MARK: pickups
         case .fish: ItemSpec(width: 10, height: 10, baseY: 14, xp: 5, hurtsOnTouch: false)
         case .yarnBasket: ItemSpec(width: 16, height: 400, hurtsOnTouch: false)

@@ -490,5 +490,285 @@
     ]
    }
   ]
+ },
+ {
+  "id": "boss_voidcat",
+  "hp": 30,
+  "width": 60,
+  "height": 90,
+  "baseY": 0,
+  "vulnerable": "always",
+  "openingTime": 2.0,
+  "attacks": [
+   {
+    "name": "shadow_paws",
+    "telegraph": 0.7,
+    "duration": 1.2,
+    "recover": 1.0,
+    "hazards": [
+     {
+      "kind": "shadow_paw",
+      "delay": 0.0,
+      "y": 0,
+      "width": 16,
+      "height": 14,
+      "closingSpeed": 240
+     },
+     {
+      "kind": "shadow_paw",
+      "delay": 0.6,
+      "y": 0,
+      "width": 16,
+      "height": 14,
+      "closingSpeed": 240
+     },
+     {
+      "kind": "shadow_paw",
+      "delay": 1.2,
+      "y": 0,
+      "width": 16,
+      "height": 14,
+      "closingSpeed": 240
+     }
+    ]
+   },
+   {
+    "name": "star_fall",
+    "telegraph": 0.7,
+    "duration": 1.0,
+    "recover": 1.0,
+    "hazards": [
+     {
+      "kind": "falling_star",
+      "delay": 0.0,
+      "y": 150,
+      "width": 12,
+      "height": 12,
+      "closingSpeed": 150,
+      "ahead": 200,
+      "arm": 0.6,
+      "falls": true
+     },
+     {
+      "kind": "falling_star",
+      "delay": 0.5,
+      "y": 150,
+      "width": 12,
+      "height": 12,
+      "closingSpeed": 150,
+      "ahead": 260,
+      "arm": 0.6,
+      "falls": true
+     },
+     {
+      "kind": "shadow_paw",
+      "delay": 0.9,
+      "y": 0,
+      "width": 16,
+      "height": 14,
+      "closingSpeed": 240
+     }
+    ]
+   },
+   {
+    "name": "portal_paws",
+    "telegraph": 0.6,
+    "duration": 2.0,
+    "recover": 1.0,
+    "hazards": [
+     {
+      "kind": "void_wave",
+      "delay": 0.5,
+      "y": 0,
+      "width": 24,
+      "height": 12,
+      "closingSpeed": 220
+     },
+     {
+      "kind": "star_shard",
+      "delay": 1.2,
+      "y": 40,
+      "width": 20,
+      "height": 8,
+      "closingSpeed": 260
+     },
+     {
+      "kind": "void_wave",
+      "delay": 1.9,
+      "y": 0,
+      "width": 24,
+      "height": 12,
+      "closingSpeed": 220
+     }
+    ],
+    "portals": [
+     {
+      "delay": 0.0,
+      "open": 2.4,
+      "ahead": 70,
+      "y": 0,
+      "exitAhead": 150,
+      "exitY": 50
+     }
+    ]
+   },
+   {
+    "name": "portal_shards",
+    "telegraph": 0.6,
+    "duration": 1.8,
+    "recover": 1.0,
+    "hazards": [
+     {
+      "kind": "star_shard",
+      "delay": 0.3,
+      "y": 40,
+      "width": 20,
+      "height": 8,
+      "closingSpeed": 260
+     },
+     {
+      "kind": "void_wave",
+      "delay": 0.9,
+      "y": 0,
+      "width": 24,
+      "height": 12,
+      "closingSpeed": 220
+     },
+     {
+      "kind": "star_shard",
+      "delay": 1.5,
+      "y": 40,
+      "width": 20,
+      "height": 8,
+      "closingSpeed": 260
+     }
+    ],
+    "portals": [
+     {
+      "delay": 0.0,
+      "open": 2.2,
+      "ahead": 80,
+      "y": 10,
+      "exitAhead": 140,
+      "exitY": 0,
+      "reverses": true
+     }
+    ]
+   },
+   {
+    "name": "phase_rush",
+    "telegraph": 0.5,
+    "duration": 1.6,
+    "recover": 1.1,
+    "hazards": [
+     {
+      "kind": "void_wave",
+      "delay": 0.0,
+      "y": 0,
+      "width": 24,
+      "height": 12,
+      "closingSpeed": 230
+     },
+     {
+      "kind": "star_shard",
+      "delay": 0.5,
+      "y": 40,
+      "width": 20,
+      "height": 8,
+      "closingSpeed": 270
+     },
+     {
+      "kind": "shadow_paw",
+      "delay": 1.0,
+      "y": 0,
+      "width": 16,
+      "height": 14,
+      "closingSpeed": 250
+     },
+     {
+      "kind": "star_shard",
+      "delay": 1.5,
+      "y": 40,
+      "width": 20,
+      "height": 8,
+      "closingSpeed": 270
+     }
+    ]
+   },
+   {
+    "name": "phase_storm",
+    "telegraph": 0.5,
+    "duration": 1.4,
+    "recover": 1.1,
+    "hazards": [
+     {
+      "kind": "falling_star",
+      "delay": 0.0,
+      "y": 150,
+      "width": 12,
+      "height": 12,
+      "closingSpeed": 150,
+      "ahead": 210,
+      "arm": 0.6,
+      "falls": true
+     },
+     {
+      "kind": "void_wave",
+      "delay": 0.4,
+      "y": 0,
+      "width": 24,
+      "height": 12,
+      "closingSpeed": 230
+     },
+     {
+      "kind": "falling_star",
+      "delay": 0.7,
+      "y": 150,
+      "width": 12,
+      "height": 12,
+      "closingSpeed": 150,
+      "ahead": 270,
+      "arm": 0.6,
+      "falls": true
+     },
+     {
+      "kind": "shadow_paw",
+      "delay": 1.2,
+      "y": 0,
+      "width": 16,
+      "height": 14,
+      "closingSpeed": 250
+     }
+    ]
+   }
+  ],
+  "phases": [
+   {
+    "startsBelow": 1,
+    "attacks": [
+     "shadow_paws",
+     "star_fall"
+    ]
+   },
+   {
+    "startsBelow": 0.66,
+    "attacks": [
+     "portal_paws",
+     "star_fall",
+     "portal_shards"
+    ]
+   },
+   {
+    "startsBelow": 0.33,
+    "attacks": [
+     "phase_rush",
+     "phase_storm"
+    ],
+    "requires": [
+     "ghostDash",
+     "superPounce"
+    ]
+   }
+  ]
  }
 ]

@@ -1,12 +1,15 @@
 # Game design — Purrfectly Dangerous
 
-A kitten runs automatically across four worlds to win back the Sacred Fish. Each world ends in a
-three-phase boss fight and gives the kitten a new ability. The source concept and style sheet are in
+A kitten runs automatically across five worlds to win back the Sacred Fish. Each world ends in a
+three-phase boss fight; the first four give the kitten a new ability, and the fifth, the void, is the
+final world that tests them all. The source concept and style sheet are in
 `docs/concept/`; this file is the version the game actually builds, and it wins where they differ.
 
-First-release scope (concept §8): four worlds, four bosses, four abilities, fish, medals, endless
-mode. **Not yet**: mini-bosses, upgrade shop, Nine Lives, Catnip Frenzy, cutscenes, the extra
-encounters (§3) and the special bosses (§4).
+First-release scope (concept §8, extended): four worlds and their bosses, plus the final void world
+with the Void Cat (from the special bosses of §4), four abilities, fish, medals, endless mode.
+**Not yet**: mini-bosses, upgrade shop, Nine Lives, Catnip Frenzy, cutscenes (the opening, and the
+ending after the Void Cat: the golden crown, the mountain of fish and the mouse that steals the
+throne), the extra encounters (§3) and the other special bosses (§4).
 
 ## Loop and controls
 
@@ -188,6 +191,38 @@ at or below 40% it is hit only while recovering; then the core is exposed and ph
 2. Tail sweep (low) while flame vents fire ahead (blinking warning).
 3. Core exposed: rapid alternating high/low attacks with short openings.
 
+### 5 — void (speed 150, Final)
+The final world. The creature roster follows the expanded concept's "Final Level — The Void Cat"
+roster and its sheet `docs/concept/The Void Cat_ Final Boss Sprite Sheet.png`; the boss follows §4
+(the Void Cat: shadow paws, falling stars and portals that confuse projectile direction, and a final
+phase that tests the abilities). The kitten enters at level 5 (every ability) and the boss grants
+nothing new (`bossRewardLevel` 5). In an endless run it comes after level 4, and the run loops all
+five worlds; like every level, it opens for play on its own once beaten there. `level_05.json` is a placeholder for the level designer.
+
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `void_slime` | void slime | lurches in on the world clock (0.5 s moving, 0.5 s still), spitting low void orbs; burns a stomper | jump the orbs and it; yarn |
+| `void_bat` | void bat | swoops to just over a standing kitten (28) and fires void orbs at head height (30) | stay down; yarn from a hop |
+| `void_sentinel` | void sentinel | floats at 36; charges for 0.8 s (it flashes), then a long low void laser (30 wide); 3 HP | jump the laser; 3 yarn from hops |
+| `rift_hound` | rift hound | a faster hell hound: 0.45 s warning, then in from behind at 170 over the run speed | jump it as it passes |
+| `void_mage` | void mage | stands; every 3 s, by turns, summons a void wisp 80 ahead of the kitten or fires a low void bolt; 3 HP, a stomp kills | jump the bolts; stomp, or 3 yarn |
+| `rift_turret` | rift crystal | hovers at 20 (in the kitten's way); charges for 1 s (it flashes), then a fast low crystal shot; 2 HP | jump the shot, then it |
+| `void_wisp` | void wisp | floats at 30, drifting in; every 2.5 s a homing orb that steers toward the kitten's middle at up to 40 units/s while it is still ahead | jump late (it can't climb that fast), or Ghost Dash |
+| `mini_void_cat` | mini void cat | a shadow cat that, once its dash has passed the kitten, appears 80 ahead once more and dashes again; a stomp kills | jump or stomp each dash, or Ghost Dash |
+
+Boss `boss_voidcat` — **The Void Cat**, 30 HP (placeholder tuning for the level designer).
+1. Shadow paws sweeping along the ground (low), and falling stars: each blinks where it will fall
+   (fixed on the ground ahead), then drops and shatters.
+2. Portals: a pair opens for a while, the entry just ahead of the kitten and the exit further on and
+   higher. Yarn that flies into the entry comes out of the exit (once per ball), at the same height
+   within it, so it reaches the boss from an unexpected height; a portal may also send yarn back.
+   The kitten itself passes through portals.
+3. **The final phase needs the abilities.** Yarn is shrugged off unless the boss is *exposed*. The
+   kitten exposes it by using a Ghost Dash or a Super Pounce through an attack: while dashing or
+   pouncing, an armed hazard is level with the kitten (overlapping it along the run, at any height).
+   The boss then stays exposed for `openingTime` (2 s) and yarn lands. (`phases[].requires` lists
+   the abilities that count.)
+
 ## Pickups
 
 | Id | Effect |
@@ -198,7 +233,7 @@ at or below 40% it is hit only while recovering; then the core is exposed and ph
 ## Medals and endless
 
 Medals as before (bronze/silver/gold → shown as 1–3 stars) for distance, enemies defeated and fish.
-The START button begins an endless run through the four worlds in order, each with its boss, every
+The START button begins an endless run through the five worlds in order, each with its boss, every
 loop 15% faster up to ×2 (only the game clock changes, so the no-hit proof holds on every loop).
 Scoring and saving as in the engine's `EndlessRun`.
 

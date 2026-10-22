@@ -580,6 +580,97 @@
    }
   }
  },
+ "bg_void_bushes": {
+  "width": 320,
+  "height": 22,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_void_clouds": {
+  "width": 320,
+  "height": 150,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_void_far": {
+  "width": 320,
+  "height": 150,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_void_near": {
+  "width": 320,
+  "height": 130,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_void_puffs": {
+  "width": 320,
+  "height": 120,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_void_sky": {
+  "width": 16,
+  "height": 200,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_void_sky_top": {
+  "width": 8,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "bone": {
   "width": 10,
   "height": 10,
@@ -797,6 +888,54 @@
    }
   }
  },
+ "boss_voidcat": {
+  "width": 170,
+  "height": 140,
+  "anchorX": 0.4971,
+  "anchorY": 0.0214,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "paws": {
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "stars": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "portal": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "phase": {
+    "frames": 6,
+    "fps": 8,
+    "loop": true
+   },
+   "swipe": {
+    "frames": 6,
+    "fps": 12,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 10,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "branch_squirrel": {
   "width": 40,
   "height": 40,
@@ -839,6 +978,24 @@
   }
  },
  "bridge_citadel": {
+  "width": 48,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "crumble": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "bridge_void": {
   "width": 48,
   "height": 12,
   "anchorX": 0.5,
@@ -1233,6 +1390,19 @@
     "frames": 5,
     "fps": 14,
     "loop": false
+   }
+  }
+ },
+ "crystal_shot": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
    }
   }
  },
@@ -1732,6 +1902,45 @@
    }
   }
  },
+ "ground_void": {
+  "width": 32,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ground_void_earth": {
+  "width": 32,
+  "height": 36,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ground_void_fill": {
+  "width": 8,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "haunted_portrait": {
   "width": 36,
   "height": 36,
@@ -1830,6 +2039,19 @@
    }
   }
  },
+ "hazard_falling_star": {
+  "width": 12,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "hazard_giant_acorn": {
   "width": 28,
   "height": 34,
@@ -1856,6 +2078,19 @@
    }
   }
  },
+ "hazard_portal_ring": {
+  "width": 24,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
  "hazard_rocket": {
   "width": 22,
   "height": 10,
@@ -1865,6 +2100,19 @@
    "fly": {
     "frames": 3,
     "fps": 14,
+    "loop": true
+   }
+  }
+ },
+ "hazard_shadow_paw": {
+  "width": 40,
+  "height": 14,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
     "loop": true
    }
   }
@@ -1895,6 +2143,19 @@
    }
   }
  },
+ "hazard_star_shard": {
+  "width": 12,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "hazard_tail": {
   "width": 36,
   "height": 13,
@@ -1904,6 +2165,19 @@
    "fly": {
     "frames": 2,
     "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "hazard_void_wave": {
+  "width": 20,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 3,
+    "fps": 12,
     "loop": true
    }
   }
@@ -3176,6 +3450,19 @@
    }
   }
  },
+ "homing_orb": {
+  "width": 14,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "hud_level_tab": {
   "width": 64,
   "height": 32,
@@ -3585,6 +3872,19 @@
    }
   }
  },
+ "island_void": {
+  "width": 48,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "lava_glob": {
   "width": 10,
   "height": 10,
@@ -3854,6 +4154,39 @@
    }
   }
  },
+ "mini_void_cat": {
+  "width": 56,
+  "height": 34,
+  "anchorX": 0.5268,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "teleport": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "mini_yeti": {
   "width": 60,
   "height": 46,
@@ -4054,6 +4387,24 @@
    "death": {
     "frames": 4,
     "fps": 8,
+    "loop": false
+   }
+  }
+ },
+ "portal": {
+  "width": 26,
+  "height": 36,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "open": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   },
+   "close": {
+    "frames": 4,
+    "fps": 12,
     "loop": false
    }
   }
@@ -4786,6 +5137,254 @@
    }
   }
  },
+ "ravine_void": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_b": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_back": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_deep": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_falls": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_falls_edge": {
+  "width": 4,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_fill": {
+  "width": 8,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_floor": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_lip": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_pool": {
+  "width": 16,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "churn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_rim": {
+  "width": 12,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_splash": {
+  "width": 16,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "splash": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_surface": {
+  "width": 16,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "wave": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_void_vines": {
+  "width": 6,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "rift_hound": {
+  "width": 58,
+  "height": 34,
+  "anchorX": 0.6121,
+  "anchorY": 0.0588,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "run": {
+    "frames": 6,
+    "fps": 12,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
+ "rift_turret": {
+  "width": 44,
+  "height": 44,
+  "anchorX": 0.5114,
+  "anchorY": 0.1818,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "charge": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
  "shadow_cat": {
   "width": 56,
   "height": 34,
@@ -5510,6 +6109,58 @@
    }
   }
  },
+ "terrain_void_edge": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_void_fill": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_void_top": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_void_wall": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "title_cat": {
   "width": 64,
   "height": 40,
@@ -5613,6 +6264,215 @@
     "frames": 4,
     "fps": 14,
     "loop": true
+   }
+  }
+ },
+ "void_bat": {
+  "width": 50,
+  "height": 34,
+  "anchorX": 0.49,
+  "anchorY": 0.1765,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "void_bolt": {
+  "width": 14,
+  "height": 10,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
+ "void_laser": {
+  "width": 16,
+  "height": 4,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 2,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
+ "void_mage": {
+  "width": 50,
+  "height": 46,
+  "anchorX": 0.67,
+  "anchorY": 0.0652,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "summon": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "void_orb": {
+  "width": 12,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "void_sentinel": {
+  "width": 60,
+  "height": 46,
+  "anchorX": 0.6583,
+  "anchorY": 0.1087,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+   },
+   "charge": {
+    "frames": 3,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "void_slime": {
+  "width": 36,
+  "height": 30,
+  "anchorX": 0.5139,
+  "anchorY": 0.0667,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "void_wisp": {
+  "width": 50,
+  "height": 54,
+  "anchorX": 0.49,
+  "anchorY": 0.3704,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+   },
+   "move": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hit": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
    }
   }
  },

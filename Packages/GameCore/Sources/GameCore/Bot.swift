@@ -65,6 +65,8 @@ struct BotPlan: Sendable, Equatable {
 public struct Bot: Sendable {
     private var plan: BotPlan?
     private var elapsed = 0.0
+    /// The plan in progress is a move to open a boss phase that needs abilities.
+    private var planOpens = false
 
     public init() {}
 
@@ -86,9 +88,11 @@ public struct Bot: Sendable {
 
     /// Plays `plan` on a copy of the world. Being knocked back off a step is harmless, so it does not
     /// make a plan unsafe; `bumpedAt` is the face of the first step run into, if any.
-    static func outcome(_ start: RunnerWorld, plan: BotPlan?, horizon: Double,
-                        dt: Double) -> (safe: Bool, distance: Double, bumpedAt: Double?) {
+    /// `afterLanding` is how long it keeps running (with no input) once the move is back on the ground.
+    static func outcome(_ start: RunnerWorld, plan: BotPlan?, horizon: Double, dt: Double,
+                        afterLanding: Double = 0.12) -> (safe: Bool, distance: Double, bumpedAt: Double?, exposed: Bool) {
         var bumpedAt: Double?
+        var exposed = false
         var world = start
         var elapsed = 0.0
         var horizon = horizon
@@ -99,22 +103,43 @@ public struct Bot: Sendable {
             let input = plan?.input(elapsed: elapsed, dt: dt, base: base) ?? base
             for event in world.step(input, dt: dt) {
                 switch event {
-                case .heroHit, .heroDied: return (false, world.distance, bumpedAt)
+                case .heroHit, .heroDied: return (false, world.distance, bumpedAt, exposed)
                 case .bumped: bumpedAt = bumpedAt ?? world.lastBumpFace
+                case .bossExposed: exposed = true
                 default: break
                 }
             }
-            if world.phase == .victory || world.isOver { return (true, world.distance, bumpedAt) }
+            if world.phase == .victory || world.isOver { return (true, world.distance, bumpedAt, exposed) }
             elapsed += dt
             // A move only has to get the hero back on the ground safely; what comes after that is
             // a fresh decision, so stop looking shortly after touchdown.
             if plan != nil, !landed, world.onGround, elapsed > settled {
                 landed = true
-                horizon = min(horizon, elapsed + 0.12)
+                horizon = min(horizon, elapsed + afterLanding)
             }
         }
-        return (true, world.distance, bumpedAt)
+        return (true, world.distance, bumpedAt, exposed)
     }
+
+    /// In a boss phase that needs abilities: Ghost Dash or Super Pounce moves, released at a few
+    /// moments, to try against an attack coming in.
+    static func openingPlans(for world: RunnerWorld) -> [BotPlan] {
+        let moments = [0.0, 0.1, 0.2, 0.3, 0.4]
+        // A tap dashes even with the paw held for a pounce (the tap restarts the charge); a dash
+        // stays put, where a pounce can carry the kitten into a boss standing close.
+        var plans: [BotPlan] = []
+        if world.canDash { plans += moments.map { BotPlan(paw: .dash, pawAt: $0) } }
+        if world.isPounceReady { plans += moments.map { BotPlan(paw: .pounce, pawAt: $0) } }
+        return plans
+    }
+
+    /// An attack is on its way: a boss hazard ahead within reach of a dash or pounce soon.
+    static func attackComing(_ world: RunnerWorld) -> Bool {
+        world.hazards.contains { $0.x - world.distance > -10 && $0.x - world.distance < 160 }
+    }
+
+    /// How far ahead, in seconds, the bot looks for a threat before it acts.
+    static let reactionTime = 0.45
 
     /// How far ahead, in seconds of running, the bot looks for a step it would bounce off.
     static let stepLookAhead = 0.7
@@ -137,16 +162,29 @@ public struct Bot: Sendable {
 
     public mutating func input(for world: RunnerWorld, dt: Double) -> Input {
         let base = Self.baseInput(world)
+        // A boss phase that needs abilities: go through its attack with one, if that is safe. In the
+        // air too (it may be mid-jump over the last attack), unless it is already doing so.
+        if world.bossNeedsOpening, !planOpens, Self.attackComing(world),
+           let opener = Self.openingPlans(for: world).first(where: {
+               let result = Self.outcome(world, plan: $0, horizon: 1.3, dt: dt)
+               return result.safe && result.exposed
+           }) {
+            plan = opener
+            planOpens = true
+            elapsed = dt
+            return opener.input(elapsed: 0, dt: dt, base: base)
+        }
         if let plan {
             if world.onGround, elapsed > plan.settled(tuning: world.tuning, dt: dt) {
                 self.plan = nil
+                planOpens = false
             } else {
                 defer { elapsed += dt }
                 return plan.input(elapsed: elapsed, dt: dt, base: base)
             }
         }
         guard world.onGround else { return base }
-        let threatened = !Self.survives(world, plan: nil, horizon: 0.45, dt: dt)
+        let threatened = !Self.survives(world, plan: nil, horizon: Self.reactionTime, dt: dt)
         // A step ahead that running on would bounce off: jump onto it from far enough out. Looking
         // further ahead than for threats leaves room for the take-off a tall step or a Double Pounce
         // needs; a move only counts if it ends with the hero past the face without a bounce.
@@ -161,7 +199,11 @@ public struct Bot: Sendable {
             }
         }
         if chosen == nil, threatened {
-            chosen = options.first { Self.survives(world, plan: $0, horizon: 1.3, dt: dt) }
+            // Rather a move that comes down with room to react to what is next (as much as the bot
+            // itself looks ahead) than one that lands right in front of it.
+            chosen = options.first {
+                Self.outcome(world, plan: $0, horizon: 1.3 + Self.reactionTime, dt: dt, afterLanding: Self.reactionTime).safe
+            } ?? options.first { Self.survives(world, plan: $0, horizon: 1.3, dt: dt) }
         }
         guard let chosen else { return base }
         plan = chosen

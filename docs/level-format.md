@@ -103,6 +103,14 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | citadel | `flame_archer` | 16×24, stands; every 2 s in range fires a `flame_arrow` (12×4) at 6; a stomp kills; 2 HP. Put it on a ledge (terrain) for its intended look |
 | citadel | `chainsaw_cat` | 26×30 walker (10/s) with a 20×24 blade zone in front of its body that hurts too; no stomp; 5 HP; needs hero level 5 (a Super Pounce through it defeats it) |
 | citadel | `fire_wisp` | Floats 20 up, drifting in at 40/s; within 50 it flashes 0.5 s keeping that gap, then bursts into a `fire_ring` (40×10) on the ground for 0.4 s; yarn (from a hop) defeats it first |
+| void | `void_slime` | 20×14 walker at 30/s in bursts on the world clock (0.5 s moving, 0.5 s still; `cycleOffset` shifts it); every 2.2 s in range spits a `void_orb` (8×8) along the ground at 2; no stomp |
+| void | `void_bat` | Like `ice_bat`: flies at 42, swoops to 28; every 2 s in range fires a `void_orb` at 30 (over a standing kitten) |
+| void | `void_sentinel` | Floats 36 up, still; charges 0.8 s (warning), then fires a `void_laser` (30×4, 170/s) at 4 within 300; 3 HP |
+| void | `rift_hound` | Like `hell_hound`, with a 0.45 s warning and running 170 faster than the level |
+| void | `void_mage` | 16×24, stands; every 3 s in range, by turns, summons a `void_wisp` 80 ahead of the hero (first) or fires a `void_bolt` (10×6) at 6; a stomp kills; 3 HP |
+| void | `rift_turret` | Hovers 20 up, still (in the hero's way: jump it); charges 1 s (warning), then a `crystal_shot` (10×4, 200/s) at 4; 2 HP |
+| void | `void_wisp` | Floats 30 up, drifting in at 30/s; every 2.5 s in range a `homing_orb` (8×8, 100/s) that steers its height toward the hero's middle at up to 40/s while ahead of the hero |
+| void | `mini_void_cat` | As `shadow_cat` (unseen until 180, appears 80 ahead, 0.4 s flash, dash at 120/s), then once more: when its dash has passed the hero it appears 80 ahead again; a stomp kills |
 | any | `fish` | +5 XP and +1 fish |
 | any | `yarn_basket` | Raises the hero to `shrineLevel` |
 
@@ -157,7 +165,19 @@ placed. Walkers turn back at every step, so one placed on a block patrols it. Dr
 - `phases[].decoys` (optional): extra look-alike copies during that phase, lined up from the boss
   toward the hero (`BossState.copyXs`). Only `BossState.trueCopy` takes damage, and it changes with
   every attack in a fixed order; yarn passes through the others.
-- An attack runs `telegraph` → `duration` (hazards and `summons` spawn at their `delay`) → `recover`.
+- `phases[].requires` (optional, e.g. `["ghostDash", "superPounce"]`): in that phase yarn only lands
+  while the boss is exposed. Using a listed ability (a Ghost Dash, or a Super Pounce) while an armed
+  hazard overlaps the hero along x exposes it for `openingTime` seconds (boss field, default 1.5).
+  Make sure the attacks of such a phase send hazards the hero can dash or pounce through.
+- An attack runs `telegraph` → `duration` (hazards, `summons` and `portals` spawn at their `delay`)
+  → `recover`.
+- `attacks[].portals[]` (optional): `delay`, `open` (seconds), `ahead` and `y` of the entry, `exitAhead`
+  and `exitY` of the exit (both relative to the hero, so they stay on screen), optional `reverses`
+  (yarn comes back out) and `width`/`height` (default 16×28). Yarn entering the open entry leaves the
+  exit at the same height within it, once per ball. Needs sprite `portal` (`open`, `close`).
+- Hazard `falls: true`: a falling star. It hangs where it spawned while it arms (`arm`, blinking),
+  then drops under gravity and shatters on the ground. Use `ahead` with `closingSpeed` equal to the
+  level speed to pin it to a spot the hero runs toward, and a high `y`.
 - Hazard `y` is its bottom edge: `0` makes a low hazard to jump, `42` a high one to run under
   (the kitten's hitbox is 16 wide and 24 tall, so anything below 24 hits it standing).
 - `closingSpeed` is how fast it approaches on screen. With `ahead` the hazard appears that far in

@@ -139,3 +139,157 @@ import Testing
         #expect(!hits(boss(decoys: 2, hp: 50), seconds: 15).hits.isEmpty)
     }
 }
+
+/// The final boss's tools: portals that bend yarn, stars that blink then fall, and a last phase that
+/// opens only to an ability used through an attack.
+@Suite struct VoidBossTests {
+    func hero(_ level: Int) -> HeroStats { HeroStats(xp: Progression.xp(forLevel: level)) }
+
+    func boss(attacks: [BossAttack], phases: [BossPhase], hp: Int = 5) -> BossDefinition {
+        BossDefinition(id: "test_void", hp: hp, width: 40, height: 80, baseY: 0, vulnerable: .always,
+                       attacks: attacks, phases: phases)
+    }
+
+    func arena(_ boss: BossDefinition, heroLevel: Int = 5) -> RunnerWorld {
+        var world = RunnerWorld(level: flatLevel(length: 100), boss: boss, stats: hero(heroLevel))
+        world.run(1.1)
+        return world
+    }
+
+    /// Steps until `condition`, with `input`, returning the events.
+    func advance(_ world: inout RunnerWorld, limit: Double = 6, _ input: Input = Input(),
+                 until condition: (RunnerWorld) -> Bool) -> [GameEvent] {
+        var events: [GameEvent] = []
+        let end = world.time + limit
+        while !condition(world), world.time < end, !world.isOver { events += world.step(input, dt: dt) }
+        return events
+    }
+
+    // MARK: Portals
+
+    func portalBoss(reverses: Bool = false, open: Double = 4) -> BossDefinition {
+        let pair = PortalSpec(delay: 0, open: open, ahead: 60, y: 0, exitAhead: 120, exitY: 40, reverses: reverses)
+        let warp = BossAttack(name: "warp", telegraph: 0.2, duration: open, recover: 5, hazards: [], portals: [pair])
+        return boss(attacks: [warp], phases: [.init(startsBelow: 1, attacks: ["warp"])])
+    }
+
+    @Test func yarnThroughAnOpenPortalComesOutOfItsPair() throws {
+        var world = arena(portalBoss())
+        _ = advance(&world) { !$0.portals.isEmpty }
+        let portal = try #require(world.portals.first)
+        #expect(portal.isOpen)
+        let events = world.step(Input(fireHeld: true), dt: dt) + advance(&world, limit: 1) { world in
+            world.projectiles.first.map { $0.ported } ?? false
+        }
+        #expect(events.contains { if case .yarnPorted = $0 { true } else { false } })
+        let shot = try #require(world.projectiles.first)
+        // Out of the exit: higher, further on, still flying forward.
+        #expect(shot.y >= 40)
+        #expect(shot.x >= world.distance + 120 - 8)
+        #expect(shot.vx > 0)
+        // It goes through only once, even if it meets a portal again.
+        let later = world.run(0.3)
+        #expect(!later.contains { if case .yarnPorted = $0 { true } else { false } })
+    }
+
+    @Test func aReversingPortalSendsYarnBackTheOtherWay() throws {
+        var world = arena(portalBoss(reverses: true))
+        _ = advance(&world) { !$0.portals.isEmpty }
+        _ = world.step(Input(fireHeld: true), dt: dt)
+        _ = advance(&world, limit: 1) { $0.projectiles.first?.ported ?? false }
+        let shot = try #require(world.projectiles.first)
+        #expect(shot.vx < 0)
+    }
+
+    @Test func aClosedPortalLetsYarnStraightThroughAndPortalsAreDeterministic() throws {
+        var world = arena(portalBoss(open: 0.3))
+        _ = advance(&world) { !$0.portals.isEmpty }
+        _ = advance(&world, limit: 1) { !($0.portals.first?.isOpen ?? true) }
+        let events = world.step(Input(fireHeld: true), dt: dt) + world.run(0.6)
+        #expect(!events.contains { if case .yarnPorted = $0 { true } else { false } })
+
+        var a = arena(portalBoss()), b = arena(portalBoss())
+        let ea = a.run(2, Input(fireHeld: true)), eb = b.run(2, Input(fireHeld: true))
+        #expect(ea == eb)
+        #expect(a.projectiles == b.projectiles)
+    }
+
+    // MARK: Falling stars
+
+    @Test func aStarBlinksInPlaceThenFallsAndShattersOnTheGround() throws {
+        let star = HazardSpec(kind: "star", delay: 0, y: 150, width: 12, height: 12, closingSpeed: 100, ahead: 160,
+                              arm: 0.6, falls: true)
+        let rain = BossAttack(name: "rain", telegraph: 0.2, duration: 0.2, recover: 5, hazards: [star])
+        var world = arena(boss(attacks: [rain], phases: [.init(startsBelow: 1, attacks: ["rain"])]))
+        _ = advance(&world) { !$0.hazards.isEmpty }
+        let blinking = try #require(world.hazards.first)
+        #expect(!blinking.isArmed)
+        world.run(0.3)
+        let still = try #require(world.hazards.first)
+        // Telegraphed: it hangs at its x (fixed in the world) while it blinks.
+        #expect(still.y == 150 && still.x == blinking.x)
+        _ = advance(&world, limit: 1) { $0.hazards.first?.isArmed ?? false }
+        world.run(0.2)
+        #expect((world.hazards.first?.y ?? 150) < 150)
+        let events = advance(&world, limit: 2) { $0.hazards.isEmpty }
+        #expect(events.contains { if case .hazardBroke = $0 { true } else { false } })
+    }
+
+    // MARK: Final phase
+
+    func finalBoss() -> BossDefinition {
+        let paw = HazardSpec(kind: "shadow_paw", delay: 0.3, y: 0, width: 16, height: 14, closingSpeed: 220)
+        let swipe = BossAttack(name: "swipe", telegraph: 0.4, duration: 0.6, recover: 0.8, hazards: [paw])
+        return BossDefinition(id: "test_void", hp: 4, width: 40, height: 80, baseY: 0, vulnerable: .always,
+                              attacks: [swipe],
+                              phases: [.init(startsBelow: 1, attacks: ["swipe"], requires: [.ghostDash, .superPounce])],
+                              openingTime: 2.0)
+    }
+
+    @Test func theFinalPhaseShrugsOffYarnUntilAnAbilityIsUsedThroughAnAttack() throws {
+        var world = arena(finalBoss())
+        // Yarn alone is blocked (fired again and again once the intro is over).
+        var events: [GameEvent] = []
+        for index in 0..<240 { events += world.step(Input(fireHeld: index % 20 < 2), dt: dt) }
+        #expect(events.contains(.bossBlocked))
+        #expect(!events.contains { if case .bossHit = $0 { true } else { false } })
+        #expect(world.bossOpening == 0)
+
+        // A Ghost Dash through a paw opens it.
+        var dasher = arena(finalBoss(), heroLevel: 4)
+        _ = advance(&dasher) { world in
+            world.hazards.contains { $0.isArmed && $0.box.minX - world.heroBox.maxX < 4 }
+        }
+        events = dasher.step(Input(pawPressed: true), dt: dt) + dasher.run(0.4)
+        #expect(events.contains(.bossExposed))
+        #expect(!events.contains { if case .heroHit = $0 { true } else { false } })
+        #expect(dasher.bossOpening > 0)
+        // Then yarn lands, until the opening closes.
+        events = dasher.run(0.05, Input(fireHeld: true)) + dasher.run(1.0)
+        #expect(events.contains { if case .bossHit = $0 { true } else { false } })
+        dasher.run(2.0)
+        #expect(dasher.bossOpening == 0)
+    }
+
+    @Test func aSuperPounceOverAnAttackOpensItToo() {
+        var world = arena(finalBoss())
+        var events: [GameEvent] = []
+        // Hold the paw to charge, and let go as a paw comes near.
+        events += world.step(Input(pawPressed: true, pawHeld: true), dt: dt)
+        events += advance(&world, Input(pawHeld: true)) { world in
+            world.isPounceReady && world.hazards.contains { $0.isArmed && $0.box.minX - world.heroBox.maxX < 30 }
+        }
+        events += world.step(Input(), dt: dt) + world.run(0.8)
+        #expect(events.contains(.pounced))
+        #expect(events.contains(.bossExposed))
+    }
+
+    @Test func theBotUsesItsAbilitiesToBeatAFinalPhase() {
+        var world = arena(finalBoss())
+        var bot = Bot()
+        var events: [GameEvent] = []
+        while !world.isOver, world.time < 60 { events += world.step(bot.input(for: world, dt: dt), dt: dt) }
+        #expect(events.contains(.bossDefeated))
+        #expect(!events.contains { if case .heroHit = $0 { true } else { false } })
+    }
+}

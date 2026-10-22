@@ -205,5 +205,92 @@ def citadel() -> list[Sprite]:
             hazard("claw", claw, fps=8)]
 
 
+def void() -> list[Sprite]:
+    """The Void Cat's attacks: black-violet smoke with a magenta rim, and white-violet stars."""
+    from characters.boss_voidcat import ring, star
+
+    paw = []                                                     # a shadow paw swiping low along the ground
+    for i in range(4):
+        c = Canvas(40, 14)
+        trail = Canvas(40, 14)
+        rnd = noise(1000 + i)
+        for k in range(7):                                       # smoke streaming behind (to the right)
+            x = 16 + k * 3.4
+            trail.ellipse(x, 9 + (rnd() - 0.5) * 2, 3.6 - k * 0.4, 2.6 - k * 0.25,
+                          (P.VC_SMOKE_L, P.VC_SMOKE, P.VC_VIOLET)[(k + i) % 3])
+        c.paste(see_through(trail.img, 200))
+        with part(c, {P.VC_SMOKE: (P.VC_VIOLET, P.VC_SMOKE_D)}, P.VC_RIM, up=1, down=1, left=1, right=1) as k:
+            k.ellipse(16, 8, 7, 4.5, P.VC_SMOKE)
+            k.ellipse(21, 9, 5, 3.5, P.VC_SMOKE)
+        for t in range(3):                                       # three claws raking forward, hooked down
+            y = 4 + t * 3.5 + (i % 2) * 0.5
+            c.line((10, y), (4 - (t == 1), y), P.VC_EYE_GLOW)
+            c.line((4 - (t == 1), y), (2 - (t == 1), y + 1.5), P.VC_EYE)
+            c.px(9, y + 1, P.VC_PORTAL_D)
+        c.px(18, 7, P.VC_EYE)                                    # a glint of an eye in the smoke
+        paw.append(c.outline(P.VC_RIM))
+
+    falling = []                                                 # a star dropping out of the sky, trail above
+    for i in range(4):
+        c = Canvas(12, 16)
+        for k in range(5):
+            c.px(6 + (k % 2) * 0.5, 1 + k * 1.6, (P.VC_PORTAL_D, P.VC_VIOLET, P.VC_RIM, P.VC_RIM_L, P.VC_EYE)[k])
+        c.line((5, 4), (5, 8), P.VC_VIOLET)
+        c.line((7, 3), (7, 7), P.VC_RIM)
+        with part(c, {P.VC_STAR: (P.WHITE, P.VC_EYE_GLOW)}, P.VC_RIM, up=1, down=1, left=1, right=1) as k:
+            pts = []
+            for j in range(10):
+                a = -math.pi / 2 + j * math.pi / 5 + i * 0.15
+                rad = 4.5 if j % 2 == 0 else 2
+                pts.append((6 + math.cos(a) * rad, 11 + math.sin(a) * rad))
+            k.poly(pts, P.VC_STAR)
+        c.px(6, 11, P.WHITE)
+        falling.append(c.outline(P.VC_PORTAL_D))
+
+    portal = []                                                  # a swirling magenta ring
+    for i in range(4):
+        c = Canvas(24, 24)
+        ring(c, 12, 12, 8.5, i * math.pi / 2 * 0.5, 1.0)
+        portal.append(c.outline(P.VC_SMOKE_D))
+
+    wave = []                                                    # a low wave of void smoke rolling along
+    for i in range(3):
+        c = Canvas(20, 10)
+        with part(c, {P.VC_SMOKE: (P.VC_SMOKE_L, P.VC_SMOKE_D)}, P.VC_RIM, up=1, down=1, left=1, right=1) as k:
+            k.poly([(1, 9), (4, 3 + i % 2 * 0.5), (8, 1), (12, 3), (16, 6), (19, 9)], P.VC_SMOKE)
+            k.ellipse(5, 6, 4, 3, P.VC_SMOKE)
+        c.line((3, 4), (8, 1), P.VC_RIM_L)                       # the crest catching the light
+        c.line((8, 1), (11, 2), P.VC_RIM)
+        rnd = noise(1040 + i)
+        for _ in range(3):
+            star(c, 6 + rnd() * 9, 5 + rnd() * 3, 0)
+        wave.append(c.outline(P.VC_RIM))
+
+    shard = []                                                   # a star shard flying point first, high
+    for i in range(2):
+        c = Canvas(12, 8)
+        c.line((8, 4), (11, 4 - i * 0.5), P.VC_RIM)
+        c.poly([(1, 4), (5, 2), (9, 3.5), (9, 4.5), (5, 6)], P.VC_EYE_GLOW)
+        c.poly([(1, 4), (5, 2), (9, 3.5), (5, 4)], P.VC_EYE)
+        c.px(3, 4, P.WHITE)
+        shard.append(c.outline(P.VC_RIM))
+    # `portal`: the boss portals the engine draws, an upright swirling oval about 16x28 (20x32 with its glow) standing on
+    # its bottom row.
+    gate = Sprite("portal", (26, 36))
+
+    def oval(scale: float, spin: float) -> Canvas:
+        c = Canvas(26, 36)
+        if scale > 0.12:
+            rad, tall = 7 * scale, 13 / 7
+            ring(c, 13, 34 - (13 + 3) * scale, rad, spin, 1.0, tall)
+        else:                                                    # all that is left: a spark on the ground
+            star(c, 13, 33, 1, P.VC_PORTAL_L)
+        return c.outline(P.VC_SMOKE_D)
+    gate.add("open", [oval(1.0, i * math.pi / 4) for i in range(4)], fps=10)
+    gate.add("close", [oval(s, i * math.pi / 4) for i, s in enumerate((0.75, 0.5, 0.28, 0.0))], fps=12, loop=False)
+    return [gate, hazard("shadow_paw", paw, fps=12), hazard("falling_star", falling, fps=12),
+            hazard("portal_ring", portal, fps=10), hazard("void_wave", wave, fps=12), hazard("star_shard", shard, fps=12)]
+
+
 def build() -> list[Sprite]:
-    return [*acorns(), *frost(), *haunted(), *citadel()]
+    return [*acorns(), *frost(), *haunted(), *citadel(), *void()]

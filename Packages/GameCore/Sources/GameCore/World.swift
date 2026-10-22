@@ -124,6 +124,9 @@ public struct Entity: Sendable, Equatable, Identifiable {
     /// Seconds it has kept its distance ahead (see `KeepAheadSpec`), and the gap a lit fuse holds.
     var heldFor = 0.0
     var holdGap = 0.0
+    /// Throws made so far (an alternating thrower summons on the even ones), and teleports still to come.
+    var throwCount = 0
+    var teleportsLeft = 0
 
     init(id: Int, kind: ItemKind, x: Double, y: Double, hp: Int, cycleOffset: Double = 0) {
         self.id = id
@@ -136,6 +139,7 @@ public struct Entity: Sendable, Equatable, Identifiable {
         timer = kind.spec.throwing?.windup ?? 0.6
         // A teleporter is not there at all until it wakes.
         if kind.spec.teleport != nil || kind.spec.chase != nil { state = .hidden }
+        teleportsLeft = kind.spec.teleport?.repeats ?? 0
     }
 
     public var box: AABB {
@@ -224,6 +228,8 @@ public struct Projectile: Sendable, Equatable, Identifiable {
     public var x: Double
     public var y: Double
     public var vx: Double
+    /// Already sent through a portal (it goes through only once).
+    public var ported = false
 
     public var size: Double { 8 }
     public var damage: Int { 1 }
@@ -251,9 +257,30 @@ public struct Hazard: Sendable, Equatable, Identifiable {
     public var life: Double?
     /// What it becomes where it lands, if it lingers (a lava glob's puddle).
     public var linger: LingerSpec?
+    /// Homing: how fast it may change height toward the hero's middle (units per second).
+    public var homing: Double?
+    /// A falling star: gravity only takes it once it has armed.
+    public var waitsToFall = false
 
     public var isArmed: Bool { arm <= 0 }
     public var box: AABB { AABB(centerX: x, bottom: y, width: width, height: height) }
+}
+
+/// One open (or just closed) portal pair from a boss attack; see `PortalSpec`. Placed relative to the
+/// hero, so `x` and `exitX` follow `distance`.
+public struct Portal: Sendable, Equatable, Identifiable {
+    public let id: Int
+    public let spec: PortalSpec
+    public internal(set) var x: Double
+    public internal(set) var exitX: Double
+    /// Seconds it stays open; negative once closed (it lingers a moment before it goes).
+    public internal(set) var openLeft: Double
+
+    public var isOpen: Bool { openLeft > 0 }
+    public var width: Double { spec.width ?? PortalSpec.defaultWidth }
+    public var height: Double { spec.height ?? PortalSpec.defaultHeight }
+    public var box: AABB { AABB(centerX: x, bottom: spec.y, width: width, height: height) }
+    public var exitBox: AABB { AABB(centerX: exitX, bottom: spec.exitY, width: width, height: height) }
 }
 
 public struct Input: Sendable, Equatable {
@@ -332,6 +359,14 @@ public enum GameEvent: Sendable, Equatable {
     /// A fuse was lit (it flashes), and it burst into a ring of fire.
     case fuseLit(id: Int)
     case exploded(id: Int)
+    /// A thrower summoned a creature instead of throwing (the void mage).
+    case summoned(id: Int)
+    /// A boss opened a portal pair; yarn went through one.
+    case portalOpened(id: Int)
+    case yarnPorted(id: Int)
+    /// In a phase that needs abilities, the hero used one through an attack: the boss can be hit for
+    /// a moment.
+    case bossExposed
     /// The hero ran into the face of a step too high to walk onto and is knocked back; once per hit.
     case bumped
     /// A thrown thing ran into the face of a step and broke.
@@ -377,6 +412,9 @@ public struct RunnerWorld: Sendable {
     public private(set) var entities: [Entity] = []
     public private(set) var projectiles: [Projectile] = []
     public private(set) var hazards: [Hazard] = []
+    public private(set) var portals: [Portal] = []
+    /// Seconds left of an opening in a boss phase that `requires` abilities.
+    public private(set) var bossOpening = 0.0
     public private(set) var bossState: BossState?
     /// Seconds of hit immunity left.
     public private(set) var invulnerable = 0.0
@@ -500,6 +538,7 @@ public struct RunnerWorld: Sendable {
         yarnCooldown = max(0, yarnCooldown - dt)
         dashTime = max(0, dashTime - dt)
         dashCooldownLeft = max(0, dashCooldownLeft - dt)
+        bossOpening = max(0, bossOpening - dt)
 
         let previousBottom = heroY
         paw(input, dt: dt, events: &events)
@@ -508,6 +547,7 @@ public struct RunnerWorld: Sendable {
         spawnItems()
         moveEntities(dt: dt, events: &events)
         updateBoss(dt: dt, events: &events)
+        movePortals(dt: dt)
         moveHazards(dt: dt, events: &events)
         moveProjectiles(dt: dt, events: &events)
         if phase == .running || phase == .boss {
@@ -792,10 +832,11 @@ public struct RunnerWorld: Sendable {
             let spec = entity.kind.spec
             // A curled roller rolls at its own speed; anything hanging on a thread stays put.
             let speed = entity.state == .curled ? (spec.rollSpeed ?? spec.velocity) : spec.velocity
-            let still = entity.isHanging || entity.isDormant || entity.state == .leaping
+            let pausing = spec.burst.map { !$0.isMoving(at: time + entity.cycleOffset) } ?? false
+            let still = entity.isHanging || entity.isDormant || entity.state == .leaping || pausing
             let velocity = still ? 0 : (entity.reversed ? -speed : speed)
             entity.x += velocity * dt
-            if entity.walks {
+            if entity.walks, velocity != 0 {
                 // Stop at a rim or a step (up or down) and head back the other way.
                 let half = spec.width / 2
                 let front = entity.x + (velocity < 0 ? -half : half)
@@ -859,7 +900,13 @@ public struct RunnerWorld: Sendable {
                     entity.timer -= dt
                     if entity.timer <= 0 {
                         entity.timer = throwing.interval
-                        launch(throwing, from: entity, events: &events)
+                        if let summon = throwing.alternateSummon, entity.throwCount % 2 == 0 {
+                            summonAhead(summon, ahead: throwing.summonAhead)
+                            events.append(.summoned(id: entity.id))
+                        } else {
+                            launch(throwing, from: entity, events: &events)
+                        }
+                        entity.throwCount += 1
                     }
                 }
                 // Winding up for the next throw: a warning the player can read.
@@ -877,8 +924,15 @@ public struct RunnerWorld: Sendable {
                               width: throwing.width, height: throwing.height,
                               vx: -throwing.speed, arm: 0,
                               gravity: throwing.arc ? tuning.lobGravity : 0, fades: throwing.fades,
-                              linger: throwing.linger))
+                              linger: throwing.linger, homing: throwing.homing))
         events.append(entity.kind == .bell ? .bellRang(id: entity.id) : .threw(id: entity.id))
+    }
+
+    /// A creature appears `ahead` of the hero, standing (or floating) on the ground there.
+    private mutating func summonAhead(_ kind: ItemKind, ahead: Double) {
+        let x = distance + ahead
+        entities.append(Entity(id: takeID(), kind: kind, x: x, y: groundHeight(at: x) + kind.spec.baseY,
+                               hp: kind.spec.hp))
     }
 
     /// Unseen → warning (the hero reached its spot) → running in from behind, past the hero.
@@ -980,6 +1034,17 @@ public struct RunnerWorld: Sendable {
                 entity.state = .active
                 events.append(.leapLanded(id: entity.id))
             }
+        case .active:
+            // A teleporter whose dash has carried it past the hero appears ahead again, if it may.
+            guard let teleport = spec.teleport, entity.teleportsLeft > 0,
+                  entity.x < distance - tuning.heroWidth * 2 else { break }
+            entity.teleportsLeft -= 1
+            entity.state = .warning
+            entity.timer = wake.warning
+            entity.reversed = false
+            entity.x = distance + teleport.ahead
+            entity.y = groundHeight(at: entity.x)
+            events.append(.teleported(id: entity.id))
         default:
             break
         }
@@ -1028,6 +1093,11 @@ public struct RunnerWorld: Sendable {
             }
             hazard.x += hazard.vx * dt
             hazard.arm = max(0, hazard.arm - dt)
+            if let rate = hazard.homing, hazard.box.minX > heroBox.maxX {
+                // Steers toward the hero's middle, no faster than its turn rate; past the hero it flies on.
+                let target = heroY + tuning.heroHeight / 2 - hazard.height / 2
+                hazard.y += min(max(target - hazard.y, -rate * dt), rate * dt)
+            }
             // Anything low enough to run into the face of a step breaks on it.
             if !ground.isFlat, hazard.vx != 0 {
                 let front = hazard.x + (hazard.vx < 0 ? -hazard.width : hazard.width) / 2
@@ -1043,7 +1113,7 @@ public struct RunnerWorld: Sendable {
                 hazard.rolling = false
                 hazard.gravity = tuning.lobGravity
             }
-            if hazard.gravity > 0 {
+            if hazard.gravity > 0, !(hazard.waitsToFall && !hazard.isArmed) {
                 hazard.vy -= hazard.gravity * dt
                 hazard.y += hazard.vy * dt
                 if hazard.y <= floor, !(floor <= 0 && groundIsOpen(at: hazard.x)) {
@@ -1082,12 +1152,21 @@ public struct RunnerWorld: Sendable {
         var kept: [Projectile] = []
         for var shot in projectiles {
             shot.x += shot.vx * dt
+            if !shot.ported, let portal = portals.first(where: { $0.isOpen && $0.box.intersects(shot.box) }) {
+                // Through the portal and out of its pair, at the same height within it.
+                let reverses = portal.spec.reverses == true
+                shot.y = portal.spec.exitY + (shot.y - portal.spec.y)
+                shot.x = portal.exitX + (reverses ? -1 : 1) * (portal.width + shot.size) / 2
+                if reverses { shot.vx = runSpeed - tuning.yarnSpeed }
+                shot.ported = true
+                events.append(.yarnPorted(id: shot.id))
+            }
             if hit(with: shot, events: &events) {
                 events.append(.yarnGone(id: shot.id, hit: true))
             } else if ground.height(at: shot.x + shot.size / 2) > shot.y + 0.001 {
                 // Yarn stops against the face of a step.
                 events.append(.yarnGone(id: shot.id, hit: false))
-            } else if shot.x > distance + tuning.projectileRange {
+            } else if shot.x > distance + tuning.projectileRange || shot.x < distance - tuning.despawnBehind {
                 events.append(.yarnGone(id: shot.id, hit: false))
             } else {
                 kept.append(shot)
@@ -1114,7 +1193,7 @@ public struct RunnerWorld: Sendable {
         }
         guard phase == .boss, var state = bossState, let boss, state.action != .intro, state.action != .dead,
               state.box.intersects(box) else { return false }
-        if boss.isOpen(hpFraction: state.hpFraction, action: state.action) {
+        if boss.isOpen(hpFraction: state.hpFraction, action: state.action), !needsOpening(state, boss) || bossOpening > 0 {
             state.hp = max(0, state.hp - shot.damage)
             bossState = state
             events.append(.bossHit(hp: state.hp))
@@ -1196,10 +1275,50 @@ public struct RunnerWorld: Sendable {
                 }
             }
         }
+        exposeBossIfAbilityUsedThroughAnAttack(events: &events)
         guard !ghost else { return }
         for hazard in hazards where hazard.isArmed && hazard.box.intersects(hero) {
             hurt(events: &events)
         }
+    }
+
+    // MARK: - Final phase
+
+    /// The phase `state` is in requires abilities, so yarn needs an opening.
+    private func needsOpening(_ state: BossState, _ boss: BossDefinition) -> Bool {
+        guard boss.phases.indices.contains(state.phaseIndex) else { return false }
+        return !(boss.phases[state.phaseIndex].requires ?? []).isEmpty
+    }
+
+    /// True in a boss phase that requires abilities while no opening is running.
+    public var bossNeedsOpening: Bool {
+        guard phase == .boss, let state = bossState, let boss, state.action != .intro, state.action != .dead else {
+            return false
+        }
+        return needsOpening(state, boss) && bossOpening <= 0
+    }
+
+    /// A Ghost Dash or Super Pounce (whichever the phase requires) while an armed hazard is level with
+    /// the hero opens the boss for `openingTime`.
+    private mutating func exposeBossIfAbilityUsedThroughAnAttack(events: inout [GameEvent]) {
+        guard phase == .boss, let state = bossState, let boss, needsOpening(state, boss) else { return }
+        let requires = boss.phases[state.phaseIndex].requires ?? []
+        let usingOne = (isDashing && requires.contains(.ghostDash)) || (pouncing && requires.contains(.superPounce))
+        let hero = heroBox
+        guard usingOne, hazards.contains(where: { $0.isArmed && $0.box.minX < hero.maxX && $0.box.maxX > hero.minX })
+        else { return }
+        if bossOpening <= 0 { events.append(.bossExposed) }
+        bossOpening = boss.openingTime ?? BossDefinition.defaultOpeningTime
+    }
+
+    /// Portals keep their place ahead of the hero; closed ones go after a moment.
+    private mutating func movePortals(dt: Double) {
+        for index in portals.indices {
+            portals[index].openLeft -= dt
+            portals[index].x = distance + portals[index].spec.ahead
+            portals[index].exitX = distance + portals[index].spec.exitAhead
+        }
+        portals.removeAll { $0.openLeft < -0.4 }
     }
 
     /// Bounces the hero up off the top of entity `index`.
@@ -1275,9 +1394,20 @@ public struct RunnerWorld: Sendable {
                   attack.hazards[state.spawnedHazards].delay <= state.actionTime {
                 let spec = attack.hazards[state.spawnedHazards]
                 let x = spec.ahead.map { distance + $0 } ?? state.x - state.width / 2
+                let falls = spec.falls == true
                 hazards.append(Hazard(id: takeID(), kind: spec.kind, x: x, y: spec.y, width: spec.width,
-                                      height: spec.height, vx: level.speed - spec.closingSpeed, arm: spec.arm ?? 0))
+                                      height: spec.height, vx: level.speed - spec.closingSpeed, arm: spec.arm ?? 0,
+                                      gravity: falls ? tuning.gravity : 0, fades: falls, waitsToFall: falls))
                 state.spawnedHazards += 1
+            }
+            let portalSpecs = attack.portals ?? []
+            while state.spawnedPortals < portalSpecs.count, portalSpecs[state.spawnedPortals].delay <= state.actionTime {
+                let spec = portalSpecs[state.spawnedPortals]
+                let portal = Portal(id: takeID(), spec: spec, x: distance + spec.ahead, exitX: distance + spec.exitAhead,
+                                    openLeft: spec.open)
+                portals.append(portal)
+                events.append(.portalOpened(id: portal.id))
+                state.spawnedPortals += 1
             }
             let summons = attack.summons ?? []
             while state.spawnedSummons < summons.count, summons[state.spawnedSummons].delay <= state.actionTime {
@@ -1317,6 +1447,7 @@ public struct RunnerWorld: Sendable {
         state.actionTime = 0
         state.spawnedHazards = 0
         state.spawnedSummons = 0
+        state.spawnedPortals = 0
         events.append(.bossTelegraph(attack: state.attackName))
     }
 
@@ -1324,6 +1455,7 @@ public struct RunnerWorld: Sendable {
         bossState?.action = .dead
         bossState?.actionTime = 0
         hazards.removeAll()
+        portals.removeAll()
         events.append(.bossDefeated)
         win(events: &events)
     }

@@ -98,6 +98,8 @@ final class GameScene: SKScene {
     private var bossNodes: [ActorNode] = []
     private var entityNodes: [Int: ActorNode] = [:]
     private var hazardNodes: [Int: ActorNode] = [:]
+    /// Each open portal pair: the entry and the exit node.
+    private var portalNodes: [Int: (entry: ActorNode, exit: ActorNode)] = [:]
     private var shotNodes: [Int: ActorNode] = [:]
     private var platformViews: [PlatformView] = []
     /// World time each crumbling ledge was landed on, to pace its crumble frames.
@@ -706,6 +708,8 @@ final class GameScene: SKScene {
         .penguinSoldier: "spear", .snowyOwl: "icicle_shot", .snowman: "snowball_shot", .iciclePlant: "icicle_bolt",
         .ghostCat: "spirit_ball", .hauntedPortrait: "magic_shot", .candleCat: "fire_orb", .poltergeistBook: "magic_bolt",
         .lavaSlime: "lava_glob", .fireImp: "fireball_shot", .stoneGuard: "magma_blast", .flameArcher: "flame_arrow",
+        .voidSlime: "void_orb", .voidBat: "void_orb", .voidSentinel: "void_laser", .voidMage: "void_bolt",
+        .riftTurret: "crystal_shot", .voidWisp: "homing_orb",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
     private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
@@ -716,7 +720,9 @@ final class GameScene: SKScene {
                                            "fire_orb": "fire_orb", "magic_bolt": "magic_bolt",
                                            "lava_glob": "lava_glob", "fireball_shot": "fireball_shot",
                                            "magma_blast": "magma_blast", "flame_arrow": "flame_arrow",
-                                           "lava_puddle": "lava_puddle", "fire_ring": "fire_ring"]
+                                           "lava_puddle": "lava_puddle", "fire_ring": "fire_ring",
+                                           "void_orb": "void_orb", "void_laser": "void_laser", "void_bolt": "void_bolt",
+                                           "crystal_shot": "crystal_shot", "homing_orb": "homing_orb"]
     /// Hiding animation and the poses held afterwards (first one the sprite has), for things that
     /// curl up or hide in a shell.
     private static let curlAnimation: [ItemKind: (start: String, hold: [String])] = [
@@ -895,6 +901,21 @@ final class GameScene: SKScene {
                 play(.dash)
             case .fuseLit:
                 break
+            case .summoned(let id):
+                // The void mage raises a wisp ahead of the kitten.
+                let node = entityNodes[id]
+                let kind = world.entities.first { $0.id == id }?.kind
+                Self.playAny(node, ["summon", "attack"], restart: true) { [weak node] in
+                    Self.playAny(node, kind.map(Self.restAnimation) ?? ["idle"])
+                }
+            case .portalOpened:
+                play(.dash)
+            case .yarnPorted:
+                play(.block)
+            case .bossExposed:
+                // The final phase opened to an ability: the boss can be hit for a moment.
+                play(.impact)
+                trueBossNode?.flash(.white, duration: 0.25)
             case .exploded(let id):
                 play(.flame)
                 if let node = entityNodes.removeValue(forKey: id) {
@@ -1123,6 +1144,7 @@ final class GameScene: SKScene {
         renderHero()
         renderEntities()
         renderHazards()
+        renderPortals()
         renderShots()
         renderBoss()
     }
@@ -1186,6 +1208,9 @@ final class GameScene: SKScene {
         .lavaSlime: ["move", "walk", "idle"], .fireImp: ["fly", "idle"], .stoneGuard: ["walk", "idle"],
         .hellHound: ["run", "walk", "idle"], .emberBat: ["fly", "idle"], .flameArcher: ["idle", "walk"],
         .chainsawCat: ["walk", "idle"], .fireWisp: ["move", "idle"],
+        .voidSlime: ["move", "idle"], .voidBat: ["fly", "idle"], .voidSentinel: ["idle", "move"],
+        .riftHound: ["run", "idle"], .voidMage: ["idle", "walk"], .riftTurret: ["idle"],
+        .voidWisp: ["move", "idle"], .miniVoidCat: ["attack", "move", "idle"],
     ]
 
     /// The resting animation of a kind, best first.
@@ -1260,7 +1285,7 @@ final class GameScene: SKScene {
             default:
                 if !node.isBusy { Self.playAny(node, Self.restAnimation(entity.kind)) }
             }
-        case .shadowCat:
+        case .shadowCat, .miniVoidCat:
             switch entity.state {
             case .hidden:
                 node.alpha = 0
@@ -1268,7 +1293,20 @@ final class GameScene: SKScene {
                 Self.playAny(node, ["teleport", "idle"])
                 node.alpha = blink ? 1 : 0.4
             default:
-                if !node.isBusy { Self.playAny(node, Self.restAnimation(.shadowCat)) }
+                if !node.isBusy { Self.playAny(node, Self.restAnimation(entity.kind)) }
+            }
+        case .voidSlime:
+            // Lurches in bursts: moving, then still.
+            let moving = entity.kind.spec.burst?.isMoving(at: world.time + entity.cycleOffset) ?? true
+            if !node.isBusy { Self.playAny(node, moving ? ["move", "idle"] : ["idle"]) }
+        case .voidSentinel, .riftTurret:
+            if entity.state == .warning {
+                // Charging: the visible wind-up before the shot.
+                Self.playAny(node, ["charge", "attack", "idle"])
+                node.color = .white
+                node.colorBlendFactor = blink ? 0.5 : 0
+            } else if !node.isBusy {
+                Self.playAny(node, Self.restAnimation(entity.kind))
             }
         case .hedgehog, .snailCat, .iceHedgehog:
             // Normally started by the `curled` event; this catches a node made after it fired.
@@ -1293,12 +1331,12 @@ final class GameScene: SKScene {
             } else if !node.isBusy {
                 Self.playAny(node, Self.restAnimation(entity.kind))
             }
-        case .hellHound where entity.state != .active:
+        case .hellHound where entity.state != .active, .riftHound where entity.state != .active:
             if entity.state == .warning {
                 // Coming from behind: flash it at the left edge of the screen, at the kitten's height.
                 node.position = CGPoint(x: node.size.width / 2 + 4, y: screenY(world.groundHeight(at: world.distance)))
                 node.alpha = blink ? 0.9 : 0.2
-                Self.playAny(node, Self.restAnimation(.hellHound))
+                Self.playAny(node, Self.restAnimation(entity.kind))
             } else {
                 node.alpha = 0
             }
@@ -1311,7 +1349,7 @@ final class GameScene: SKScene {
             if Int(world.time * 60) % 8 == 0 {
                 burst("spark_ember", count: 1, radius: 6, at: CGPoint(x: node.position.x + 6, y: node.position.y + 6))
             }
-        case .snowCat, .iceGolem, .miniYeti, .chainsawCat, .hellHound:
+        case .snowCat, .iceGolem, .miniYeti, .chainsawCat, .hellHound, .riftHound:
             // Melee: swing once in reach (looks only; the hitbox decides the hit).
             let reach = entity.kind.spec.width / 2 + world.tuning.heroWidth / 2 + 14
             if abs(entity.x - world.distance) < reach, node.has("attack") {
@@ -1405,6 +1443,36 @@ final class GameScene: SKScene {
         return node
     }
 
+    /// Portal pairs (sprite `portal`): `open` while yarn is bent through them, `close` as they shut.
+    private func renderPortals() {
+        var seen = Set<Int>()
+        for portal in world.portals {
+            seen.insert(portal.id)
+            let pair = portalNodes[portal.id] ?? {
+                let make = { () -> ActorNode in
+                    let node = ActorNode(sprite: "portal", library: self.library)
+                    node.zPosition = 5
+                    self.actors.addChild(node)
+                    return node
+                }
+                let pair = (entry: make(), exit: make())
+                portalNodes[portal.id] = pair
+                return pair
+            }()
+            pair.entry.position = CGPoint(x: screenX(portal.x), y: screenY(portal.spec.y))
+            pair.exit.position = CGPoint(x: screenX(portal.exitX), y: screenY(portal.spec.exitY))
+            for node in [pair.entry, pair.exit] {
+                Self.playAny(node, portal.isOpen ? ["open", "idle", "still"] : ["close", "idle", "still"])
+                node.alpha = portal.isOpen ? 1 : 0.4
+            }
+        }
+        for (id, pair) in portalNodes where !seen.contains(id) {
+            pair.entry.removeFromParent()
+            pair.exit.removeFromParent()
+            portalNodes[id] = nil
+        }
+    }
+
     private func renderHazards() {
         var seen = Set<Int>()
         for hazard in world.hazards {
@@ -1457,6 +1525,8 @@ final class GameScene: SKScene {
         "boss_icedragon": ["shard_fan": "shards", "freezing_breath": "breath", "dive": "dive", "*": "breath"],
         "boss_phantom": ["summon_ghosts": "summon", "spectral_waves": "teleport", "split": "split", "*": "summon"],
         "boss_mecha": ["rockets": "rockets", "tail_sweep": "tail", "core_barrage": "core", "*": "rockets"],
+        "boss_voidcat": ["shadow_paws": "paws", "star_fall": "stars", "portal_paws": "portal", "final_swipe": "swipe",
+                         "*": "attack"],
     ]
 
     private func attackAnimation(boss: String, attack: String) -> String {

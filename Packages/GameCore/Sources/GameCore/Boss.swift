@@ -16,6 +16,43 @@ public struct HazardSpec: Codable, Sendable, Equatable {
     public var ahead: Double?
     /// Seconds it is visible as a warning before it can hurt.
     public var arm: Double?
+    /// A falling star: it hangs where it spawned, blinking, while it arms, then drops under gravity
+    /// and shatters on the ground. Pair with `ahead` and a `closingSpeed` equal to the level speed to
+    /// pin it to a spot the kitten runs toward.
+    public var falls: Bool?
+}
+
+/// A pair of portals a boss attack opens for `open` seconds, both placed relative to the hero (they
+/// keep their place on screen): an entry `ahead` of the hero at height `y`, and an exit `exitAhead`
+/// at `exitY`. Yarn that enters the entry while it is open comes out of the exit at the same height
+/// within it (so higher or lower than it went in), flying on, or flying back if `reverses`. A ball of
+/// yarn goes through portals only once. The hero passes through them freely.
+public struct PortalSpec: Codable, Sendable, Equatable {
+    public var delay: Double
+    public var open: Double
+    public var ahead: Double
+    public var y: Double
+    public var exitAhead: Double
+    public var exitY: Double
+    public var reverses: Bool?
+    public var width: Double?
+    public var height: Double?
+
+    public init(delay: Double, open: Double, ahead: Double, y: Double, exitAhead: Double, exitY: Double,
+                reverses: Bool? = nil, width: Double? = nil, height: Double? = nil) {
+        self.delay = delay
+        self.open = open
+        self.ahead = ahead
+        self.y = y
+        self.exitAhead = exitAhead
+        self.exitY = exitY
+        self.reverses = reverses
+        self.width = width
+        self.height = height
+    }
+
+    public static let defaultWidth = 16.0
+    public static let defaultHeight = 28.0
 }
 
 public struct SummonSpec: Codable, Sendable, Equatable {
@@ -33,6 +70,7 @@ public struct BossAttack: Codable, Sendable, Equatable {
     public var recover: Double
     public var hazards: [HazardSpec]
     public var summons: [SummonSpec]?
+    public var portals: [PortalSpec]?
 }
 
 public struct BossPhase: Codable, Sendable, Equatable {
@@ -43,11 +81,17 @@ public struct BossPhase: Codable, Sendable, Equatable {
     /// Extra look-alike copies of the boss during this phase. Only one copy (which one changes with
     /// every attack, deterministically) takes damage; yarn passes through the others.
     public var decoys: Int?
+    /// A phase that tests abilities: yarn only lands during an opening, which the hero makes by using
+    /// one of these abilities through an attack: a Ghost Dash or a Super Pounce while an armed hazard
+    /// is level with the hero (overlapping it along x, at any height). An opening lasts the boss's
+    /// `openingTime`.
+    public var requires: [Ability]?
 
-    public init(startsBelow: Double, attacks: [String], decoys: Int? = nil) {
+    public init(startsBelow: Double, attacks: [String], decoys: Int? = nil, requires: [Ability]? = nil) {
         self.startsBelow = startsBelow
         self.attacks = attacks
         self.decoys = decoys
+        self.requires = requires
     }
 }
 
@@ -68,9 +112,14 @@ public struct BossDefinition: Codable, Sendable, Equatable {
     public var armoredAbove: Double?
     public var attacks: [BossAttack]
     public var phases: [BossPhase]
+    /// Seconds an opening lasts in a phase that `requires` abilities (default 1.5).
+    public var openingTime: Double?
+
+    public static let defaultOpeningTime = 1.5
 
     public init(id: String, hp: Int, width: Double, height: Double, baseY: Double, vulnerable: BossVulnerability,
-                armoredAbove: Double? = nil, attacks: [BossAttack], phases: [BossPhase]) {
+                armoredAbove: Double? = nil, attacks: [BossAttack], phases: [BossPhase], openingTime: Double? = nil) {
+        self.openingTime = openingTime
         self.id = id
         self.hp = hp
         self.width = width
@@ -113,6 +162,7 @@ public struct BossState: Sendable, Equatable {
     var attackCursor = 0
     var spawnedHazards = 0
     var spawnedSummons = 0
+    var spawnedPortals = 0
 
     public var hpFraction: Double { maxHP > 0 ? Double(hp) / Double(maxHP) : 0 }
     /// Centre x of each copy. The first stands at the boss position; the others line up toward the hero.

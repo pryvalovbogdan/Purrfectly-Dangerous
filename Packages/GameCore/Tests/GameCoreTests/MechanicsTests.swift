@@ -1453,6 +1453,226 @@ import Testing
         #expect(LevelValidator.botRun(citadelLevel(items, length: 3800), boss: nil).finished)
     }
 
+    // MARK: - Void creatures (The Void Cat sheet)
+
+    static let voidCreatures: [ItemKind] = [.voidSlime, .voidBat, .voidSentinel, .riftHound, .voidMage, .riftTurret,
+                                            .voidWisp, .miniVoidCat]
+
+    /// A flat test level at world 5's speed.
+    func voidLevel(_ items: [PlacedItem], length: Double = 2000, entry: Int = 5) -> LevelDefinition {
+        var level = flatLevel(items: items, length: length, entry: entry, reward: max(entry, 2))
+        level.speed = 150
+        return level
+    }
+
+    /// New hazards `step` brought, by kind.
+    func fresh(_ world: RunnerWorld, since known: Set<Int>) -> [Hazard] {
+        world.hazards.filter { !known.contains($0.id) }
+    }
+
+    @Test func voidCreaturesHaveTheirIdsAndHitboxes() {
+        let expected: [(ItemKind, String, Double, Double, Int, Int)] = [
+            (.voidSlime, "void_slime", 20, 14, 1, 20), (.voidBat, "void_bat", 18, 14, 1, 20),
+            (.voidSentinel, "void_sentinel", 20, 22, 3, 40), (.riftHound, "rift_hound", 26, 18, 2, 40),
+            (.voidMage, "void_mage", 16, 24, 3, 45), (.riftTurret, "rift_turret", 16, 20, 2, 35),
+            (.voidWisp, "void_wisp", 14, 14, 1, 20), (.miniVoidCat, "mini_void_cat", 18, 20, 1, 50),
+        ]
+        for (kind, id, width, height, hp, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.hp == hp, "\(id) hp")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+            #expect(kind.spec.yarnable, "\(id) is yarnable")
+        }
+    }
+
+    @Test func voidSlimeMovesInBurstsAndSpitsLowOrbs() throws {
+        let burst = try #require(ItemKind.voidSlime.spec.burst)
+        var world = RunnerWorld(level: voidLevel([.init(at: 900, kind: .voidSlime)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        var moved = 0, stood = 0
+        var orbs: [Hazard] = []
+        for _ in 0..<180 {
+            let before = world.entities.first?.x ?? 0
+            let known = Set(world.hazards.map(\.id))
+            _ = world.step(Input(), dt: dt)
+            orbs += fresh(world, since: known)
+            let walking = burst.isMoving(at: world.time)
+            let step = before - (world.entities.first?.x ?? before)
+            if walking { #expect(step > 0); moved += 1 } else { #expect(step == 0); stood += 1 }
+        }
+        #expect(moved > 40 && stood > 40)
+        let orb = try #require(orbs.first)
+        #expect(orb.kind == "void_orb" && orb.y == 2 && orb.gravity == 0)
+        #expect(stompAttempts(.voidSlime).isEmpty)
+    }
+
+    @Test func voidBatSwoopsAndItsOrbsPassOverAStandingKitten() {
+        var world = RunnerWorld(level: voidLevel([.init(at: 700, kind: .voidBat)]), boss: nil)
+        var lowest = Double.infinity
+        var events: [GameEvent] = []
+        var orbs: [Hazard] = []
+        while world.time < 6 {
+            let known = Set(world.hazards.map(\.id))
+            events += world.step(Input(), dt: dt)
+            orbs += fresh(world, since: known)
+            if let bat = world.entities.first(where: { $0.kind == .voidBat }) { lowest = min(lowest, bat.y) }
+        }
+        #expect(lowest >= 28)
+        #expect(!orbs.isEmpty)
+        #expect(orbs.allSatisfy { $0.kind == "void_orb" && $0.y >= world.tuning.heroHeight })
+        #expect(!hit(events))
+    }
+
+    @Test func voidSentinelChargesThenFiresALongLowLaser() throws {
+        var world = RunnerWorld(level: voidLevel([.init(at: 800, kind: .voidSentinel)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 36)
+        advance(&world) { $0.entities.first?.state == .warning }
+        let charging = world.time
+        let shot = advance(&world, limit: 2) { !$0.hazards.isEmpty }
+        #expect(threw(shot))
+        #expect(abs(world.time - charging - 0.8) < 0.05)
+        let laser = try #require(world.hazards.first)
+        #expect(laser.kind == "void_laser" && laser.y == 4 && laser.width >= 24 && laser.gravity == 0)
+        #expect(ItemKind.voidSentinel.spec.throwing?.range == 300)
+        var standing = world
+        #expect(hit(standing.run(3)))
+    }
+
+    @Test func riftHoundIsAFasterHellHoundWithAShorterWarning() throws {
+        let rift = try #require(ItemKind.riftHound.spec.chase)
+        let hell = try #require(ItemKind.hellHound.spec.chase)
+        #expect(rift.warning == 0.45 && rift.warning < hell.warning)
+        #expect(rift.overtake > hell.overtake)
+        var world = RunnerWorld(level: voidLevel([.init(at: 600, kind: .riftHound)]), boss: nil)
+        let warned = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(warned.contains { if case .chaseWarning = $0 { true } else { false } })
+        #expect(hit(world.run(3)))
+    }
+
+    @Test func voidMageTakesTurnsSummoningAWispAheadAndFiringABolt() throws {
+        // A slow level, so the kitten stays in its range for several turns.
+        var slow = voidLevel([.init(at: 900, kind: .voidMage)])
+        slow.speed = 30
+        var world = RunnerWorld(level: slow, boss: nil)
+        advance(&world, limit: 30) { !$0.entities.isEmpty }
+        let mage = try #require(world.entities.first)
+        var acts: [String] = []
+        var times: [Double] = []
+        while acts.count < 3, world.time < 40, !world.isOver {
+            let known = Set(world.hazards.map(\.id))
+            let wisps = world.entities.filter { $0.kind == .voidWisp }.count
+            let step = world.step(Input(), dt: dt)
+            if step.contains(where: { if case .summoned(id: mage.id) = $0 { true } else { false } }) {
+                let wisp = try #require(world.entities.last { $0.kind == .voidWisp })
+                #expect(world.entities.filter { $0.kind == .voidWisp }.count == wisps + 1)
+                #expect(abs(wisp.x - world.distance - 80) < 1)
+                acts.append("summon")
+                times.append(world.time)
+            }
+            if step.contains(.threw(id: mage.id)) {
+                let bolt = try #require(fresh(world, since: known).first { $0.kind == "void_bolt" })
+                #expect(bolt.y == 6 && bolt.gravity == 0)
+                acts.append("bolt")
+                times.append(world.time)
+            }
+        }
+        #expect(acts == ["summon", "bolt", "summon"])
+        #expect(times.count == 3 && abs(times[1] - times[0] - 3) < 0.05)
+        #expect(stompAttempts(.voidMage).contains { defeated($0, .voidMage) })
+    }
+
+    @Test func riftTurretChargesVisiblyThenShootsFast() throws {
+        var world = RunnerWorld(level: voidLevel([.init(at: 800, kind: .riftTurret)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 20)
+        advance(&world) { $0.entities.first?.state == .warning }
+        let charging = world.time
+        advance(&world, limit: 2) { !$0.hazards.isEmpty }
+        #expect(abs(world.time - charging - 1.0) < 0.05)
+        let shot = try #require(world.hazards.first)
+        #expect(shot.kind == "crystal_shot" && shot.y == 4 && shot.vx <= -180)
+    }
+
+    @Test func voidWispsOrbHomesOnTheKittensHeightButALateJumpDodgesIt() throws {
+        let level = voidLevel([.init(at: 700, kind: .voidWisp)])
+        var world = RunnerWorld(level: level, boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 30)
+        advance(&world) { $0.hazards.contains { $0.kind == "homing_orb" } }
+        let rate = try #require(ItemKind.voidWisp.spec.throwing?.homing)
+        // Standing still: it sinks toward the kitten's middle, no faster than its turn rate, and hits.
+        var standing = world
+        var last = try #require(standing.hazards.first).y
+        var events: [GameEvent] = []
+        while standing.time < world.time + 2, !standing.isOver {
+            events += standing.step(Input(), dt: dt)
+            guard let orb = standing.hazards.first(where: { $0.kind == "homing_orb" }) else { break }
+            #expect(abs(orb.y - last) <= rate * dt + 1e-9)
+            last = orb.y
+        }
+        #expect(hit(events))
+        // The same start always plays out the same way.
+        var a = world, b = world
+        a.run(1)
+        b.run(1)
+        #expect(a.hazards == b.hazards)
+        // A jump late enough leaves it behind: it can't climb as fast as the kitten.
+        let dodged = stride(from: 0.0, to: 1.0, by: 0.03).contains { delay in
+            var jumper = world
+            var events = jumper.run(delay)
+            events += jumper.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            events += jumper.run(1.2, Input(jumpHeld: true))
+            return !hit(events)
+        }
+        #expect(dodged)
+    }
+
+    @Test func miniVoidCatTeleportsInTwiceAndAStompKillsIt() throws {
+        var world = RunnerWorld(level: voidLevel([.init(at: 900, kind: .miniVoidCat)]), boss: nil, stats: hero(4))
+        var appearances: [Double] = []
+        var events: [GameEvent] = []
+        while world.time < 12, !world.isOver, appearances.count < 3 {
+            // A Ghost Dash through each dash, so the kitten survives to see the second.
+            let dashing = world.entities.first.map { $0.state == .active && $0.x - world.distance < 40 } ?? false
+            let step = world.step(Input(pawPressed: dashing && world.canDash), dt: dt)
+            events += step
+            if step.contains(where: { if case .teleported = $0 { true } else { false } }) {
+                appearances.append((world.entities.first?.x ?? 0) - world.distance)
+            }
+        }
+        #expect(appearances.count == 2)
+        #expect(appearances.allSatisfy { abs($0 - 80) < 1 })
+        #expect(ItemKind.miniVoidCat.spec.stompKills)
+    }
+
+    static let voidBotCases: [ItemKind] = voidCreatures
+
+    @Test(arguments: MechanicsTests.voidBotCases)
+    func botClearsEachVoidCreatureWithoutAHit(kind: ItemKind) {
+        let level = voidLevel([.init(at: 400, kind: kind), .init(at: 950, kind: kind)], length: 1600)
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
+    /// Wherever a rift turret stands, the bot gets past it: its 1 s charge, the shot and the crystal
+    /// itself (hovering in the kitten's way) line up differently with the run at every spot.
+    @Test(arguments: [140.0, 150.0])
+    func botClearsALoneRiftTurretWhereverItStands(speed: Double) {
+        var failed: [Int] = []
+        for at in stride(from: 400.0, through: 1000, by: 20) {
+            var level = voidLevel([.init(at: at, kind: .riftTurret)], length: 1400)
+            level.speed = speed
+            if !LevelValidator.botRun(level, boss: nil).finished { failed.append(Int(at)) }
+        }
+        #expect(failed == [], "speed \(Int(speed)): the bot is hit by a lone rift turret at \(failed)")
+    }
+
+    @Test func botClearsAVoidRunOfEveryCreature() {
+        let items = Self.voidCreatures.enumerated().map { PlacedItem(at: 400 + Double($0.offset) * 420, kind: $0.element) }
+        #expect(LevelValidator.botRun(voidLevel(items, length: 4000), boss: nil).finished)
+    }
+
     // MARK: - Bot
 
     @Test func botPouncesThroughCrateWalls() {

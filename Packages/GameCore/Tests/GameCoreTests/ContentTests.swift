@@ -14,8 +14,28 @@ import Testing
     }
 
     @Test func levelFilesAreFound() {
-        #expect(Content.levelIDs.count >= 4)
+        #expect(Content.levelIDs.count == 5)
         #expect(Content.levelIDs.first == "level_01")
+    }
+
+    /// The fifth and last world: the void, all abilities from the start, the final boss at the end
+    /// with a last phase that needs the abilities.
+    @Test func theFinalWorldIsTheVoid() throws {
+        let level = try Content.level("level_05")
+        #expect(level.background == "void")
+        #expect(level.entryHeroLevel == 5 && level.bossRewardLevel == 5)
+        #expect(level.boss == "boss_voidcat")
+        let boss = try #require(try Content.bosses()["boss_voidcat"])
+        #expect(boss.phases.last?.requires?.isEmpty == false)
+        #expect(boss.attacks.contains { !($0.portals ?? []).isEmpty })
+        #expect(boss.attacks.contains { $0.hazards.contains { $0.falls == true } })
+        let lore = try Content.lore()
+        #expect(lore.strings["level.5.name"]?.isEmpty == false)
+        #expect(lore.strings["boss_voidcat.name"] == "The Void Cat")
+        // Endless loops all five.
+        var run = EndlessRun(levelCount: Content.levelIDs.count)
+        for _ in 0..<5 { run.clear(stats: HeroStats(xp: Progression.xp(forLevel: 5)), score: 1) }
+        #expect(run.levelIndex == 0 && run.loop == 2)
     }
 
     @Test func entryLevelsMatchEarlierBossRewards() throws {
