@@ -15,7 +15,7 @@ from dataclasses import dataclass, replace
 from PIL import Image
 
 import palette as P
-from draw import Canvas, end_of, r, see_through, tint
+from draw import Canvas, end_of, noise, r, see_through, tint
 from sprite import Sprite
 
 SIZE = (44, 36)
@@ -35,14 +35,15 @@ class Skin:
     iris: tuple | None = None         # coloured eyes
     flower: bool = False              # a pink flower by the ear
     patch: bool = False               # calico: a dark patch over the far ear and forehead
-    hood: str | None = None           # "frog" | "shark"
+    sakura: bool = False              # Sakura's own look: blossom, blush, bell, petals, magenta lines
+    hood: str | None = None           # "shark" | "cabbage": a whole onesie, the calico kitten's face in the hood
     hood_colours: tuple | None = None
 
 
 SKINS = (
     Skin("shadow", fur=P.SKIN_SHADOW_FUR_LIT, white=P.SKIN_SHADOW_WHITE, iris=P.SKIN_EYE_GREEN),
     Skin("misty", fur=P.SKIN_GREY_FUR, cape=(P.BLUE_L, P.BLUE, P.BLUE_D)),
-    Skin("sakura", fur=P.SKIN_SNOW_FUR, cape=(P.YARN_L, P.YARN, P.YARN_D), flower=True),
+    Skin("sakura", fur=P.SAKURA_FUR, white=P.SAKURA_WHITE, cape=P.SAKURA_CAPE, flower=True, sakura=True),
     Skin("honey", fur=P.SKIN_CREAM_FUR, cape=(P.YELLOW, P.GOLD, P.GOLD_D)),
     Skin("pixie", fur=P.SKIN_PIXIE_FUR_LIT, white=P.SKIN_PIXIE_WHITE, cape=(P.PURPLE_L, P.PURPLE, P.PURPLE_D),
          iris=P.SKIN_EYE_VIOLET),
@@ -50,11 +51,12 @@ SKINS = (
     Skin("snowball", fur=P.SKIN_SNOW_FUR, cape=(P.BLUE_L, P.BLUE, P.BLUE_D), iris=P.SKIN_EYE_BLUE),
     Skin("napster", fur=P.SKIN_WARM_GREY_FUR, cape=(P.BROWN_L, P.BROWN, P.BROWN_D)),
     Skin("toffee", fur=P.SKIN_CALICO_FUR, cape=(P.BROWN_L, P.BROWN, P.BROWN_D), patch=True),
-    Skin("cabage", cape=(P.LEAF_L, P.GREEN, P.FOREST), hood="frog", hood_colours=P.SKIN_FROG),
-    Skin("sharky", cape=(P.BLUE, P.BLUE_D, P.NAVY), hood="shark", hood_colours=P.SKIN_SHARK),
+    Skin("cabage", fur=P.CABBAGE_SUIT, cape=P.CABBAGE_LEAF, hood="cabbage", hood_colours=P.CABBAGE_SUIT[:3]),
+    Skin("sharky", fur=P.SHARK_SUIT, cape=P.SHARK_SUIT[:3], hood="shark", hood_colours=P.SHARK_SUIT[:3]),
 )
 
 _SKIN: Skin | None = None
+_PLAIN = False        # draw the head grid undressed (the cabbage cat's ghost is a plain white cat)
 
 
 @contextmanager
@@ -81,9 +83,12 @@ def wearing(skin: Skin):
 # Per head grid (keyed by rows x width): rows of ears, first eye row, and the face opening a hood leaves
 # (centre x, centre y, radius x, radius y), and where a flower sits by the near ear.
 GRIDS = {
-    (18, 18): dict(ears=5, eye=9, opening=(11.5, 12.5, 7.0, 5.5), flower=(16, 7)),
-    (20, 22): dict(ears=6, eye=11, opening=(12.5, 15.0, 8.0, 6.0), flower=(19, 8)),
-    (17, 18): dict(ears=5, eye=9, opening=(8.5, 12.0, 7.0, 5.0), flower=(15, 7)),
+    (18, 18): dict(ears=5, eye=9, opening=(11.5, 11.5, 7.5, 6.2), flower=(16, 7), blossom=(15, 3),
+                   cheeks=((6, 12), (5, 12), (16, 12))),
+    (20, 22): dict(ears=6, eye=11, opening=(12.5, 13.8, 8.6, 6.8), flower=(19, 8), blossom=(18, 4),
+                   cheeks=((5, 15), (6, 15), (19, 15), (20, 15))),
+    (17, 18): dict(ears=5, eye=9, opening=(8.5, 11.0, 7.5, 5.8), flower=(15, 7), blossom=(14, 3),
+                   cheeks=((2, 12), (3, 12), (14, 12), (15, 12))),
 }
 
 
@@ -104,47 +109,80 @@ def dress(rows) -> list[list[str]]:
             for x in range(0, w // 2 - 1):
                 if rows[y][x] in "FLD":
                     rows[y][x] = "S"
-    if _SKIN.flower:
+    if _SKIN.sakura:                                         # a big blossom over the near ear, rosy cheeks
+        bx, by = spec["blossom"]
+        for dx, dy in ((0, -2), (-1, -1), (0, -1), (1, -1), (-2, 0), (-1, 0), (1, 0), (2, 0), (-1, 1), (0, 1),
+                       (1, 1), (0, 2)):
+            if 0 <= bx + dx < w and 0 <= by + dy < h:
+                rows[by + dy][bx + dx] = "r" if (dx, dy) in ((0, 2), (2, 0), (1, 1)) else "R"
+        rows[by][bx] = "Y"
+        for x, y in spec["cheeks"]:
+            if 0 <= x < w and 0 <= y < h and rows[y][x] not in ".KHI":
+                rows[y][x] = "P"
+    elif _SKIN.flower:
         fx, fy = spec["flower"]
         for x, y, ch in ((fx, fy, "Y"), (fx - 1, fy, "R"), (fx + 1, fy, "R"), (fx, fy - 1, "R"), (fx, fy + 1, "r")):
             if 0 <= x < w and 0 <= y < h:
                 rows[y][x] = ch
-    if _SKIN.hood:
+    if _SKIN.hood and not _PLAIN:
         cx, cy, rx, ry = spec["opening"]
-        tone = {"L": "h", "F": "g", "D": "j", "S": "j", "P": "j", "p": "j", "W": "g", "w": "g"}
-        for y in range(spec["ears"], h):
-            for x in range(w):
-                inside = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1
-                if rows[y][x] in tone and not inside:
-                    rows[y][x] = tone[rows[y][x]]
         top = spec["ears"]
+
+        def inside(x, y):
+            return ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1
+
+        for y in range(top, h):                              # the kitten's calico face inside the opening
+            for x in range(w):
+                ch = rows[y][x]
+                if inside(x, y) and ch in "FLDS":
+                    patch = x < cx - rx * 0.3 and y < cy + 1
+                    rows[y][x] = "b" if patch or ch == "S" else ("q" if ch == "L" else "o")
+        for x, y in ((round(cx - rx * 0.62), round(cy + 1)), (round(cx + rx * 0.62), round(cy + 1))):
+            if 0 <= x < w and 0 <= y < h and rows[y][x] in "oqbWw":
+                rows[y][x] = "P"                             # pink cheeks
+        tone = {"L": "h", "F": "g", "D": "j", "S": "j", "P": "j", "p": "j", "W": "g", "w": "g"}
+        for y in range(top, h):                              # the hood round the face
+            for x in range(w):
+                if rows[y][x] in tone and not inside(x, y):
+                    rows[y][x] = tone[rows[y][x]]
         cols = [x for x in range(w) if rows[top][x] != "."]
         left, right = min(cols), max(cols)
-        for y in range(top):                                 # no cat ears under a hood
-            rows[y] = ["."] * w
-        for y, inset in ((top - 1, 2), (top - 2, 4)):        # a rounded dome over the crown
-            for x in range(left + inset, right - inset + 1):
-                rows[y][x] = "h" if x < (left + right) / 2 - 2 else "g"
-        if _SKIN.hood == "frog":                             # two frog eyes on top
-            for ex in (left + 3, right - 3):
-                for dx, dy, ch in ((-1, -3, "g"), (0, -3, "g"), (1, -3, "g"), (-2, -2, "g"), (2, -2, "g"),
-                                   (-1, -2, "T"), (0, -2, "T"), (1, -2, "T"), (-1, -1, "T"), (0, -1, "K"),
-                                   (1, -1, "T"), (-2, -1, "g"), (2, -1, "g")):
-                    x, y = ex + dx, top + dy
-                    if 0 <= x < w and 0 <= y < h:
-                        rows[y][x] = ch
-        else:                                                # a shark fin, and teeth round the face opening
+        if _SKIN.hood == "shark":
+            for y in range(top):                             # no cat ears: a dome and a dorsal fin
+                rows[y] = ["."] * w
+            for y, inset in ((top - 1, 2), (top - 2, 4)):
+                for x in range(left + inset, right - inset + 1):
+                    rows[y][x] = "h" if x < (left + right) / 2 - 2 else "g"
             mid = (left + right) // 2
             for k in range(4):
                 for x in range(mid - k - 1, mid + 1):
                     if top - 2 - (3 - k) >= 0:
-                        rows[top - 2 - (3 - k)][x] = "j" if x == mid else "g"
-            ty = int(cy - ry)
-            for x in range(int(cx - rx) + 1, int(cx + rx)):
-                if 0 <= ty < h and rows[ty][x] != ".":
-                    rows[ty][x] = "T"
-                    if x % 2 == 0 and ty + 1 < h:
-                        rows[ty + 1][x] = "T"
+                        rows[top - 2 - (3 - k)][x] = "j" if x == mid else "f"
+            for x, y in ((left + 2, top + 1), (right - 2, top + 1)):
+                if rows[y][x] in "hgj":
+                    rows[y][x] = "K"                         # the shark's eyes on the hood
+            for x in range(w):                               # a zigzag of white teeth along the top of the jaw
+                ys = [y for y in range(top, h) if inside(x, y) and rows[y][x] not in ".KHI"]
+                if ys and x % 2 == 0:
+                    rows[ys[0]][x] = "T"
+                    if x % 4 == 0 and len(ys) > 1 and rows[ys[1]][x] not in "KHIP":
+                        rows[ys[1]][x] = "T"
+        else:                                                # cabbage: leaf ear-points, layered leaves, veins
+            leafy = {"P": "g", "p": "j", "F": "g", "L": "h", "D": "j", "S": "j"}
+            for y in range(top):
+                for x in range(w):
+                    if rows[y][x] in leafy:
+                        rows[y][x] = leafy[rows[y][x]]
+            base = (cx, cy + ry)
+            for y in range(h):
+                for x in range(w):
+                    if rows[y][x] in "hgj" and not inside(x, y):
+                        d = math.hypot(x - base[0], y - base[1])
+                        ang = math.degrees(math.atan2(y - base[1], x - base[0])) % 360
+                        if int(d) % 5 == 0:
+                            rows[y][x] = "j"                 # the edge of a leaf layer
+                        elif abs(ang % 36 - 18) < 2.2 and d > 6:
+                            rows[y][x] = "v"                 # a pale vein
     return rows
 
 CX, GROUND = 22, 34
@@ -420,7 +458,9 @@ def stamp_colours() -> dict:
             "w": P.FUR_WHITE_D, "P": P.PINK, "p": P.PINK_D, "K": P.BLACK, "H": P.WHITE,
             "I": _SKIN.iris if _SKIN and _SKIN.iris else P.BLACK,          # iris, coloured-eye skins
             "R": P.YARN, "Y": P.YELLOW, "r": P.YARN_D,                       # sakura's flower
-            "h": hood[0], "g": hood[1], "j": hood[2], "T": P.WHITE, "O": P.OUTLINE}   # hoods
+            "h": hood[0], "g": hood[1], "j": hood[2], "T": P.WHITE, "O": P.OUTLINE,    # hoods
+            "o": P.CALICO_ORANGE, "q": P.CALICO_ORANGE_L, "b": P.CALICO_BROWN,         # calico face
+            "f": P.SHARK_FIN, "v": P.CABBAGE_VEIN}
 assert all(len(row) == 18 for row in HEAD + EARS_BACK)
 
 
@@ -600,6 +640,11 @@ def _chibi_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
     c.rect(x0 + 4, y0 + 18, x0 + 11, y0 + 18, P.CAPE_D)
     c.rect(x0 + 10, y0 + 18, x0 + 11, y0 + 19, P.CAPE)
     c.px(x0 + 11, y0 + 20, P.CAPE_D)
+    if _SKIN and _SKIN.sakura:                              # a round gold bell on the knot
+        c.rect(x0 + 10, y0 + 19, x0 + 12, y0 + 21, P.GOLD)
+        c.px(x0 + 10, y0 + 19, P.YELLOW)
+        c.px(x0 + 12, y0 + 21, P.GOLD_D)
+        c.px(x0 + 11, y0 + 21, P.GOLD_D)
 
     if not pose.arm_behind:                                 # near arm outlined, so it reads over the head
         layer = Canvas(*c.size)
@@ -653,6 +698,15 @@ def running(frame: int, **overrides) -> HeroPose:
     return replace(pose, **overrides)
 
 
+def ghost_ramp() -> tuple:
+    """Colours of see-through spirits (Ghost Dash, the ghost): white, light, mid, dark, deepest; pink for Sakura."""
+    if _SKIN and _SKIN.sakura:
+        return P.SAKURA_GHOST
+    if _SKIN and _SKIN.hood == "cabbage":
+        return P.CABBAGE_GHOST
+    return (P.WHITE, P.CYAN, P.BLUE, P.BLUE_D, P.NAVY)
+
+
 def ghostly(image: Image.Image, alpha: int, cape: bool = True) -> Image.Image:
     """Ghost Dash: the fur recoloured to blue-white by brightness (so the white muzzle still shows), a blue
     outline, the cape left red; all at partial alpha."""
@@ -663,14 +717,15 @@ def ghostly(image: Image.Image, alpha: int, cape: bool = True) -> Image.Image:
             cr, cg, cb, ca = px[x, y]
             if not ca:
                 continue
+            ramp = ghost_ramp()
             if (cr, cg, cb) == P.OUTLINE[:3]:
-                colour = P.BLUE_D
+                colour = ramp[3]
             elif cape and (cr, cg, cb, 255) in (P.CAPE_L, P.CAPE, P.CAPE_D):  # cape and scarf
                 colour = (cr, cg, cb, 255)
             else:
                 lum = 0.3 * cr + 0.59 * cg + 0.11 * cb
-                colour = (P.WHITE if lum > 215 else P.CYAN if lum > 125 else P.BLUE if lum > 80 else P.BLUE_D if lum > 35
-                          else P.NAVY)
+                colour = (ramp[0] if lum > 215 else ramp[1] if lum > 125 else ramp[2] if lum > 80 else ramp[3] if lum > 35
+                          else ramp[4])
             px[x, y] = (*colour[:3], min(ca, alpha))
     return out
 
@@ -807,7 +862,7 @@ def hero_sprite(name: str) -> Sprite:
         lines = Canvas(*SIZE)
         for k, y in enumerate((GROUND - 18, GROUND - 11, GROUND - 5)):
             n = 3 + (i + k * 3) % 4
-            lines.line((2 + (k + i) % 3, y), (2 + (k + i) % 3 + n, y), P.WHITE if k % 2 else P.CYAN)
+            lines.line((2 + (k + i) % 3, y), (2 + (k + i) % 3 + n, y), ghost_ramp()[0] if k % 2 else ghost_ramp()[1])
         frame.alpha_composite(see_through(lines.img, 200))
         frame.alpha_composite(ghostly(body, 235))
         dash.append(frame)
@@ -838,7 +893,224 @@ def hero_sprite(name: str) -> Sprite:
     hero.add("hurt", [tint(hurt, P.WHITE, 0.3), hero_frame(hurt_pose, extras=[hit_star(1)])], fps=10)
     hero.add("death", death_frames(hurt_pose), fps=8, loop=False)
     screen_poses(hero)
+    if _SKIN and _SKIN.sakura:
+        sakura_finish(hero)
+    elif _SKIN and _SKIN.hood == "shark":
+        shark_finish(hero)
+    elif _SKIN and _SKIN.hood == "cabbage":
+        cabbage_finish(hero)
     return hero
+
+
+def behind(frame: Image.Image, draw) -> Image.Image:
+    """`draw` on an empty canvas, then the frame on top: effects that sit behind the cat."""
+    c = Canvas(*SIZE)
+    draw(c)
+    c.paste(frame)
+    return c.img
+
+
+def in_front(frame: Image.Image, draw) -> Image.Image:
+    c = Canvas(*SIZE)
+    c.paste(frame)
+    draw(c)
+    return c.img
+
+
+def safe_px(c: Canvas, x: float, y: float, colour) -> None:
+    """A pixel kept clear of the left, right and top edges and of the rows below the ground."""
+    if 2 <= round(x) <= SIZE[0] - 3 and 2 <= round(y) <= GROUND:
+        c.px(x, y, colour)
+
+
+def ring(c: Canvas, cx, cy, rx, ry, colours, a0=0, a1=360, step=4) -> None:
+    for k in range(int((a1 - a0) / step) + 1):
+        a = math.radians(a0 + k * step)
+        safe_px(c, cx + math.cos(a) * rx, cy + math.sin(a) * ry, colours[k % len(colours)])
+
+
+def shark_finish(hero: Sprite) -> None:
+    """Sharky's water: splash rings and droplets on the double jump, a wave behind the dash, a swirl round the
+    pounce, a little puddle under the knocked-out cat."""
+    W = P.SHARK_WATER
+    for name, anim in hero.anims.items():
+        for i, frame in enumerate(anim.frames):
+            if name == "double":
+                def splash(c, i=i):
+                    ring(c, 22, 33, 6 + i * 3, 1.5 + i * 0.4, (W[1], W[2], W[0]))
+                    for k in range(4):
+                        a = math.radians(200 + k * 45 + i * 10)
+                        safe_px(c, 22 + math.cos(a) * (8 + i * 2), 28 - i - abs(math.sin(a)) * 4, W[2 if k % 2 else 1])
+                anim.frames[i] = in_front(frame, splash)
+            elif name == "dash":
+                def wave(c, i=i):
+                    for x in range(2, 22):
+                        crest = 21 + 3 * math.sin(x / 2.5 + i * 1.5) + (22 - x) * 0.25
+                        for y in range(int(crest), GROUND + 1):
+                            colour = W[0] if y == int(crest) else W[1] if y < crest + 3 else W[2] if y < crest + 7 else W[3]
+                            safe_px(c, x, y, colour)
+                anim.frames[i] = behind(frame, wave)
+            elif name == "pounce":
+                anim.frames[i] = behind(frame, lambda c, i=i: ring(c, 22, 23, 17, 7, (W[0], W[1], W[2]), 90 + i * 20,
+                                                                    330 + i * 20, 3))
+            elif name == "ko" or (name == "death" and i >= 2):
+                def puddle(c):
+                    c.ellipse(22, GROUND - 0.5, 17, 1.6, W[2])
+                    c.ellipse(20, GROUND - 0.8, 12, 1.0, W[1])
+                    for x in (10, 18, 30):
+                        safe_px(c, x, GROUND - 1, W[0])
+                anim.frames[i] = behind(frame, puddle)
+
+
+def leaf_fleck(c: Canvas, x: float, y: float) -> None:
+    """A small falling leaf, only on empty pixels."""
+    px = c.img.load()
+    for dx, dy, colour in ((0, 0, P.CABBAGE_LEAF[0]), (1, 0, P.CABBAGE_LEAF[1]), (2, 1, P.CABBAGE_LEAF[2])):
+        X, Y = int(x) + dx, int(y) + dy
+        if 2 <= X <= SIZE[0] - 3 and 2 <= Y <= GROUND and px[X, Y][3] == 0:
+            px[X, Y] = colour
+
+
+def cabbage_ball(k: int) -> Image.Image:
+    """Cabbage Roll: the cat curled into a rolling cabbage, leaf layers turning, the kitten's face peeking out,
+    leaf streaks behind."""
+    S, L = P.CABBAGE_SUIT, P.CABBAGE_LEAF
+    cx, cy, r = 25, GROUND - 9, 9
+    c = Canvas(*SIZE)
+    c.ellipse(cx, cy, r, r, S[1])
+    c.ellipse(cx - 2, cy - 2, r - 3, r - 3, S[0])
+    for j in range(3):                                       # leaf layers, turning as it rolls
+        a0 = k * 45 + j * 120
+        rr = r - 1 - j * 2.5
+        for t in range(0, 150, 5):
+            a = math.radians(a0 + t)
+            c.px(cx + math.cos(a) * rr, cy + math.sin(a) * rr, S[2])
+    for j in range(5):                                       # pale veins from the core
+        a = math.radians(k * 45 + j * 72)
+        c.line((cx, cy), (cx + math.cos(a) * (r - 2), cy + math.sin(a) * (r - 2)), P.CABBAGE_VEIN)
+    a = math.radians(k * 90 + 30)                            # the kitten's face peeking out
+    fx, fy = cx + math.cos(a) * 4, cy + math.sin(a) * 4
+    c.rect(fx - 2, fy - 1, fx + 1, fy + 1, P.CALICO_ORANGE)
+    c.px(fx - 1, fy, P.BLACK)
+    c.px(fx + 1, fy, P.BLACK)
+    c.outline()
+    for j, y in enumerate((cy - 6, cy, cy + 6)):             # leaf streaks behind
+        n = 4 + (j + k) % 3
+        for x in range(cx - r - 3 - n, cx - r - 1):
+            safe_px(c, x, y, L[0] if (x + j) % 3 else L[1])
+    return c.img
+
+
+def cabbage_finish(hero: Sprite) -> None:
+    """The cabbage cat's leaves: drifting off it in motion, an arc on the double jump, a crescent on the leaf
+    slash (pounce), a burst when it throws, scattered round it when knocked out; the dash is a cabbage roll."""
+    L = P.CABBAGE_LEAF
+    moving = {"run", "jump", "fall", "double", "stop", "pounce", "hurt", "death", "ko", "cheer"}
+    for name, anim in hero.anims.items():
+        seed = sum(ord(ch) * (k + 3) for k, ch in enumerate(name))
+        for i, frame in enumerate(anim.frames):
+            img = frame
+            if name == "dash":
+                img = cabbage_ball(i)
+            elif name == "double":
+                img = behind(img, lambda c, i=i: (ring(c, 22, 24, 13, 8, (L[0], L[1]), 20 + i * 10, 160 + i * 10, 3),
+                                                  ring(c, 22, 24, 12, 7, (L[1],), 30 + i * 10, 150 + i * 10, 4)))
+            elif name == "pounce":
+                img = in_front(img, lambda c, i=i: (ring(c, 30, 21, 10, 10, (L[0], P.CABBAGE_VEIN), -70, 70, 4),
+                                                    ring(c, 29, 21, 9, 9, (L[1],), -60, 60, 5)))
+            elif name == "throw" and i == 2:
+                def burst(c):
+                    for k in range(4):
+                        a = math.radians(-60 + k * 40)
+                        leaf_fleck(c, 35 + math.cos(a) * 4, 19 + math.sin(a) * 4)
+                img = in_front(img, burst)
+            elif name == "ko" or (name == "death" and i >= 2):
+                def scattered(c):
+                    for x, y in ((5, GROUND - 1), (12, GROUND), (33, GROUND - 1), (39, GROUND), (26, GROUND - 2)):
+                        leaf_fleck(c, x, y)
+                img = in_front(img, scattered)
+            if name in moving:
+                rnd = noise(seed)
+                c = Canvas(*SIZE)
+                c.paste(img)
+                for k in range(2):
+                    bx, by = 3 + rnd() * 36, 3 + rnd() * 26
+                    leaf_fleck(c, 3 + (bx - 3 - i * 2) % 36, 3 + (by - 3 + i) % 27)
+                img = c.img
+            anim.frames[i] = img
+
+
+def recolour(image: Image.Image, mapping: dict) -> Image.Image:
+    """Swaps exact colours (alpha kept)."""
+    out = image.copy()
+    px = out.load()
+    rgb = {k[:3]: v[:3] for k, v in mapping.items()}
+    for y in range(out.height):
+        for x in range(out.width):
+            c = px[x, y]
+            if c[3] and c[:3] in rgb:
+                px[x, y] = (*rgb[c[:3]], c[3])
+    return out
+
+
+def petal(c: Canvas, x: float, y: float, big: bool) -> None:
+    """A drifting cherry petal: a small pink "+" (big) or a two-pixel fleck, only on empty pixels."""
+    pts = [(0, 0, P.SAKURA_PETAL_D), (1, 0, P.SAKURA_PETAL)]
+    if big:
+        pts = [(0, 0, P.SAKURA_PETAL_D), (-1, 0, P.SAKURA_PETAL), (1, 0, P.SAKURA_PETAL), (0, -1, P.SAKURA_PETAL),
+               (0, 1, P.SAKURA_PETAL)]
+    px = c.img.load()
+    for dx, dy, colour in pts:
+        X, Y = int(x) + dx, int(y) + dy
+        if 2 <= X <= SIZE[0] - 3 and 2 <= Y <= GROUND and px[X, Y][3] == 0:
+            px[X, Y] = colour
+
+
+def blossom(c: Canvas, x: int, y: int, r: int) -> None:
+    """The glowing blossom Sakura flings: five petals round a gold centre in a soft glow."""
+    glow = Canvas(*SIZE)
+    glow.ellipse(x, y, r + 2, r + 2, P.SAKURA_PETAL)
+    c.paste(see_through(glow.img, 130))
+    flower = Canvas(*SIZE)
+    for k in range(5):
+        a = k / 5 * math.tau - math.pi / 2
+        flower.ellipse(x + math.cos(a) * r * 0.7, y + math.sin(a) * r * 0.7, r * 0.55, r * 0.55, P.SAKURA_PETAL_D)
+    flower.ellipse(x, y, r * 0.45, r * 0.45, P.SAKURA_GLOW)
+    flower.px(x, y, P.YELLOW)
+    c.paste(flower.outline(P.SAKURA_LINE))
+
+
+def sakura_finish(hero: Sprite) -> None:
+    """Sakura's own touches on the built frames: magenta line work and dark plum eyes; pink instead of blue for
+    the ghost and the petal dash; light petal spots on the cape; the glowing blossom when she throws; and a few
+    petals drifting through the empty space of every frame."""
+    lines = {P.OUTLINE: P.SAKURA_LINE, P.BLACK: P.SAKURA_EYE}
+
+    def flashed(colour):                                     # the colour after the hurt flash's white tint
+        one = Image.new("RGBA", (1, 1), colour)
+        return tint(one, P.WHITE, 0.3).getpixel((0, 0))
+    lines.update({flashed(k): flashed(v) for k, v in list(lines.items())})
+    for name, anim in hero.anims.items():
+        seed = sum(ord(ch) * (k + 1) for k, ch in enumerate(name))
+        for i, frame in enumerate(anim.frames):
+            img = recolour(frame, lines)
+            px = img.load()
+            for y in range(SIZE[1]):                         # petal spots on the cape
+                for x in range(SIZE[0]):
+                    c = px[x, y]
+                    if c[3] and c[:3] == P.CAPE[:3] and (x * 3 + y * 5) % 11 == 0:
+                        px[x, y] = (*P.SAKURA_PETAL[:3], c[3])
+            c = Canvas(*SIZE)
+            c.paste(img)
+            if name == "throw" and i in (2, 3):
+                blossom(c, 36 + (i - 2) * 2, 17 - (i - 2), 3 - (i - 2))       # glow stays inside the frame
+            rnd = noise(seed)
+            for k in range(3):
+                bx, by = 3 + rnd() * 37, 3 + rnd() * 26
+                x = 3 + (bx - 3 - i * 2) % 37
+                y = 3 + (by - 3 + i) % 28
+                petal(c, x, y, big=k == 0)
+            anim.frames[i] = c.img
 
 
 def draped_cape(angle: float, length: float, flap: float, ripple: float = 8, dx: float = -3, dy: float = 0):
@@ -1144,7 +1416,12 @@ def ghost_frame(k: int) -> Image.Image:
                  (8, 14), (9, 14), (7, 15), (10, 15)):                                      # a little frown
         rows[y][x] = "K"
     rows[9][5] = rows[9][12] = "H"
-    _stamp(c, rows, x0, y0)
+    global _PLAIN
+    _PLAIN = bool(_SKIN and _SKIN.hood == "cabbage")         # the cabbage cat's ghost is a plain cat
+    try:
+        _stamp(c, rows, x0, y0)
+    finally:
+        _PLAIN = False
     c.outline()
     out = Canvas(*SIZE)
     wings = Canvas(*SIZE)
@@ -1153,9 +1430,10 @@ def ghost_frame(k: int) -> Image.Image:
         wx, wy = hx - 0.5 + side * 8, hy + 6
         wings.poly([(wx, wy + 1), (wx + side * 4, wy - 5 - flap), (wx + side * 7, wy - 4 - flap),
                     (wx + side * 6, wy), (wx + side * 2, wy + 2)], P.WHITE)
-        wings.line((wx + side * 2, wy - 1), (wx + side * 4, wy - 3 - flap), P.BLUE_L)
+        wings.line((wx + side * 2, wy - 1), (wx + side * 4, wy - 3 - flap),
+                   ghost_ramp()[1] if _SKIN and _SKIN.sakura else P.BLUE_L)
     out.paste(ghostly(c.img, 215, cape=False))
-    out.paste(wings.outline(P.BLUE_D))
+    out.paste(wings.outline(ghost_ramp()[3]))
     ty = int(y0 - 2)                                                   # a hollow gold ring
     left, right = int(hx - 5), int(hx + 4)
     out.rect(left + 1, ty - 1, right - 1, ty - 1, P.YELLOW)

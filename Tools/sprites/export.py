@@ -206,6 +206,10 @@ def titles() -> None:
     for cut in SHEET_CUTS:
         cut_from_sheet(*cut)
     cat_portraits()
+    # Cats that later got their own sheets: their portrait is that sheet's IDLE FRONT pose instead
+    # of the selection-sheet card (Cabage became a cabbage, not the frog hood the card shows).
+    for cut in SKIN_SHEET_PORTRAITS:
+        cut_from_sheet(*cut)
 
 
 HUD_SOURCE = "hud_source.png"
@@ -291,6 +295,12 @@ def cut_cat_card(box: tuple, name: str, cleared: tuple = ()) -> None:
     write_png(piece, folder / f"{name}.png")
     contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+SKIN_SHEET_PORTRAITS = [
+    ("cabage_source.png", (470, 70, 640, 225), "cat_cabage", _checker_only),
+    ("sharky_source.png", (470, 65, 630, 215), "cat_sharky", _checker_only),
+]
 
 
 def cat_portraits() -> None:
