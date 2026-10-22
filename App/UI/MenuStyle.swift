@@ -50,6 +50,8 @@ struct MenuBackground: View {
             }
             .onAppear { scene = makeScene(proxy.size) }
             .onChange(of: proxy.size) { _, newSize in scene = makeScene(newSize) }
+            // A cat picked on the CATS screen shows here as soon as the player comes back.
+            .onChange(of: model.heroSprite) { _, _ in scene = makeScene(proxy.size) }
         }
         .ignoresSafeArea()
     }
