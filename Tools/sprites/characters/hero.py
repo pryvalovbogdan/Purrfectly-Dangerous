@@ -36,6 +36,7 @@ class Skin:
     flower: bool = False              # a pink flower by the ear
     patch: bool = False               # calico: a dark patch over the far ear and forehead
     sakura: bool = False              # Sakura's own look: blossom, blush, bell, petals, magenta lines
+    round: bool = False               # drawn on the round chibi body (`_round_at`) instead of the hero's
     hood: str | None = None           # "shark" | "cabbage": a whole onesie, the calico kitten's face in the hood
     hood_colours: tuple | None = None
 
@@ -43,7 +44,8 @@ class Skin:
 SKINS = (
     Skin("shadow", fur=P.SKIN_SHADOW_FUR_LIT, white=P.SKIN_SHADOW_WHITE, iris=P.SKIN_EYE_GREEN),
     Skin("misty", fur=P.SKIN_GREY_FUR, cape=(P.BLUE_L, P.BLUE, P.BLUE_D)),
-    Skin("sakura", fur=P.SAKURA_FUR, white=P.SAKURA_WHITE, cape=P.SAKURA_CAPE, flower=True, sakura=True),
+    Skin("sakura", fur=P.SAKURA_FUR, white=P.SAKURA_WHITE, cape=P.SAKURA_CAPE, flower=True, sakura=True,
+         round=True),
     Skin("honey", fur=P.SKIN_CREAM_FUR, cape=(P.YELLOW, P.GOLD, P.GOLD_D)),
     Skin("pixie", fur=P.SKIN_PIXIE_FUR_LIT, white=P.SKIN_PIXIE_WHITE, cape=(P.PURPLE_L, P.PURPLE, P.PURPLE_D),
          iris=P.SKIN_EYE_VIOLET),
@@ -51,8 +53,10 @@ SKINS = (
     Skin("snowball", fur=P.SKIN_SNOW_FUR, cape=(P.BLUE_L, P.BLUE, P.BLUE_D), iris=P.SKIN_EYE_BLUE),
     Skin("napster", fur=P.SKIN_WARM_GREY_FUR, cape=(P.BROWN_L, P.BROWN, P.BROWN_D)),
     Skin("toffee", fur=P.SKIN_CALICO_FUR, cape=(P.BROWN_L, P.BROWN, P.BROWN_D), patch=True),
-    Skin("cabage", fur=P.CABBAGE_SUIT, cape=P.CABBAGE_LEAF, hood="cabbage", hood_colours=P.CABBAGE_SUIT[:3]),
-    Skin("sharky", fur=P.SHARK_SUIT, cape=P.SHARK_SUIT[:3], hood="shark", hood_colours=P.SHARK_SUIT[:3]),
+    Skin("cabage", fur=P.CABBAGE_SUIT, cape=P.CABBAGE_LEAF, hood="cabbage", hood_colours=P.CABBAGE_SUIT[:3],
+         round=True),
+    Skin("sharky", fur=P.SHARK_SUIT, cape=P.SHARK_SUIT[:3], hood="shark", hood_colours=P.SHARK_SUIT[:3],
+         round=True),
 )
 
 _SKIN: Skin | None = None
@@ -87,6 +91,8 @@ GRIDS = {
                    cheeks=((6, 12), (5, 12), (16, 12))),
     (20, 22): dict(ears=6, eye=11, opening=(12.5, 13.8, 8.6, 6.8), flower=(19, 8), blossom=(18, 4),
                    cheeks=((5, 15), (6, 15), (19, 15), (20, 15))),
+    (17, 22): dict(ears=4, eye=8, opening=(11.5, 11.0, 8.6, 5.6), flower=(18, 5), blossom=(18, 2),
+                   cheeks=((4, 11), (19, 11))),
     (17, 18): dict(ears=5, eye=9, opening=(8.5, 11.0, 7.5, 5.8), flower=(15, 7), blossom=(14, 3),
                    cheeks=((2, 12), (3, 12), (14, 12), (15, 12))),
 }
@@ -405,13 +411,208 @@ def _ribbon(c: Canvas, root, angle, length, flap, ripple, width0, width1, light,
     return tip
 
 
+# ---------------------------------------------------------------------------------------------------
+# The round chibi body of the costume skins (Sakura, Sharky, Cabbage): a wide head about 60% of the height
+# over a short round body, stubby legs and round paws. It reads the same `HeroPose` as the hero, so every
+# animation works on it unchanged.
+
+CHIBI_HEAD = (
+    "...D..............F...",
+    "..DPF............FPF..",
+    "..DPPF..........FPPF..",
+    ".DPPPFF........FFPPPF.",
+    ".DLLLSLSFFWWFSFFFFFFF.",
+    "DLLLLSLSFFWWFSFFFFFFFF",
+    "DLLLFFFFFFWWFFFFFFFFFF",
+    "DLLFFFFFFWWWWFFFFFFFFF",
+    "DFFFFFHKKFWWWWFHKKFFFF",
+    "DFFFFFKKKWWWWWWKKKFFFF",
+    "DSSFFFKKKWWWWWWKKKWFFF",
+    "DFFFFWWWWWWPPWWWWWWFFF",
+    "DFFFWWWWWpWpWpWWWWWWFF",
+    ".DFFWWWWWWpWpWWWWWWFF.",
+    ".DDFwWWWWWWWWWWWWWWFD.",
+    "..DDDwwWWWWWWWWWWwDD..",
+    "....DDDDwwwwwwwwDDD...",
+)
+assert all(len(row) == 22 for row in CHIBI_HEAD)
+CHIBI_CENTRE = (10.5, 14)        # the grid pixel that sits on the neck
+
+
+def _round_face(pose: HeroPose) -> list[list[str]]:
+    """The round head with this pose's eyes and mouth."""
+    rows = [list(row) for row in CHIBI_HEAD]
+    for x, y in ((4, 11), (19, 11)):
+        rows[y][x] = "P"                                     # pink cheeks
+    if pose.eye != "open":
+        for y in range(7, 11):
+            for x in list(range(6, 9)) + list(range(15, 18)):
+                if rows[y][x] in "KH":
+                    rows[y][x] = "F"
+        marks = {
+            "shut": [(6, 9), (7, 10), (8, 9), (15, 9), (16, 10), (17, 9)],
+            "happy": [(6, 10), (7, 9), (8, 10), (15, 10), (16, 9), (17, 10)],
+            "wide": [(x, y) for x0 in (6, 15) for x in range(x0, x0 + 3) for y in range(7, 11)],
+            "squint": [(6, 8), (7, 9), (6, 10), (17, 8), (16, 9), (17, 10)],
+            "x": [(6, 8), (8, 8), (7, 9), (6, 10), (8, 10), (15, 8), (17, 8), (16, 9), (15, 10), (17, 10)],
+            "sad": [(7, 8), (6, 9), (7, 9), (8, 9), (6, 10), (7, 10), (8, 10), (16, 8), (15, 9), (16, 9), (17, 9),
+                    (15, 10), (16, 10), (17, 10)],
+        }[pose.eye]
+        for x, y in marks:
+            rows[y][x] = "K"
+        if pose.eye == "wide":
+            rows[7][6] = rows[7][15] = "H"
+    open_mouth = pose.smile or pose.tongue or pose.frown or pose.mouth
+    if open_mouth:
+        for x, y in ((9, 12), (11, 12), (13, 12), (10, 13), (12, 13)):
+            rows[y][x] = "W"
+    if _SKIN and _SKIN.hood == "shark" and pose.mouth:          # Sharky's bite: the jaw wide open
+        for x in range(9, 15):
+            for y in range(12, 15):
+                rows[y][x] = "K" if y in (12, 14) or x in (9, 14) else "p"
+        for x in (10, 12):
+            rows[12][x] = "T"
+    elif pose.smile:                                         # a wide open "D" smile
+        for x in range(9, 14):
+            rows[12][x] = "K"
+        rows[13][9] = rows[13][13] = "K"
+        for x in range(10, 13):
+            rows[13][x] = "p"
+            rows[14][x] = "K"
+    elif pose.tongue:
+        for x, y, ch in ((10, 12, "K"), (11, 12, "K"), (12, 12, "K"), (10, 13, "P"), (11, 13, "P"), (12, 13, "P"),
+                         (11, 14, "p")):
+            rows[y][x] = ch
+    elif pose.frown:
+        for x, y in ((9, 13), (10, 12), (11, 12), (12, 12), (13, 13)):
+            rows[y][x] = "K"
+    elif pose.mouth:
+        for x, y in ((10, 12), (11, 12), (12, 12), (10, 13), (12, 13)):
+            rows[y][x] = "p"
+        rows[13][11] = "K"
+    return rows
+
+
+def _round_at(c: Canvas, back: Canvas, pose: HeroPose, hip) -> dict:
+    lean = math.radians(pose.lean * 0.7)
+    up = (math.sin(lean), -math.cos(lean))
+    front = (math.cos(lean), math.sin(lean))
+    length = 4.0 + pose.length * 0.5
+    skin = _SKIN
+    shark, cabbage = skin.hood == "shark", skin.hood == "cabbage"
+
+    def along(d, f=0.0, base=hip):
+        return (base[0] + up[0] * d + front[0] * f, base[1] + up[1] * d + front[1] * f)
+
+    fur, fur_l, fur_d, stripe = P.GINGER, P.GINGER_L, P.GINGER_D, P.GINGER_DD
+    white, white_d = P.FUR_WHITE, P.FUR_WHITE_D
+    neck = along(length + 3.0)
+
+    if not shark:                                            # cape: petals for Sakura, a leaf cape for Cabbage
+        layer = Canvas(*c.size)
+        _ribbon(layer, along(length + 1.5, -3.0), pose.cape - pose.lean * 0.3, pose.cape_len * 0.8, pose.flap,
+                pose.ripple, 4, 8 if cabbage else 6, P.CAPE, P.CAPE_D, P.CAPE_L)
+        back.paste(despeckle(layer).outline())
+
+    layer = Canvas(*c.size)                                  # tail
+    point = along(1.5, -4.8)
+    angle = pose.tail
+    for i in range(5 if shark else 8):
+        rad = math.radians(angle)
+        point = (point[0] - math.cos(rad) * 1.25, point[1] - math.sin(rad) * 1.25)
+        size = 1.8 if shark else 1.5 if i < 6 else 1.1
+        layer.ellipse(point[0], point[1], size, size, fur_d if i < 2 else fur)
+        angle += pose.curl * (0.5 if shark else 1.0)
+    tail_tip = point
+    if shark:                                                # a forked shark tail fin at the tip
+        rad = math.radians(angle)
+        bx, by = point
+        nx, ny = -math.sin(rad), math.cos(rad)
+        layer.poly([(bx + nx * 1.5, by + ny * 1.5), (bx - math.cos(rad) * 3 + nx * 3.5, by - math.sin(rad) * 3 + ny * 3.5),
+                    (bx - math.cos(rad) * 1.5, by - math.sin(rad) * 1.5),
+                    (bx - math.cos(rad) * 3 - nx * 3.5, by - math.sin(rad) * 3 - ny * 3.5),
+                    (bx - nx * 1.5, by - ny * 1.5)], fur)
+    elif skin.sakura:
+        layer.ellipse(point[0], point[1], 1.4, 1.4, P.SAKURA_PETAL)
+    back.paste(despeckle(layer).outline())
+
+    def leg(start, spec, colour, paw, on):
+        angle = spec[0] * 0.8
+        foot = end_of(start, angle, 3.2)
+        on.line(start, foot, colour, 4)
+        on.ellipse(foot[0] + 0.5, foot[1], 2.3, 1.4, paw)        # a round paw
+        return foot
+
+    def arm(start, spec, colour, paw, on):
+        hand = end_of(start, spec[0] * 0.9, 3.0 + pose.reach)
+        on.line(start, hand, colour, 3)
+        on.ellipse(hand[0], hand[1], 1.6, 1.6, paw)
+        return hand
+
+    shoulder = along(length + 0.5, 2.8)
+    layer = Canvas(*c.size)
+    leg(along(0.5, -2.4), pose.far_leg, fur_d, white_d, layer)
+    far_hand = arm((shoulder[0] - front[0] * 3, shoulder[1] - front[1] * 3), pose.far_arm, fur_d, white_d, layer)
+    c.paste(despeckle(layer).outline())
+
+    body = Canvas(*c.size)                                   # a short round body
+    centre = along(3.2)
+    body.ellipse(centre[0], centre[1], 6.6, 5.6, fur_d)
+    body.ellipse(centre[0] - 0.5, centre[1] - 0.6, 6.0, 5.0, fur)
+    belly = along(2.6, 2.6)
+    if shark:
+        body.ellipse(belly[0], belly[1] + 0.5, 4.2, 4.0, P.SHARK_BELLY)
+        fin = along(3.5, -2.5)                               # a small side fin
+        body.poly([(fin[0] + 1, fin[1] - 1), (fin[0] - 3, fin[1] + 3), (fin[0] + 2, fin[1] + 2)], P.SHARK_SUIT[2])
+    elif not skin.sakura:
+        body.ellipse(belly[0], belly[1], 3.0, 3.4, white)
+    if cabbage:                                              # leaf layers over the body
+        for d in (1.5, 4.5):
+            p0, p1 = along(d, -5), along(d + 1.5, 1)
+            body.line(p0, p1, P.CABBAGE_SUIT[2])
+        body.line(along(2, -3), along(5, -1), P.CABBAGE_VEIN)
+    c.paste(despeckle(body))
+
+    layer = Canvas(*c.size)
+    leg(along(0.5, 1.0), pose.near_leg, fur, white, layer)
+    c.paste(despeckle(layer).outline())
+
+    near_hand = None
+    if pose.arm_behind:
+        layer = Canvas(*c.size)
+        near_hand = arm(shoulder, pose.near_arm, fur, white, layer)
+        c.paste(layer.outline())
+
+    head = (neck[0] + 1.0 + pose.head_dx, neck[1] + pose.head_dy)
+    x0, y0 = r(head[0] - CHIBI_CENTRE[0]), r(head[1] - CHIBI_CENTRE[1])
+    _stamp(c, _round_face(pose), x0, y0)
+
+    if skin.sakura:                                          # pink scarf with a gold bell
+        c.rect(x0 + 5, y0 + 16, x0 + 16, y0 + 17, P.CAPE)
+        c.rect(x0 + 7, y0 + 16, x0 + 13, y0 + 16, P.CAPE_L)
+        c.rect(x0 + 13, y0 + 18, x0 + 15, y0 + 20, P.GOLD)
+        c.px(x0 + 13, y0 + 18, P.YELLOW)
+        c.px(x0 + 15, y0 + 20, P.GOLD_D)
+    elif cabbage:                                            # a leafy collar
+        c.rect(x0 + 5, y0 + 16, x0 + 16, y0 + 17, P.CAPE)
+        c.rect(x0 + 7, y0 + 16, x0 + 13, y0 + 16, P.CAPE_L)
+
+    if not pose.arm_behind:
+        layer = Canvas(*c.size)
+        near_hand = arm(shoulder, pose.near_arm, fur, white, layer)
+        c.paste(layer.outline())
+    return {"head": (x0 + CHIBI_CENTRE[0], y0 + CHIBI_CENTRE[1] - 6), "neck": neck, "hip": hip,
+            "tail_tip": tail_tip, "near_hand": near_hand, "far_hand": far_hand}
+
+
 def chibi(c: Canvas, pose: HeroPose, cx: float, ground: float) -> dict:
     """Draws the hero facing right; the lowest pixel of its body (not the cape or tail) rests on `ground`
     (minus `pose.lift`)."""
     w, h = c.size
     body = Canvas(w + PAD * 2, h + PAD * 2)
     back = Canvas(w + PAD * 2, h + PAD * 2)
-    joints = _chibi_at(body, back, pose, (cx + PAD - 0.5, PAD + h / 2))
+    draw = _round_at if _SKIN and _SKIN.round else _chibi_at
+    joints = draw(body, back, pose, (cx + PAD - 0.5, PAD + h / 2))
     box = body.img.getbbox()
     dy = r(ground - pose.lift) - (box[3] - 1 - PAD) if box else 0
     back.paste(body)
@@ -1171,7 +1372,13 @@ def screen_poses(hero: Sprite) -> None:
         pose = HeroPose(near_leg=(6, 0), far_leg=(-8, -4), near_arm=(20, 40), far_arm=(-25, 20), lean=-4, lift=up,
                         cape=100 + k * 12, cape_len=14, flap=k * 1.6, ripple=22, tail=-20 + up * 25, curl=16,
                         eye="happy", smile=True)
-        cheer.append(hero_frame(pose, extras=[raised_paw(up)]))
+        if _SKIN and _SKIN.round:                            # a victory leap on the round body
+            hop = (0, 1, 2, 1)[k]
+            pose = replace(pose, lift=hop, near_arm=(128 + k * 3, 0), far_arm=(-40, -20), arm_behind=True, reach=10,
+                           near_leg=(55, -20) if hop else (6, 0), far_leg=(40, -30) if hop else (-8, -4))
+            cheer.append(hero_frame(pose))
+        else:
+            cheer.append(hero_frame(pose, extras=[raised_paw(up)]))
     hero.add("cheer", cheer, fps=8)
 
     # Sitting on its haunches, paws together in front, "^ ^" eyes and a smile; the tail swishes along the
@@ -1249,6 +1456,11 @@ assert all(len(row) == 22 for row in MENU_HEAD)
 
 
 def menu_frame(k: int) -> Image.Image:
+    if _SKIN and _SKIN.round:                                # the costume skins sit on their round body
+        return hero_frame(HeroPose(near_leg=(70, 0), far_leg=(55, 0), near_arm=(12, 0), far_arm=(4, 0), lean=-4,
+                                   cape=78 + (0, 14, 0, 4)[k], cape_len=13, flap=k * 1.6, ripple=14,
+                                   tail=(-40, -40, -40, -20)[k], curl=(16, 16, 16, 24)[k],
+                                   eye="shut" if k == 2 else "open", smile=True))
     """The start-screen pose: a compact cat crouched low, three-quarter view facing right, its big head over a
     short round body; two short white-pawed front legs side by side, the hind foot tucked at the back, the
     tail curling behind the cape, which billows up and back to the left. Built from separately outlined parts;
@@ -1339,6 +1551,10 @@ def menu_frame(k: int) -> Image.Image:
 
 
 def ko_frame(k: int) -> Image.Image:
+    if _SKIN and _SKIN.round:                                # lying flat on the round body
+        return hero_frame(HeroPose(near_leg=(-90, -92 + k * 8), far_leg=(-80, -86), near_arm=(85, 90),
+                                   far_arm=(80, 85), lean=90, length=1, head_dy=2, cape=96, cape_len=10, ripple=4,
+                                   tail=-4 + k * 5, curl=6, eye="x", tongue=True), dx=-3)
     """The knocked-out cat, about 40 px long, built from separately outlined parts so each one reads: tail,
     hind leg, body, cape, head (the HEAD grid with its ears up)."""
     fur, fur_l, fur_d, stripe = P.GINGER, P.GINGER_L, P.GINGER_D, P.GINGER_DD
