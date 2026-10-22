@@ -181,6 +181,8 @@ struct CatsScreen: View {
         if current.owned {
             PrimaryButton(title: model.ui("select"), height: 52, fontSize: 24) {
                 data.select(current.id)
+                // Back to the start page, where the chosen cat now stands.
+                onBack()
             }
             .disabled(current.id == data.selected)
             .opacity(current.id == data.selected ? 0.7 : 1)
@@ -211,6 +213,8 @@ struct CatsScreen: View {
                         Task { @MainActor in
                             try? await Task.sleep(for: .seconds(0.9))
                             if sparkle == shown { sparkle = nil }
+                            // After the unlock sparkle, back to the start page with the new cat.
+                            onBack()
                         }
                     }
                 } label: {
