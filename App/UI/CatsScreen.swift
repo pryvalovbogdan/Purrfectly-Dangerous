@@ -46,7 +46,7 @@ struct CatsScreen: View {
         let sceneHeight = size.height - ground - insets.top
         return VStack(spacing: 0) {
             topBar(data: data)
-                .padding(.top, insets.top + 6)
+                .padding(.top, insets.top + MenuView.topBarInset)
             VStack(spacing: 4) {
                 Image("title_cats")
                     .resizable().interpolation(.high).scaledToFit()
@@ -96,7 +96,7 @@ struct CatsScreen: View {
             .background(Color.menuInk.opacity(0.55), in: PixelRect(step: 4))
             .frame(width: right)
         }
-        .padding(.top, insets.top + 8)
+        .padding(.top, insets.top + MenuView.topBarInset)
         .padding(.bottom, max(insets.bottom, 8))
         .padding(.leading, leading)
         .padding(.trailing, trailing)

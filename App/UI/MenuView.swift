@@ -27,14 +27,14 @@ struct MenuView: View {
                 }
             }
             ScreenFrame { _, insets in
-                // Beside the Dynamic Island or notch (the status bar is hidden), else under the safe area:
-                // the fish wallet at the left, sound at the right.
-                HStack(alignment: .top) {
+                // A little below the safe area's top edge, level with each other: the fish wallet at the
+                // left, sound at the right. The logo's cat ears are in the middle, between them.
+                HStack(alignment: .center) {
                     FishWallet(amount: model.fishWallet)
                     Spacer()
                     SoundButton()
                 }
-                .padding(.top, max(14, insets.top - 44))
+                .padding(.top, insets.top + Self.topBarInset)
                 .padding(.leading, max(insets.leading, 14))
                 .padding(.trailing, max(insets.trailing, 14))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -113,6 +113,9 @@ struct MenuView: View {
     private static let rowGap: CGFloat = 12
     private static let tallTitleShare: CGFloat = 0.94
     private static let wideTitleShare: CGFloat = 0.4
+    /// Space between the safe area's top edge and the wallet and sound buttons (the CATS screen's top
+    /// bar uses the same).
+    static let topBarInset: CGFloat = 14
     /// Space kept between the safe area's top and the cat's ear tips.
     private static let titleClearance: CGFloat = 24
     /// Space between the tagline and the scene's tree tops, when the title block is short enough.
