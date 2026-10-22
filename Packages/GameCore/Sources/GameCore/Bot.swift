@@ -138,6 +138,17 @@ public struct Bot: Sendable {
         world.hazards.contains { $0.x - world.distance > -10 && $0.x - world.distance < 160 }
     }
 
+    /// Whether running on for one more frame still leaves a move that survives.
+    static func canWait(_ world: RunnerWorld, dt: Double, options: (RunnerWorld) -> [BotPlan]) -> Bool {
+        var next = world
+        for event in next.step(baseInput(world), dt: dt) {
+            if case .heroHit = event { return false }
+            if case .heroDied = event { return false }
+        }
+        guard next.onGround, !next.isOver else { return false }
+        return options(next).contains { survives(next, plan: $0, horizon: 1.3, dt: dt) }
+    }
+
     /// How far ahead, in seconds, the bot looks for a threat before it acts.
     static let reactionTime = 0.45
 
@@ -203,7 +214,14 @@ public struct Bot: Sendable {
             // itself looks ahead) than one that lands right in front of it.
             chosen = options.first {
                 Self.outcome(world, plan: $0, horizon: 1.3 + Self.reactionTime, dt: dt, afterLanding: Self.reactionTime).safe
-            } ?? options.first { Self.survives(world, plan: $0, horizon: 1.3, dt: dt) }
+            }
+            if chosen == nil, let fallback = options.first(where: { Self.survives(world, plan: $0, horizon: 1.3, dt: dt) }) {
+                // Every move that survives now lands too close to the next thing (a shot, then the
+                // crystal that fired it). A later move may land better: wait a frame, but only if a
+                // move that survives is sure to be there then too.
+                if Self.canWait(world, dt: dt, options: candidates(for:)) { return base }
+                chosen = fallback
+            }
         }
         guard let chosen else { return base }
         plan = chosen

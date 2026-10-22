@@ -1525,8 +1525,8 @@ final class GameScene: SKScene {
         "boss_icedragon": ["shard_fan": "shards", "freezing_breath": "breath", "dive": "dive", "*": "breath"],
         "boss_phantom": ["summon_ghosts": "summon", "spectral_waves": "teleport", "split": "split", "*": "summon"],
         "boss_mecha": ["rockets": "rockets", "tail_sweep": "tail", "core_barrage": "core", "*": "rockets"],
-        "boss_voidcat": ["shadow_paws": "paws", "star_fall": "stars", "portal_paws": "portal", "final_swipe": "swipe",
-                         "*": "attack"],
+        "boss_voidcat": ["shadow_paws": "paws", "star_fall": "stars", "portal_paws": "portal",
+                         "portal_shards": "portal", "phase_rush": "phase", "phase_storm": "phase", "*": "attack"],
     ]
 
     private func attackAnimation(boss: String, attack: String) -> String {
