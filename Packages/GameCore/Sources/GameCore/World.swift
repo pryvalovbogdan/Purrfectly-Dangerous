@@ -208,7 +208,7 @@ public struct Entity: Sendable, Equatable, Identifiable {
 
     /// The blade zone in front of the body, on the side it walks toward (see `ReachSpec`).
     public var reachBox: AABB? {
-        guard let reach = kind.spec.reach else { return nil }
+        guard let reach = kind.spec.reach, !reach.whileLunging || state == .active else { return nil }
         let half = kind.spec.width / 2
         let center = reversed ? x + half + reach.width / 2 : x - half - reach.width / 2
         return AABB(centerX: center, bottom: y, width: reach.width, height: reach.height)
@@ -249,6 +249,8 @@ public struct Entity: Sendable, Equatable, Identifiable {
     public var walks: Bool {
         if kind.spec.fall?.walksOnLanding == true { return state == .landed && kind.spec.velocity != 0 }
         if kind.spec.wake != nil { return state == .active && kind.spec.velocity != 0 }
+        // A roller that waits still until it curls walks (rolls) once curled.
+        if state == .curled, kind.spec.rollSpeed != nil, kind.spec.baseY == 0, kind.spec.flight == nil { return true }
         return kind.walks
     }
 
@@ -395,6 +397,8 @@ public enum GameEvent: Sendable, Equatable {
     /// A fuse was lit (it flashes), and it burst into a ring of fire.
     case fuseLit(id: Int)
     case exploded(id: Int)
+    /// A feinting creature turned and lunged (the sakura bunny's crescent swipe).
+    case lunged(id: Int)
     /// A thrower summoned a creature instead of throwing (the void mage).
     case summoned(id: Int)
     /// A boss opened a portal pair; yarn went through one.
@@ -546,6 +550,10 @@ public struct RunnerWorld: Sendable {
         ground.height(at: x)
     }
 
+    /// Where ledge `index` is now: its left end and its top (a moving one swings on the world clock).
+    public func platformLeft(_ index: Int) -> Double { platforms[index].left(at: time) }
+    public func platformTop(_ index: Int) -> Double { platforms[index].top(at: time) }
+
     public func platformState(_ index: Int) -> PlatformState {
         let platform = platforms[index]
         switch platform.mode {
@@ -554,6 +562,8 @@ public struct RunnerWorld: Sendable {
         case .crumbles:
             guard let landed = platformLanded[index] else { return .solid }
             return time - landed < (platform.crumbleAfter ?? Platform.defaultCrumbleAfter) ? .crumbling : .gone
+        case .moves:
+            return .solid
         case .blinks:
             let cycle = platform.cycle
             let phase = (time + (platform.offset ?? 0)).truncatingRemainder(dividingBy: cycle.period)
@@ -697,8 +707,14 @@ public struct RunnerWorld: Sendable {
         advance(dt: dt, events: &events)
 
         if onGround {
+            if let index = standingOn, platforms[index].mode == .moves {
+                // Riding a moving ledge: carried along with it, up, down or sideways.
+                let platform = platforms[index]
+                distance += platform.left(at: time) - platform.left(at: time - dt)
+                heroY = platform.top(at: time)
+            }
             if let index = standingOn {
-                if !platforms[index].spans(distance) || !platformHolds(index) {
+                if !platforms[index].spans(distance, at: time) || !platformHolds(index) {
                     // Off the end of the ledge, or it gave way: falling, with only a Double Pounce left.
                     onGround = false
                     offEdge = true
@@ -766,9 +782,10 @@ public struct RunnerWorld: Sendable {
         var best: (index: Int?, top: Double)?
         for index in platforms.indices {
             let platform = platforms[index]
-            guard platform.spans(distance), platform.y <= previous + 0.001, platform.y >= heroY,
-                  platformHolds(index), platform.y > (best?.top ?? -.infinity) else { continue }
-            best = (index, platform.y)
+            let top = platform.top(at: time)
+            guard platform.spans(distance, at: time), platform.top(at: time - dt) <= previous + 0.001, top >= heroY,
+                  platformHolds(index), top > (best?.top ?? -.infinity) else { continue }
+            best = (index, top)
         }
         let groundFloor = self.floor
         if best == nil, let groundFloor, heroY <= groundFloor { best = (nil, groundFloor) }
@@ -880,7 +897,12 @@ public struct RunnerWorld: Sendable {
             var entity = entities[index]
             let spec = entity.kind.spec
             // A curled roller rolls at its own speed; anything hanging on a thread stays put.
-            let speed = entity.state == .curled ? (spec.rollSpeed ?? spec.velocity) : spec.velocity
+            var speed = entity.state == .curled ? (spec.rollSpeed ?? spec.velocity) : spec.velocity
+            if let feint = spec.feint {
+                // Backing off (away from the hero, slower), then lunging.
+                if entity.state == .warning { speed = feint.backsOff ? -spec.velocity / 2 : 0 }
+                if entity.state == .active { speed = feint.lungeSpeed }
+            }
             let pausing = spec.burst.map { !$0.isMoving(at: time + entity.cycleOffset) } ?? false
             let still = entity.isHanging || entity.isDormant || entity.state == .leaping || pausing
             let velocity = still ? 0 : (entity.reversed ? -speed : speed)
@@ -929,6 +951,13 @@ public struct RunnerWorld: Sendable {
             if let wake = spec.wake {
                 updateWaker(&entity, wake: wake, gap: gap, dt: dt, events: &events)
             }
+            if let pendulum = spec.pendulum {
+                // The weight on its rope, hanging from the pivot above where it was placed.
+                let angle = pendulum.angle(at: time + entity.cycleOffset)
+                let pivot = groundHeight(at: entity.home) + pendulum.pivot
+                entity.x = entity.home - pendulum.length * sin(angle)
+                entity.y = pivot - pendulum.length * cos(angle) - spec.height / 2
+            }
             if let keep = spec.keepAhead, entity.heldFor < keep.duration, entity.x - distance <= keep.distance {
                 // Keeping its distance, moving with the hero, until its time is up.
                 entity.x = distance + keep.distance
@@ -940,6 +969,21 @@ public struct RunnerWorld: Sendable {
             }
             if let fuse = spec.fuse {
                 updateFuse(&entity, fuse: fuse, gap: gap, dt: dt, events: &events)
+            }
+            if let feint = spec.feint {
+                switch entity.state {
+                case .idle where gap < feint.trigger:
+                    entity.state = .warning
+                    entity.timer = feint.backFor
+                case .warning:
+                    entity.timer -= dt
+                    if entity.timer <= 0 {
+                        entity.state = .active
+                        events.append(.lunged(id: entity.id))
+                    }
+                default:
+                    break
+                }
             }
             if let throwing = spec.throwing, !throwing.onCycleOpen {
                 // A phasing ghost only throws while it is there.
@@ -968,6 +1012,17 @@ public struct RunnerWorld: Sendable {
     }
 
     private mutating func launch(_ throwing: ThrowSpec, from entity: Entity, events: inout [GameEvent]) {
+        if let fan = throwing.fan {
+            // A fan of lobs, each with its own speed and upward kick.
+            let y = throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y
+            for shot in fan {
+                hazards.append(Hazard(id: takeID(), kind: throwing.projectile, x: entity.x - 10, y: y,
+                                      width: throwing.width, height: throwing.height, vx: -shot.speed, arm: 0,
+                                      vy: shot.lift, gravity: tuning.lobGravity, fades: throwing.fades))
+            }
+            events.append(.threw(id: entity.id))
+            return
+        }
         hazards.append(Hazard(id: takeID(), kind: throwing.projectile, x: entity.x - 10,
                               y: throwing.y.map { groundHeight(at: entity.x) + $0 } ?? entity.y,
                               width: throwing.width, height: throwing.height,
@@ -1124,9 +1179,15 @@ public struct RunnerWorld: Sendable {
                     entity.y = floor
                     entity.vy = 0
                     entity.state = .landed
+                    entity.timer = fall.lingers ?? 0
                     events.append(fall.walksOnLanding ? .droppedDown(id: entity.id) : .shattered(id: entity.id))
                 }
             }
+        case .landed:
+            // A hot patch burns out (no reward: nothing was defeated).
+            guard fall.lingers != nil else { break }
+            entity.timer -= dt
+            if entity.timer <= 0 { entity.hp = 0 }
         default:
             break
         }

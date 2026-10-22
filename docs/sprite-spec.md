@@ -131,10 +131,28 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | void_wisp | 50×54 | idle 2, move 4, attack 3 (swell, launch a homing orb, recover), hit 2, death 4 (rises and fades). The fire wisp's build as a pink-white spirit flame with a cat face; body bottom on row 33, x 25; 14×14 hitbox |
 | homing_orb | 14×12 | fly 4. Bright orb about 10×10 with a curling trail |
 | mini_void_cat | 56×34 | idle 2, teleport 4, attack 4 (crouch, dash, big magenta crescent slash, recover), hit 2, death 4. The shadow cat's build in void colours: black cat with a magenta rim, glowing eyes and violet smoke; feet on row 31, x 26; 18×20 hitbox |
+| sakura_slime | 34×28 | idle 2, walk 4, attack 3 (squash, spring with a puff of petals, settle), hurt 2, death 4 (melts in petals). Glossy pink dome with a blossom on its crown; feet on row 25, x 17; 20×14 hitbox |
+| sakura_bunny | 44×36 | idle 2, walk 4 (hops), run 4 (stretched leaps, petal trail), attack 4 (crouch, lunge, swipe with a pink crescent, land), hurt 2, death 4 (lies down, petals). White bunny with pink-lined ears and a blossom at its neck; feet on row 33, x 18; 18×20 hitbox |
+| lantern_spirit | 34×38 | idle 2, float 4 (blossoms circling), attack 3 (glows, fires a blossom shot, settle), hurt 2, death 4. Glowing paper lantern with a cute face, lacquered cap and base and a red bow with tassels; tassel ends on row 34, x 17; 16×18 hitbox |
+| blossom_shot | 12×12 | fly 4. Glowing pink blossom about 10×10, turning |
+| bird_crow | 48×34 | fly 4, attack 3 (wings up, dive with pink speed lines and petals, pull out), hurt 2, death 4. Dark purple crow with pink-tipped feathers and a pink flower on its head; feet on row 27, x 22 (the dive drops it a few rows); 18×14 hitbox |
+| spike_plant | 36×32 | idle 2 (closed pointed bud), open 2 (petals parting to a glowing heart with a face), attack 3 (spits a blossom shot), hurt 2, death 4. Pink lotus on broad green leaves; leaves on row 29, x 16; 18×20 hitbox |
+| rolling_onigiri | 44×28 | idle 2, roll 4 (turning, petal dust behind), attack 4 (squash, charge rolling with speed streaks and dust, stop), hurt 2, death 4. Rice ball with a nori wrap, a face and a pink blossom on top; bottom on row 25, x 22; 18×16 hitbox |
+| sakura_spirit | 24×24 | float 4, death 3. A tiny fox-spirit flame (summoned by the boss, as on the boss sheet): pink flame licks streaming back from a little fox head with pointed ears and a dark eye, a soft pink glow; lowest pixel on row 20, x 12; 12×12 hitbox |
+| lantern_slime | 34×32 | idle 2, walk 4 (hops), attack 3 (squash, bounce with a pink swoosh, land), hurt 2, death 4. Glowing paper lantern sitting like a slime: red pagoda cap with a gold knob, a red blossom painted on the paper (a face when hurt), a pink blossom on the cap; rim on row 30, x 17; 20×16 hitbox |
+| lantern_flame | 12×12 | fly 4. Small orange flame about 10×10 |
+| ninja_tanuki | 48×40 | idle 2, walk 4, attack 4 (sword raised twice, slash with a pink crescent, follow through), hurt 2, death 4. Grey tanuki in a navy gi with a dark eye mask, red scarf, wide straw hat with a blossom, ringed tail; feet on row 37, x 18; 18×22 hitbox |
+| sakura_bat | 46×32 | fly 4, attack 3 (wings up, dive with pink streaks and petals, pull up), hurt 2, death 3. Cream bat with pink-red wings and a blossom between its ears; feet on row 25, x 23; 18×14 hitbox |
+| shadow_spirit | 38×38 | idle 2, cast 3 (claw raised, pink flame gathering), attack 3 (flame flung, homing), hurt 2, death 4 (rises away). Navy cloak of shadow trailing wisps, a pale slit-eyed mask with a red stripe, a blossom in its hood; lowest wisp on row 36, x 17; 16×20 hitbox |
+| spirit_flame | 14×12 | fly 4. Homing pink fireball about 12×10 with a hot pale core |
+| spike_kappa | 40×32 | closed 2 (mossy stone shell ringed with blossoms), open 2 (a dark mouth with a pink flame, then a pink lotus spread on the mossy rim), attack 3 (mouth open, throws spike balls), hurt 2, death 4. Rim on row 30, x 19; 22×18 hitbox |
+| spike_ball | 12×12 | fly 4. Pink ball with eight spikes, about 10×10, turning |
 | gear | 30×30 | spin 4 |
 | crate_wall | 24×124 | still 1, break 5 |
 | boss_mecha | 168×124 | idle 4, rockets 6, tail 6, core 4 (chest open), hurt 2, death 8 |
 | boss_voidcat | 170×140 | idle 4, paws 8 (both paws rear up, then slam down one after the other with shadow smoke bursting on the ground), stars 6 (right paw raised, stars gathering round it and streaking up), portal 6 (the chest portal yawns open, small portals open on the ground at its sides), phase 6 (the final phase: the body flares bright, the eyes blaze; loops), swipe 6 (one big claw swipe across: paw raised, raked down through a magenta crescent; not looping), hurt 2, death 10 (dissolves into stars drifting up). The final boss, after the giant cat in `docs/concept/Void Cat Final Boss Tileset.png`: a front-facing cat of black-violet smoke with a starfield inside, blazing white-violet slanted eyes, two huge paws with crescent claws and a magenta portal in its chest; a 1 px magenta rim and a violet glow so it reads on the dark purple backdrop. Ground row 136, x 85; suggested hitbox 60×90 on the ground (baseY 0): the body column from the feet to the eyes, the paws and ears stick out |
+| boss_kitsune | 150×120 | idle 4 (sitting, tails sway, petals drift, blinks), walk 6 (on all fours; the engine may not use it), claw 6 (crouch, lunge with the forepaw thrust out through a big magenta crescent, the crescent breaks into petals; GameScene plays it for `claw_slash` as `claw`), bloom 6 (crouch, a glowing blossom gathers at the mouth and bursts with petals), summon 6 (a pink swirl round it, fox-spirit flames appear), hurt 2 (pink flash that keeps the outline), death 8 (sinks, lies flat, collapses into a heap of petals that blows away). The Blossom Kitsune Guardian, after `docs/concept/Sakura Fox Boss Sprite Sheet.png`: a white fox in soft cream fur shaded pink, three big fluffy tails tipped pink and magenta, branching brown antlers flowering with blossoms, purple ear insides, a magenta forehead mark, a narrow pink eye with a purple line, a dark purple scarf with a gold rope, a gold bell and red tassels, a pink blossom spot on the haunch, petals everywhere and a dark navy outline (`KT_LINE`). Ground row 116, x 72; suggested hitbox 50×70 on the ground (baseY 0): haunch, chest and neck; tails, antlers and muzzle stick out |
+| boss_toad | 150×120 | idle 4 (throat puffing, the lantern flickering, blinks), tongue 6 (rears back, the long tongue lashes forward and down to the ground, then snaps back; GameScene plays it for `tongue_strike`), lanterns 6 (the lantern flares, it spits a paper lantern that leaves the mouth arcing up; GameScene plays it for `lantern_arc` as `lanterns`), slam 8 (crouch, leap 18 px, slam down flattened while rocks and pink flame-plumes of blossom energy burst up round it, recover), hurt 2 (white flash that keeps the outline), death 8 (sags flat, the stone lantern topples off and goes out, fades into petals). The Lantern Toad Guardian of the Sakura route level 2 (no boss sheet; designed for `docs/concept/Sakura World Level 2 Tileset Sheet.png`): a big round toad, moss-green on top and teal underneath, rim-lit warm by the sunset, a cream belly and throat, warts and blossoms on its back, big golden eyes, a red rope collar wrapped in gold with white paper streamers, and a stone shrine lantern with a glowing window on its head; dark outline `TD_LINE`. Ground row 116, x 66; suggested hitbox 60×60 on the ground (baseY 0), as Bosses.json has it: body and head; the lantern, hind foot and tongue stick out |
 | portal | 26×36 | open 4 (loop; a swirling magenta portal, an upright oval about 16×28, 20×32 with its glow, standing on its bottom row, centred), close 4 (not looping; shrinks down onto its bottom row to a last spark). The boss portals the engine draws; uses the Void Cat's `ring` drawing |
 | fish | 16×12 | spin 6 |
 | yarn_basket | 28×28 | glow 4 |
@@ -186,7 +204,14 @@ yarn); and a `hazard_<kind>` sprite with a `fly` animation for every hazard kind
 `giant_acorn`, `shockwave` and `rocket` for the attacks the design describes; for the Void Cat, `shadow_paw`
 (40×14, a smoky paw raking low along the ground, claws first, 4 frames), `falling_star` (12×16, a star with its
 trail above it, 4), `portal_ring` (24×24, a swirling magenta ring, 4), `void_wave` (20×10, a low smoke wave with a
-lit crest, 3) and `star_shard` (12×8, a white-violet shard flying point first, 2). Hazards lead with their left edge
+lit crest, 3) and `star_shard` (12×8, a white-violet shard flying point first, 2); for the Blossom Kitsune,
+`bloom_shot` and `bloom_shot_high` (12×12 for a 10×10 hitbox: a glowing pale five-petal blossom with a magenta heart
+and a pulsing pink glow, 4; the high one sparkles) and `claw_slash` (28×14 for 26×12: a magenta crescent with a bright
+core and pink glow raking along the ground, convex edge first, petals flying off behind, 3); for the Lantern Toad,
+`lantern_shot` and `lantern_shot_high` (12×12 for 10×10: a red paper lantern with gold caps and a lit middle, embers
+behind, 4; the high one sparkles), `slam_rock` (14×14 for 12×12: a mossy stone dropping with pink energy above it, 4),
+`slam_wave` (18×12 for 16×10: a low burst of dust and pink energy, 3) and `toad_tongue` (42×12 for 40×10: the long pink
+tongue with its round sticky tip leading on the left, 2). Hazards lead with their left edge
 (they travel toward the kitten) and their frame bottom is the hitbox bottom.
 
 Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, stretched across the screen) and
@@ -270,6 +295,42 @@ in the vines' slot. The terrain (`terrain_void_*`) has crystal undersides, and `
 (MenuScene builds `LevelBackdrop` for the level's theme), so they need no extra art.
 `test_every_theme_has_its_whole_set` checks that every theme has the whole set.
 
+Sakura's Blossom Path (theme `sakura`) is drawn in `characters/sakura_world.py`, after
+`docs/concept/Sakura Pixel Art Game Tileset.png`, with the same names, sizes and contracts as the forest.
+- **Parallax:** a blue-violet sky, and pink-tinged cumulus with falling petals in `puffs` and `clouds` (never in front
+  of play). The `far` layer has a snow-capped pink-violet mountain, pagodas on misty cliffs and waterfalls. The `near`
+  layer has a band of blossom, cherry trees in bloom, a red torii gate with a lantern and stone lanterns. `bushes` are
+  pink-blossom bushes with small paper lanterns.
+- **Recoloured from the forest:** the ground, the terrain, `island_sakura` and the pit's stonework, rim and vines are
+  the forest's own generated tiles under a fixed palette map (cobbles to grey-purple, flowers to blossom), with petals
+  added on the grass at wrapped positions. So their tiling and seams are exactly the forest's. The pit's water is the
+  forest's blue.
+- `bridge_sakura` (48×12, still + crumble 4) has red-lacquered planks on an arched red beam; the walk surface is the
+  top row.
+- `platform_sakura_moving` (48×12, still 1) is a wooden plank platform on two short posts; the walk surface is the top
+  row.
+- `bamboo_spikes` (22×20; idle 1, warn 2, rise 3; feet on row 19, x 11) is cut bamboo in a stone kerb: stubs at
+  rest, rattling up when it warns, sharp spears up to about 16 px in `rise`.
+
+Sakura's route level 2, "Petal Bridges" (theme `sakura_dusk`), is drawn in `characters/sakura_dusk.py`, after
+`docs/concept/Sakura World Level 2 Tileset Sheet.png`. It is a sunset cliffside town with the same names, sizes and
+contracts as the other themes.
+- **Parallax:** a violet → pink → peach sky, and a big setting sun with pink clouds in `bg_sakura_dusk_clouds`. `far`
+  has misty violet mountains and distant pagodas. `near` has misted cliffs with houses and a temple glowing warm,
+  waterfalls between them, cherry trees, a torii and strings of paper lanterns between posts. `bushes` are the sakura
+  bushes in the sunset light.
+- **Recoloured from `sakura`:** the ground, terrain, island and pit stonework are sakura's generated pieces with
+  warmer dusk stone and moss, and the falls' foam is tinted peach.
+- **Platforms:** `bridge_sakura_dusk` (48×12, still + crumble 4) is the red arched bridge with two paper lanterns
+  hanging under the deck. `platform_sakura_dusk_moving` (48×12, still 1) is the plank platform with two hanging
+  lanterns. The walk surface is the top row of both.
+- **Hazard props:**
+  - `lantern_pendulum` (20×40, swing 8 at 8 fps) is a big paper lantern hanging straight down from its rope's top at
+    x 10, row 0 (the pivot to rotate about). Its flame flickers, its glow breathes and its tassel sways.
+  - `falling_lantern` (14×18; hang 2, fall 2, burn 4) is a small lantern on a cord, then dropping and tipping with the
+    cord snapped, then a small flame patch on its bottom row once it lands.
+- **Glows:** every lantern glow is a separate unoutlined layer composited under the outlined lantern.
+
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
 
 The jump buttons (`characters/buttons.py`) follow `docs/concept/Pixel Art Jump Button UI Sheet.png` (top row); the paw is pixel-identical in every button (the pressed ones shift it down 1 px), so swapping states never jumps. The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
@@ -293,7 +354,8 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. The forest critters (`forest_critters.py`), the void critters (`void_critters.py`; the bat, hound, wisp and mini
+afterwards. The forest critters (`forest_critters.py`), the sakura critters (`sakura_critters.py`, level 2 in `sakura_dusk_critters.py`; hurt instead of hit,
+petals and glowing blossoms for effects), the void critters (`void_critters.py`; the bat, hound, wisp and mini
 void cat recolour the citadel and museum builds colour-for-colour), the citadel critters (`citadel_critters.py`; black stone with an ember
 rim from `critters.rim`, lava ramping to a white-hot core), the haunted critters (`haunted_critters.py`; spirits are see-through
 with a bright outline, magic is magenta) and the frost critters (`frost_critters.py`; slash arcs are glowing ice

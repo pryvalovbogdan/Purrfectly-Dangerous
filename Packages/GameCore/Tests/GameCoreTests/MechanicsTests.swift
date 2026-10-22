@@ -1673,6 +1673,284 @@ import Testing
         #expect(LevelValidator.botRun(voidLevel(items, length: 4000), boss: nil).finished)
     }
 
+    // MARK: - Sakura route creatures (Sakura World level 1 sheet)
+
+    static let sakuraCreatures: [ItemKind] = [.sakuraSlime, .sakuraBunny, .lanternSpirit, .birdCrow, .spikePlant,
+                                              .rollingOnigiri, .bambooSpikes]
+
+    @Test func sakuraCreaturesHaveTheirIdsAndHitboxes() {
+        let expected: [(ItemKind, String, Double, Double, Int)] = [
+            (.sakuraSlime, "sakura_slime", 20, 14, 10), (.sakuraBunny, "sakura_bunny", 18, 20, 20),
+            (.lanternSpirit, "lantern_spirit", 16, 18, 20), (.birdCrow, "bird_crow", 18, 14, 15),
+            (.spikePlant, "spike_plant", 18, 20, 20), (.rollingOnigiri, "rolling_onigiri", 18, 16, 15),
+            (.bambooSpikes, "bamboo_spikes", 20, 18, 0),
+        ]
+        for (kind, id, width, height, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+        }
+        #expect(ItemKind.spikePlant.spec.hp == 2)
+        #expect(ItemKind(rawValue: "sakura_spirit") != nil)
+    }
+
+    @Test func sakuraSlimeShufflesInAndAStompKillsIt() throws {
+        let burst = try #require(ItemKind.sakuraSlime.spec.burst)
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 700, kind: .sakuraSlime)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        var moved = false, stood = false
+        for _ in 0..<120 {
+            let before = world.entities.first?.x ?? 0
+            _ = world.step(Input(), dt: dt)
+            let step = before - (world.entities.first?.x ?? before)
+            if burst.isMoving(at: world.time) { moved = moved || step > 0 } else { stood = stood || step == 0 }
+        }
+        #expect(moved && stood)
+        #expect(stompAttempts(.sakuraSlime).contains { defeated($0, .sakuraSlime) && !hit($0) })
+    }
+
+    @Test func sakuraBunnyHopsBackOnceThenLungesWithASwipe() throws {
+        let feint = try #require(ItemKind.sakuraBunny.spec.feint)
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 800, kind: .sakuraBunny)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.reachBox == nil)
+        advance(&world) { $0.entities.first?.state == .warning }
+        #expect(gap(world, .sakuraBunny) <= feint.trigger)
+        // Backing off: it moves away from the kitten.
+        let backing = try #require(world.entities.first?.x)
+        world.run(0.1)
+        #expect((world.entities.first?.x ?? 0) > backing)
+        let events = advance(&world, limit: 1) { $0.entities.first?.state == .active }
+        #expect(events.contains { if case .lunged = $0 { true } else { false } })
+        // Lunging: fast, with the crescent swipe out in front.
+        let lunge = try #require(world.entities.first)
+        let swipe = try #require(lunge.reachBox)
+        #expect(swipe.maxX <= lunge.box.minX)
+        world.run(0.1)
+        #expect(lunge.x - (world.entities.first?.x ?? lunge.x) > 0.1 * abs(feint.lungeSpeed) - 1)
+        // It turns only once.
+        #expect(!advance(&world, limit: 2) { _ in false }.contains { if case .lunged = $0 { true } else { false } })
+        #expect(stompAttempts(.sakuraBunny).contains { defeated($0, .sakuraBunny) })
+    }
+
+    @Test func lanternSpiritHoversAndSendsSlowBlossomShotsLow() throws {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 700, kind: .lanternSpirit)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 36)
+        advance(&world) { !$0.hazards.isEmpty }
+        let shot = try #require(world.hazards.first)
+        #expect(shot.kind == "blossom_shot" && shot.y == 4 && shot.gravity == 0)
+        #expect(ItemKind.lanternSpirit.spec.throwing?.interval == 2.4)
+        #expect(-shot.vx <= 80)
+    }
+
+    @Test func birdCrowDivesAllTheWayToTheGround() {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 700, kind: .birdCrow)]), boss: nil)
+        var lowest = Double.infinity, highest = 0.0
+        var events: [GameEvent] = []
+        while world.time < 7, !world.isOver {
+            events += world.step(Input(), dt: dt)
+            if let crow = world.entities.first(where: { $0.kind == .birdCrow }) {
+                lowest = min(lowest, crow.y)
+                highest = max(highest, crow.y)
+            }
+        }
+        #expect(lowest == 0)
+        #expect(highest > 40)
+        // It ends low: a kitten that never jumps is hit.
+        #expect(hit(events))
+    }
+
+    @Test func spikePlantSpitsABlossomShotEachTimeItOpens() throws {
+        #expect(ItemKind.spikePlant.spec.cycle != nil)
+        #expect(ItemKind.spikePlant.spec.throwing?.onCycleOpen == true)
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 700, kind: .spikePlant)]), boss: nil)
+        let events = advance(&world) { !$0.hazards.isEmpty }
+        #expect(events.contains { if case .trapFired = $0 { true } else { false } })
+        #expect(world.hazards.first?.kind == "blossom_shot" && world.hazards.first?.y == 4)
+    }
+
+    @Test func rollingOnigiriWaitsThenCurlsAndRollsInFast() throws {
+        var world = RunnerWorld(level: flatLevel(items: [.init(at: 700, kind: .rollingOnigiri)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        let waiting = try #require(world.entities.first?.x)
+        world.run(0.5)
+        #expect(world.entities.first?.x == waiting)
+        advance(&world) { $0.entities.first?.state == .curled }
+        let curled = try #require(world.entities.first?.x)
+        world.run(0.1)
+        #expect(curled - (world.entities.first?.x ?? curled) > 10)
+        #expect(world.entities.first?.walks == true)
+    }
+
+    @Test func bambooSpikesRiseOnARhythmAndAreLow() throws {
+        let cycle = try #require(ItemKind.bambooSpikes.spec.cycle)
+        #expect(ItemKind.bambooSpikes.spec.height < world().tuning.jumpApex)
+        let results = stride(from: 0.0, to: cycle.period, by: 0.1).map { offset -> Bool in
+            var world = RunnerWorld(level: flatLevel(items: [.init(at: 300, kind: .bambooSpikes, cycleOffset: offset)]),
+                                    boss: nil)
+            return hit(world.run(4))
+        }
+        #expect(results.contains(true) && results.contains(false))
+    }
+
+    func world() -> RunnerWorld { RunnerWorld(level: flatLevel(), boss: nil) }
+
+    @Test(arguments: MechanicsTests.sakuraCreatures + [.sakuraSpirit])
+    func botClearsEachSakuraCreatureWithoutAHit(kind: ItemKind) {
+        let level = flatLevel(items: [.init(at: 400, kind: kind), .init(at: 850, kind: kind)], length: 1300)
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
+    // MARK: - Sakura route, Petal Bridges (Sakura World level 2 sheet)
+
+    static let duskCreatures: [ItemKind] = [.lanternSlime, .ninjaTanuki, .sakuraBat, .shadowSpirit, .spikeKappa,
+                                            .lanternPendulum, .fallingLantern]
+
+    /// A flat test level at Petal Bridges' speed, with Double Pounce (Sakura arrives with it).
+    func duskLevel(_ items: [PlacedItem], length: Double = 2000, entry: Int = 3) -> LevelDefinition {
+        var level = flatLevel(items: items, length: length, entry: entry, reward: max(entry, 2))
+        level.speed = 120
+        return level
+    }
+
+    @Test func petalBridgesCreaturesHaveTheirIdsAndHitboxes() {
+        let expected: [(ItemKind, String, Double, Double, Int, Int)] = [
+            (.lanternSlime, "lantern_slime", 20, 16, 1, 15), (.ninjaTanuki, "ninja_tanuki", 18, 22, 2, 25),
+            (.sakuraBat, "sakura_bat", 18, 14, 1, 15), (.shadowSpirit, "shadow_spirit", 16, 20, 2, 30),
+            (.spikeKappa, "spike_kappa", 22, 18, 2, 25),
+        ]
+        for (kind, id, width, height, hp, xp) in expected {
+            #expect(kind.rawValue == id)
+            #expect(kind.spec.width == width && kind.spec.height == height, "\(id) hitbox")
+            #expect(kind.spec.hp == hp, "\(id) hp")
+            #expect(kind.spec.xp == xp, "\(id) xp")
+            #expect(kind.spec.yarnable, "\(id) is yarnable")
+        }
+        #expect(ItemKind(rawValue: "lantern_pendulum") != nil && ItemKind(rawValue: "falling_lantern") != nil)
+    }
+
+    @Test func lanternSlimeBouncesInLeavingLittleFlamePuddles() throws {
+        var world = RunnerWorld(level: duskLevel([.init(at: 700, kind: .lanternSlime)]), boss: nil)
+        advance(&world, limit: 8) { $0.hazards.contains { $0.kind == "lantern_flame" } }
+        let flame = try #require(world.hazards.first { $0.kind == "lantern_flame" })
+        #expect(flame.y == 0 && flame.vx == 0)
+        let lava = try #require(ItemKind.lavaSlime.spec.throwing?.linger)
+        #expect(flame.width < lava.width)
+        let lit = world.time
+        advance(&world, limit: 3) { !$0.hazards.contains { $0.id == flame.id } }
+        #expect(world.time - lit < lava.seconds)
+        #expect(stompAttempts(.lanternSlime).contains { defeated($0, .lanternSlime) && !hit($0) })
+    }
+
+    @Test func ninjaTanukiWindsUpThenSlashesWithoutBackingOff() throws {
+        let feint = try #require(ItemKind.ninjaTanuki.spec.feint)
+        #expect(!feint.backsOff)
+        var world = RunnerWorld(level: duskLevel([.init(at: 800, kind: .ninjaTanuki)]), boss: nil)
+        advance(&world) { $0.entities.first?.state == .warning }
+        #expect(gap(world, .ninjaTanuki) <= feint.trigger && gap(world, .ninjaTanuki) > feint.trigger - 10)
+        let windUp = try #require(world.entities.first?.x)
+        world.run(0.05)
+        #expect(world.entities.first?.x == windUp)
+        let events = advance(&world, limit: 1) { $0.entities.first?.state == .active }
+        #expect(events.contains { if case .lunged = $0 { true } else { false } })
+        let slashing = try #require(world.entities.first)
+        #expect((slashing.reachBox?.maxX ?? .infinity) <= slashing.box.minX)
+        #expect(stompAttempts(.ninjaTanuki).contains { defeated($0, .ninjaTanuki) })
+        #expect(takesYarn(.ninjaTanuki, 2))
+    }
+
+    @Test func sakuraBatNeverDipsBelowAStandingKittensHead() {
+        var world = RunnerWorld(level: duskLevel([.init(at: 600, kind: .sakuraBat)]), boss: nil)
+        var lowest = Double.infinity
+        var events: [GameEvent] = []
+        while world.time < 6 {
+            events += world.step(Input(), dt: dt)
+            if let bat = world.entities.first(where: { $0.kind == .sakuraBat }) { lowest = min(lowest, bat.y) }
+        }
+        #expect(lowest >= 28 && lowest < 42)
+        #expect(!hit(events))
+    }
+
+    @Test func shadowSpiritFloatsAndCastsAHomingSpiritFlame() throws {
+        var world = RunnerWorld(level: duskLevel([.init(at: 700, kind: .shadowSpirit)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        #expect(world.entities.first?.y == 36)
+        advance(&world) { $0.hazards.contains { $0.kind == "spirit_flame" } }
+        let flame = try #require(world.hazards.first)
+        #expect(flame.homing != nil && flame.homing == ItemKind.voidWisp.spec.throwing?.homing)
+        // Up at 36 it takes yarn from a hop: two balls.
+        #expect(!defeated(jumpVolley(at: .shadowSpirit, count: 1), .shadowSpirit))
+        #expect(defeated(jumpVolley(at: .shadowSpirit, count: 2), .shadowSpirit))
+    }
+
+    @Test func spikeKappaOpensAndThrowsAFanOfThreeSpikeBalls() throws {
+        let fan = try #require(ItemKind.spikeKappa.spec.throwing?.fan)
+        #expect(fan.count == 3)
+        // Placed where its 3 s rhythm opens with the kitten in range.
+        var world = RunnerWorld(level: duskLevel([.init(at: 800, kind: .spikeKappa)]), boss: nil)
+        let events = advance(&world) { $0.hazards.count >= 3 }
+        #expect(events.contains { if case .trapFired = $0 { true } else { false } })
+        let balls = world.hazards.filter { $0.kind == "spike_ball" }
+        #expect(balls.count == 3)
+        // An arc fan: all thrown upward, at three different speeds.
+        #expect(balls.allSatisfy { $0.vy > 0 && $0.gravity > 0 })
+        #expect(Set(balls.map(\.vx)).count == 3)
+        world.run(1.5)
+        #expect(world.hazards.filter { $0.kind == "spike_ball" }.allSatisfy { $0.y == 0 })
+        // Shut it is harmless; it takes yarn any time.
+        var shut = Entity(id: 1, kind: .spikeKappa, x: 0, y: 0, hp: 2)
+        shut.state = .idle
+        #expect(!shut.isTangible && shut.catchesYarn)
+    }
+
+    @Test func aLanternPendulumSwingsOnTheClockLowAtTheBottomHighAtTheEnds() throws {
+        let swing = try #require(ItemKind.lanternPendulum.spec.pendulum)
+        var world = RunnerWorld(level: duskLevel([.init(at: 500, kind: .lanternPendulum)]), boss: nil)
+        advance(&world) { !$0.entities.isEmpty }
+        var xs: [Double] = [], ys: [Double] = []
+        for _ in 0..<Int(swing.period / dt) {
+            _ = world.step(Input(), dt: dt)
+            if let bob = world.entities.first { xs.append(bob.x); ys.append(bob.y) }
+        }
+        // It swings both ways of its pivot, and its lowest point is in the kitten's way.
+        #expect((xs.min() ?? 0) < 500 - 30 && (xs.max() ?? 0) > 500 + 30)
+        #expect((ys.min() ?? 99) < world.tuning.heroHeight)
+        #expect((ys.max() ?? 0) > world.tuning.heroHeight + 10)
+        // On the world clock: a copy agrees.
+        var a = world, b = world
+        a.run(0.7)
+        b.run(0.7)
+        #expect(a.entities.first?.x == b.entities.first?.x && a.entities.first?.y == b.entities.first?.y)
+        // Passing under or over it depends on timing: some offsets are a hit, others are not.
+        let results = stride(from: 0.0, to: swing.period, by: 0.2).map { offset -> Bool in
+            var runner = RunnerWorld(level: duskLevel([.init(at: 400, kind: .lanternPendulum, cycleOffset: offset)]),
+                                     boss: nil)
+            return hit(runner.run(5))
+        }
+        #expect(results.contains(true) && results.contains(false))
+    }
+
+    @Test func aFallingLanternBlinksDropsAndBurnsBrieflyOnTheGround() throws {
+        let fall = try #require(ItemKind.fallingLantern.spec.fall)
+        let burns = try #require(fall.lingers)
+        var world = RunnerWorld(level: duskLevel([.init(at: 600, kind: .fallingLantern)]), boss: nil)
+        var events = advance(&world) { $0.entities.first?.state == .warning }
+        #expect(events.contains { if case .fallWarning = $0 { true } else { false } })
+        events = advance(&world, limit: 2) { $0.entities.first?.state == .landed }
+        #expect(events.contains { if case .shattered = $0 { true } else { false } })
+        let landedAt = world.time
+        advance(&world, limit: 3) { $0.entities.isEmpty }
+        #expect(abs(world.time - landedAt - burns) < 0.05)
+        #expect(!defeated(events, .fallingLantern))
+    }
+
+    @Test(arguments: MechanicsTests.duskCreatures)
+    func botClearsEachPetalBridgesCreatureWithoutAHit(kind: ItemKind) {
+        let level = duskLevel([.init(at: 400, kind: kind), .init(at: 900, kind: kind)], length: 1400)
+        #expect(LevelValidator.botRun(level, boss: nil).finished)
+    }
+
     // MARK: - Bot
 
     @Test func botPouncesThroughCrateWalls() {

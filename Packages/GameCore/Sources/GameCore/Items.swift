@@ -22,6 +22,14 @@ public enum ItemKind: String, Codable, Sendable, CaseIterable {
     // World 5 — void
     case voidSlime = "void_slime", voidBat = "void_bat", voidSentinel = "void_sentinel", riftHound = "rift_hound"
     case voidMage = "void_mage", riftTurret = "rift_turret", voidWisp = "void_wisp", miniVoidCat = "mini_void_cat"
+    // Sakura route — blossom
+    case sakuraSlime = "sakura_slime", sakuraBunny = "sakura_bunny", lanternSpirit = "lantern_spirit"
+    case birdCrow = "bird_crow", spikePlant = "spike_plant", rollingOnigiri = "rolling_onigiri"
+    case bambooSpikes = "bamboo_spikes", sakuraSpirit = "sakura_spirit"
+    // Sakura route — dusk (Petal Bridges)
+    case lanternSlime = "lantern_slime", ninjaTanuki = "ninja_tanuki", sakuraBat = "sakura_bat"
+    case shadowSpirit = "shadow_spirit", spikeKappa = "spike_kappa", lanternPendulum = "lantern_pendulum"
+    case fallingLantern = "falling_lantern"
     // Pickups
     case fish, yarnBasket = "yarn_basket"
 }
@@ -59,6 +67,30 @@ public struct ThrowSpec: Sendable, Equatable {
     /// hero instead of throwing.
     public var alternateSummon: ItemKind?
     public var summonAhead = 80.0
+    /// A fan: several lobs at once, each with its own forward speed and upward kick (replaces the
+    /// single throw; `arc` should be set).
+    public var fan: [FanShot]?
+}
+
+/// One shot of a fan: world speed toward the hero and upward speed at launch.
+public struct FanShot: Sendable, Equatable {
+    public var speed: Double
+    public var lift: Double
+}
+
+/// A weight on a rope from a pivot `pivot` above the ground where it is placed, `length` long,
+/// swinging up to `swing` radians either side of straight down, once every `period` s on the world
+/// clock (`cycleOffset` shifts it). Its hitbox follows the weight.
+public struct PendulumSpec: Sendable, Equatable {
+    public var pivot: Double
+    public var length: Double
+    public var swing: Double
+    public var period: Double
+
+    /// The rope's angle from straight down at world time `time` (positive swings toward the hero's way).
+    public func angle(at time: Double) -> Double {
+        swing * sin(2 * Double.pi * time / period)
+    }
 }
 
 /// Moves in bursts on the world clock: `walk` seconds moving, then `pause` seconds still.
@@ -101,6 +133,18 @@ public struct ChaseSpec: Sendable, Equatable {
 public struct ReachSpec: Sendable, Equatable {
     public var width: Double
     public var height: Double
+    /// Only out while it lunges (see `FeintSpec`), not while it walks or backs off.
+    public var whileLunging = false
+}
+
+/// A feint: when the hero comes within `trigger` it hops back once (away from the hero at half its
+/// speed) for `backFor` seconds, then lunges at `lungeSpeed` (world velocity, negative toward the hero).
+public struct FeintSpec: Sendable, Equatable {
+    public var trigger: Double
+    public var backFor: Double
+    public var lungeSpeed: Double
+    /// Hops back during `backFor`; otherwise it stands still winding up (the ninja tanuki).
+    public var backsOff = true
 }
 
 /// Burns a fuse: once within `trigger` of the hero it flashes for `warning` seconds, keeping that
@@ -172,6 +216,9 @@ public struct FallSpec: Sendable, Equatable {
     /// A creature on a thread rather than a falling object: out of reach (harmless, and yarn passes)
     /// while it hangs and blinks, and once down it walks at the item's `velocity` like any walker.
     public var walksOnLanding = false
+    /// What it leaves on the ground burns out after this many seconds (a falling lantern's hot zone);
+    /// nil stays.
+    public var lingers: Double?
 }
 
 /// How a flyer's height follows the gap to the hero: `high` while far away, down to `low` once close.
@@ -234,6 +281,8 @@ public struct ItemSpec: Sendable {
     public var reach: ReachSpec?
     public var fuse: FuseSpec?
     public var burst: BurstSpec?
+    public var feint: FeintSpec?
+    public var pendulum: PendulumSpec?
 }
 
 extension ItemKind {
@@ -447,6 +496,79 @@ extension ItemKind {
         case .fireWisp:
             ItemSpec(width: 14, height: 14, baseY: 20, xp: 20, velocity: -40, yarnable: true,
                      fuse: FuseSpec(trigger: 50, warning: 0.5, ringWidth: 40, ringHeight: 10, ringLife: 0.4))
+        // MARK: sakura route
+        // Shuffles in (in short bursts; its little bounce lunge is drawn). A stomp kills.
+        case .sakuraSlime:
+            ItemSpec(width: 20, height: 14, xp: 10, velocity: -24, stompable: true, stompKills: true, yarnable: true,
+                     burst: BurstSpec(walk: 0.6, pause: 0.4))
+        // Runs in fast, hops back once when close, then lunges with a crescent swipe out in front.
+        case .sakuraBunny:
+            ItemSpec(width: 18, height: 20, xp: 20, velocity: -70, stompable: true, stompKills: true, yarnable: true,
+                     reach: ReachSpec(width: 14, height: 16, whileLunging: true),
+                     feint: FeintSpec(trigger: 90, backFor: 0.35, lungeSpeed: -150))
+        // Hovers over a standing kitten and sends slow blossom shots along the ground.
+        case .lanternSpirit:
+            ItemSpec(width: 16, height: 18, baseY: 36, xp: 20, yarnable: true,
+                     throwing: ThrowSpec(projectile: "blossom_shot", interval: 2.4, range: 300, speed: 70, y: 4,
+                                         width: 10, height: 8))
+        // Hovers high, then dives all the way to the ground as it nears: jump it late, or yarn it.
+        case .birdCrow:
+            ItemSpec(width: 18, height: 14, baseY: 50, xp: 15, velocity: -50, yarnable: true,
+                     flight: FlightSpec(high: 50, low: 0, diveStart: 170, diveEnd: 60))
+        // A trap like plant_cat (shut, opening, open); each time it opens it spits a blossom shot low.
+        case .spikePlant:
+            ItemSpec(width: 18, height: 20, hp: 2, xp: 20, yarnable: true,
+                     throwing: ThrowSpec(projectile: "blossom_shot", interval: 2.4, range: 300, speed: 90, y: 4,
+                                         width: 10, height: 8, onCycleOpen: true),
+                     cycle: CycleSpec(period: 2.4, activeFor: 0.6, warning: 0.5))
+        // Sits still until the kitten is close, then curls up and rolls in fast (like the ice hedgehog).
+        case .rollingOnigiri:
+            ItemSpec(width: 18, height: 16, xp: 15, stompable: true, stompKills: true, yarnable: true,
+                     curlsAt: 110, rollSpeed: -120)
+        // A low row of spikes that rise on a rhythm, blinking first (like a vent, but low enough to jump).
+        case .bambooSpikes:
+            ItemSpec(width: 20, height: 18, cycle: CycleSpec(period: 2.2, activeFor: 0.7, warning: 0.5))
+        // A little spirit the Kitsune Guardian summons: it skims in low (jump it), or yarn it.
+        case .sakuraSpirit:
+            ItemSpec(width: 12, height: 12, baseY: 4, xp: 5, velocity: -70, yarnable: true)
+        // MARK: sakura route, dusk
+        // Bounces in, dropping a little lantern flame that burns briefly where it lands. A stomp kills.
+        case .lanternSlime:
+            ItemSpec(width: 20, height: 16, xp: 15, velocity: -24, stompable: true, stompKills: true, yarnable: true,
+                     throwing: ThrowSpec(projectile: "lantern_ember", interval: 2.0, range: 220, speed: 0, y: 2,
+                                         width: 6, height: 6, arc: true,
+                                         linger: LingerSpec(kind: "lantern_flame", seconds: 0.6, width: 12, height: 4)),
+                     burst: BurstSpec(walk: 0.5, pause: 0.5))
+        // Walks in; close up it stops to wind up, then slashes forward with a crescent out in front.
+        case .ninjaTanuki:
+            ItemSpec(width: 18, height: 22, hp: 2, xp: 25, velocity: -30, stompable: true, stompKills: true,
+                     yarnable: true, reach: ReachSpec(width: 14, height: 18, whileLunging: true),
+                     feint: FeintSpec(trigger: 80, backFor: 0.25, lungeSpeed: -120, backsOff: false))
+        // Like the forest bat: swoops to just over a standing kitten's head, never lower.
+        case .sakuraBat:
+            ItemSpec(width: 18, height: 14, baseY: 42, xp: 15, velocity: -40, yarnable: true,
+                     flight: FlightSpec(high: 42, low: 28, diveStart: 150, diveEnd: 70))
+        // Floats over a standing kitten and casts homing spirit flames (like the void wisp's orbs).
+        case .shadowSpirit:
+            ItemSpec(width: 16, height: 20, baseY: 36, hp: 2, xp: 30, velocity: -10, yarnable: true,
+                     throwing: ThrowSpec(projectile: "spirit_flame", interval: 2.6, range: 300, speed: 100, y: nil,
+                                         width: 8, height: 8, homing: 40))
+        // A shell that opens into a lotus on a rhythm and throws a fan of three spike balls that roll on.
+        case .spikeKappa:
+            ItemSpec(width: 22, height: 18, hp: 2, xp: 25, yarnable: true,
+                     throwing: ThrowSpec(projectile: "spike_ball", interval: 3.0, range: 300, speed: 0, y: 16,
+                                         width: 8, height: 8, arc: true, onCycleOpen: true,
+                                         fan: [FanShot(speed: 50, lift: 140), FanShot(speed: 80, lift: 170),
+                                               FanShot(speed: 110, lift: 200)]),
+                     cycle: CycleSpec(period: 3.0, activeFor: 0.6, warning: 0.6))
+        // A lantern on a rope swinging across the way: low in the middle (jump it), high at the ends
+        // (pass under it). On the world clock.
+        case .lanternPendulum:
+            ItemSpec(width: 14, height: 14, pendulum: PendulumSpec(pivot: 110, length: 90, swing: 1.0, period: 3.2))
+        // Hangs; blinks, drops, and burns as a hot patch on the ground for a second.
+        case .fallingLantern:
+            ItemSpec(width: 12, height: 14, baseY: 70,
+                     fall: FallSpec(trigger: 130, warning: 0.4, shardWidth: 16, shardHeight: 8, lingers: 1.0))
         // MARK: void
         // Lurches in short bursts and spits void orbs along the ground; its body burns, so no stomp.
         case .voidSlime:

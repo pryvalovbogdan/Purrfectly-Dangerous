@@ -1,0 +1,145 @@
+{
+ "id": "sakura_02",
+ "nameKey": "level.sakura_2.name",
+ "background": "sakura_dusk",
+ "speed": 120,
+ "length": 3800,
+ "entryHeroLevel": 3,
+ "boss": "boss_toad",
+ "bossRewardLevel": 4,
+ "ravines": [
+  {
+   "at": 2050,
+   "width": 80
+  },
+  {
+   "at": 2300,
+   "width": 110
+  }
+ ],
+ "platforms": [
+  {
+   "at": 2322,
+   "width": 60,
+   "y": 14,
+   "mode": "moves",
+   "kind": "bridge",
+   "axis": "y",
+   "travel": 6,
+   "period": 2.4
+  },
+  {
+   "at": 3120,
+   "width": 60,
+   "y": 12,
+   "mode": "crumbles",
+   "kind": "bridge"
+  }
+ ],
+ "items": [
+  {
+   "at": 275,
+   "kind": "fish"
+  },
+  {
+   "at": 405,
+   "kind": "fish"
+  },
+  {
+   "at": 450,
+   "kind": "lantern_slime"
+  },
+  {
+   "at": 535,
+   "kind": "fish"
+  },
+  {
+   "at": 665,
+   "kind": "fish"
+  },
+  {
+   "at": 795,
+   "kind": "fish"
+  },
+  {
+   "at": 800,
+   "kind": "sakura_bat"
+  },
+  {
+   "at": 925,
+   "kind": "fish"
+  },
+  {
+   "at": 1055,
+   "kind": "fish"
+  },
+  {
+   "at": 1150,
+   "kind": "lantern_pendulum"
+  },
+  {
+   "at": 1315,
+   "kind": "fish"
+  },
+  {
+   "at": 1435,
+   "kind": "fish"
+  },
+  {
+   "at": 1500,
+   "kind": "ninja_tanuki"
+  },
+  {
+   "at": 1555,
+   "kind": "fish"
+  },
+  {
+   "at": 1675,
+   "kind": "fish"
+  },
+  {
+   "at": 1795,
+   "kind": "fish"
+  },
+  {
+   "at": 1850,
+   "kind": "falling_lantern"
+  },
+  {
+   "at": 2500,
+   "kind": "shadow_spirit"
+  },
+  {
+   "at": 2665,
+   "kind": "fish"
+  },
+  {
+   "at": 2755,
+   "kind": "fish"
+  },
+  {
+   "at": 2845,
+   "kind": "fish"
+  },
+  {
+   "at": 2900,
+   "kind": "spike_kappa"
+  },
+  {
+   "at": 3065,
+   "kind": "fish"
+  },
+  {
+   "at": 3185,
+   "kind": "fish"
+  },
+  {
+   "at": 3305,
+   "kind": "fish"
+  },
+  {
+   "at": 3350,
+   "kind": "lantern_pendulum"
+  }
+ ]
+}

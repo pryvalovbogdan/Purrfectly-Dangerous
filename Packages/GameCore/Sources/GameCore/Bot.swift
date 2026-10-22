@@ -343,6 +343,19 @@ public enum LevelValidator {
             if platform.kind == "island", platform.mode != .solid {
                 problems.append("\(name) is an island; islands are always solid")
             }
+            if platform.mode == .moves {
+                let travel = platform.travel ?? 0
+                if travel <= 0 || platform.axis == nil {
+                    problems.append("\(name) moves but needs an axis and a travel above 0")
+                }
+                if (platform.period ?? Platform.defaultPeriod) <= 0 { problems.append("\(name) moves but its period must be above 0") }
+                if platform.axis == .y, platform.y - travel < 4 || platform.y + travel > apex - 6 {
+                    problems.append("\(name) moves from \(Int(platform.y - travel)) to \(Int(platform.y + travel)) high; it must stay between 4 and \(Int(apex - 6))")
+                }
+                if platform.axis == .x, platform.at - travel < 150 || platform.end + travel > level.length - 60 {
+                    problems.append("\(name) swings out of the level (start runway or boss arena)")
+                }
+            }
             if platform.mode == .blinks, platform.cycle.activeFor <= 0 || platform.cycle.activeFor >= platform.cycle.period {
                 problems.append("\(name) blinks but solidFor must be between 0 and period")
             }

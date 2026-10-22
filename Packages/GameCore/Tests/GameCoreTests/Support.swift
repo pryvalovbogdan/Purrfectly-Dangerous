@@ -14,6 +14,19 @@ enum Content {
         return files.filter { $0.hasPrefix("level_") && $0.hasSuffix(".json") }.map { String($0.dropLast(5)) }.sorted()
     }()
 
+    /// The cats' routes: every `route_<skin>_<NN>.json` in the level folder.
+    static func routes() throws -> RouteBook {
+        let folder = resources.appendingPathComponent("Levels")
+        let files = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+        var overrides: [String: [Int: LevelDefinition]] = [:]
+        for file in files {
+            guard let slot = RouteBook.slot(fromFileName: file) else { continue }
+            overrides[slot.skin, default: [:]][slot.slot] =
+                try ContentLoader.level(from: Data(contentsOf: folder.appendingPathComponent(file)))
+        }
+        return RouteBook(overrides: overrides)
+    }
+
     static func level(_ id: String) throws -> LevelDefinition {
         try ContentLoader.level(from: Data(contentsOf: resources.appendingPathComponent("Levels/\(id).json")))
     }

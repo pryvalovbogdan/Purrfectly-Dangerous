@@ -2,6 +2,12 @@
 
 ## `App/Resources/Levels/level_NN.json`
 
+The normal route is every `level_NN.json`, in file-name order. A cat's own level for slot NN (from 01)
+is `route_<skin>_NN.json` (e.g. `route_sakura_01.json`, Sakura's Blossom Path in slot 1): same format,
+with its own `id` (e.g. `sakura_01`, so its progress and bests are its own) and `nameKey`
+(e.g. `level.sakura_1.name`). It should fit its slot as the level it replaces does (`entryHeroLevel`,
+`shrineLevel`, `bossRewardLevel`). Every route level is validated like a normal one.
+
 Files are loaded in file-name order; adding `level_05.json` adds a fifth level with no code change.
 
 ```json
@@ -40,7 +46,7 @@ Files are loaded in file-name order; adding `level_05.json` adds a fifth level w
 | `items[].cycleOffset` | Optional seconds added to the world clock for this item's on/off cycle (vents, pistons, ghost cats), so neighbours can run out of step |
 | `slick[]` | Optional slick ground: `at`, `width`, `kind` (look only, also the sprite name: `milk`, `ice`). On it the run speed is ×1.3 and every jump is a full one (no short hop). The speed is kept through a jump from it |
 | `platforms[]` | Optional one-way ledges: `at` (left end), `width`, `y` (top above the base ground, 4–44; over terrain at least 4 above the highest block under it), `mode`, `kind` (look only, also the sprite name: `bridge`, `ice_ledge`, `vanish`, `island`; an `island` is a floating clump of earth and must be `solid`). The hero lands on them from above, jumps up through them, and can stand on them over a ravine |
-| `platforms[].mode` | `solid`; `crumbles` (gone for good `crumbleAfter` s after the first landing, default 0.5); `blinks` (there for `solidFor` of every `period` s on the world clock, default 1.6 of 2.4, flickering for the last 0.4; `offset` shifts it) |
+| `platforms[].mode` | `solid`; `crumbles` (gone for good `crumbleAfter` s after the first landing, default 0.5); `blinks` (there for `solidFor` of every `period` s on the world clock, default 1.6 of 2.4, flickering for the last 0.4; `offset` shifts it); `moves` (swings `travel` either way of where it is placed along `axis`, `x` sideways or `y` up and down, smoothly, one full swing every `period` s on the world clock, default 2.4; `offset` shifts it; the hero rides it. The validator wants an axis and a travel above 0, a vertical one between 4 and the jump limit all the way, and a sideways one clear of the runway and boss arena; for a ravine's width it counts the ledge where it is placed) |
 
 Walking off the end of a ledge, or standing on one as it goes, drops the hero; a Double Pounce is
 still possible then. Running off the rim of a ravine on the ground allows no jump at all.
@@ -111,6 +117,21 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | void | `rift_turret` | Hovers 20 up, still (in the hero's way: jump it); charges 1 s (warning), then a `crystal_shot` (10×4, 200/s) at 4; 2 HP |
 | void | `void_wisp` | Floats 30 up, drifting in at 30/s; every 2.5 s in range a `homing_orb` (8×8, 100/s) that steers its height toward the hero's middle at up to 40/s while ahead of the hero |
 | void | `mini_void_cat` | As `shadow_cat` (unseen until 180, appears 80 ahead, 0.4 s flash, dash at 120/s), then once more: when its dash has passed the hero it appears 80 ahead again; a stomp kills |
+| sakura | `sakura_slime` | 20×14 walker at 24/s in bursts on the world clock (0.6 s moving, 0.4 s still); a stomp kills |
+| sakura | `sakura_bunny` | 18×20 walker at 70/s; within 90 of the hero it hops back once (35/s away, 0.35 s), then lunges at 150/s with a 14×16 swipe zone in front of it that hurts like its body; a stomp kills |
+| sakura | `lantern_spirit` | Hovers 36 up, still; every 2.4 s in range a slow `blossom_shot` (10×8, 70/s) along the ground at 4 |
+| sakura | `bird_crow` | Flies at 50, diving as it nears (from 170 away to 60) all the way to the ground; jump it late or yarn it |
+| sakura | `spike_plant` | Trap on the world clock like `plant_cat`/`icicle_plant`: open (20 high, hurts) for 0.6 s of every 2.4 s, opening 0.5 s before; each time it opens in range it spits a `blossom_shot` along the ground at 4; yarn any time, 2 HP |
+| sakura | `rolling_onigiri` | Sits still; within 110 of the hero it curls up and rolls in at 120/s (turning at rims and steps): then no stomp, and yarn bounces off |
+| sakura | `bamboo_spikes` | Trap on the world clock: up (20×18, hurts) for 0.7 s of every 2.2 s, blinking 0.5 s before; down and harmless otherwise (`cycleOffset` shifts it) |
+| sakura | `sakura_spirit` | 12×12, skims in 4 up at 70/s (the Kitsune Guardian summons it); jump it or yarn it |
+| sakura_dusk | `lantern_slime` | 20×16 walker at 24/s in bursts (0.5 s moving, 0.5 s still); every 2 s within 220 drops a `lantern_ember` that lands as a `lantern_flame` (12×4) burning for 0.6 s; a stomp kills |
+| sakura_dusk | `ninja_tanuki` | 18×22 walker at 30/s; within 80 it stands 0.25 s winding up, then slashes forward at 120/s with a 14×18 crescent in front that hurts; a stomp kills; 2 HP |
+| sakura_dusk | `sakura_bat` | Like `forest_bat`: flies at 42, swoops to 28 |
+| sakura_dusk | `shadow_spirit` | Floats 36 up, drifting in at 10/s; every 2.6 s a homing `spirit_flame` (8×8, 100/s, turning toward the hero's middle at up to 40/s); 2 HP |
+| sakura_dusk | `spike_kappa` | Trap on the world clock: open (22×18, hurts) for 0.6 s of every 3 s, opening 0.6 s before; each time it opens in range it throws a fan of three `spike_ball`s (8×8) from 16 up, at 50/80/110 forward and 140/170/200 up, that land ahead and roll on; yarn any time, 2 HP. Mind its rhythm: it only throws if the hero is 30–300 away when it opens |
+| sakura_dusk | `lantern_pendulum` | A 14×14 lantern on a 90 rope from a pivot 110 above where it is placed, swinging 1 rad either way every 3.2 s (`cycleOffset` shifts it): bottom of the swing 13 up (in the way), the ends about 54 up. Leave room either side (it swings about 76 each way) |
+| sakura_dusk | `falling_lantern` | Hangs 70 up; 130 from the hero it blinks 0.4 s, drops, and burns on the ground as a 16×8 hot patch for 1 s, then is gone |
 | any | `fish` | +5 XP and +1 fish |
 | any | `yarn_basket` | Raises the hero to `shrineLevel` |
 

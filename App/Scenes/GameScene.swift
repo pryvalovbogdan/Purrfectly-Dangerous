@@ -710,6 +710,8 @@ final class GameScene: SKScene {
         .lavaSlime: "lava_glob", .fireImp: "fireball_shot", .stoneGuard: "magma_blast", .flameArcher: "flame_arrow",
         .voidSlime: "void_orb", .voidBat: "void_orb", .voidSentinel: "void_laser", .voidMage: "void_bolt",
         .riftTurret: "crystal_shot", .voidWisp: "homing_orb",
+        .lanternSpirit: "blossom_shot", .spikePlant: "blossom_shot",
+        .lanternSlime: "lantern_flame", .shadowSpirit: "spirit_flame", .spikeKappa: "spike_ball",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
     private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
@@ -722,14 +724,18 @@ final class GameScene: SKScene {
                                            "magma_blast": "magma_blast", "flame_arrow": "flame_arrow",
                                            "lava_puddle": "lava_puddle", "fire_ring": "fire_ring",
                                            "void_orb": "void_orb", "void_laser": "void_laser", "void_bolt": "void_bolt",
-                                           "crystal_shot": "crystal_shot", "homing_orb": "homing_orb"]
+                                           "crystal_shot": "crystal_shot", "homing_orb": "homing_orb",
+                                           "blossom_shot": "blossom_shot", "lantern_ember": "lantern_flame",
+                                           "lantern_flame": "lantern_flame", "spirit_flame": "spirit_flame",
+                                           "spike_ball": "spike_ball"]
     /// Hiding animation and the poses held afterwards (first one the sprite has), for things that
     /// curl up or hide in a shell.
     private static let curlAnimation: [ItemKind: (start: String, hold: [String])] = [
         .hedgehog: ("curl", ["rolled"]), .snailCat: ("hide", ["shell"]), .iceHedgehog: ("curl", ["roll", "attack"]),
+        .rollingOnigiri: ("roll", ["roll", "attack"]),
     ]
     /// Animation for throwing or firing, first one the sprite has.
-    private static let throwAnimation = ["throw", "attack", "fire"]
+    private static let throwAnimation = ["throw", "cast", "attack", "fire"]
 
     /// Plays the first of `names` that the node's sprite has, so a sheet that is still being drawn
     /// (or names a pose differently) degrades to the next best pose instead of a blank sprite.
@@ -794,8 +800,10 @@ final class GameScene: SKScene {
                 let node = entityNodes[id]
                 node?.flash()
                 // A brief flinch where the sprite has one, then back to what it was doing.
-                if let node, node.has("hit"), let kind = world.entities.first(where: { $0.id == id })?.kind {
-                    node.play("hit", restart: true) { [weak node] in Self.playAny(node, Self.restAnimation(kind)) }
+                // (Called `hit` on most sheets, `hurt` on the Sakura route's.)
+                if let node, let flinch = ["hit", "hurt"].first(where: node.has),
+                   let kind = world.entities.first(where: { $0.id == id })?.kind {
+                    node.play(flinch, restart: true) { [weak node] in Self.playAny(node, Self.restAnimation(kind)) }
                 }
             case .enemyDefeated(let id, _):
                 retire(entityNodes.removeValue(forKey: id))
@@ -901,6 +909,10 @@ final class GameScene: SKScene {
                 play(.dash)
             case .fuseLit:
                 break
+            case .lunged(let id):
+                // The sakura bunny turns and lunges with its crescent swipe.
+                play(.dash)
+                Self.playAny(entityNodes[id], ["attack", "run"], restart: true)
             case .summoned(let id):
                 // The void mage raises a wisp ahead of the kitten.
                 let node = entityNodes[id]
@@ -1211,6 +1223,12 @@ final class GameScene: SKScene {
         .voidSlime: ["move", "idle"], .voidBat: ["fly", "idle"], .voidSentinel: ["idle", "move"],
         .riftHound: ["run", "idle"], .voidMage: ["idle", "walk"], .riftTurret: ["idle"],
         .voidWisp: ["move", "idle"], .miniVoidCat: ["attack", "move", "idle"],
+        .sakuraSlime: ["walk", "idle"], .sakuraBunny: ["run", "walk", "idle"], .lanternSpirit: ["float", "idle"],
+        .birdCrow: ["fly", "idle"], .spikePlant: ["idle"], .rollingOnigiri: ["idle"],
+        .bambooSpikes: ["idle", "still"], .sakuraSpirit: ["float", "fly", "idle"],
+        .lanternSlime: ["walk", "idle"], .ninjaTanuki: ["walk", "idle"], .sakuraBat: ["fly", "idle"],
+        .shadowSpirit: ["float", "idle"], .spikeKappa: ["closed", "idle"], .lanternPendulum: ["swing", "idle", "still"],
+        .fallingLantern: ["hang", "idle", "still"],
     ]
 
     /// The resting animation of a kind, best first.
@@ -1245,6 +1263,48 @@ final class GameScene: SKScene {
             case .warning: node.play(names[1])
             case .active: node.play(names[2])
             default: node.play(names[0])
+            }
+        case .fallingLantern:
+            switch entity.state {
+            case .warning:
+                // A warning shake: it flashes before it drops.
+                Self.playAny(node, ["hang", "idle", "still"])
+                node.color = .white
+                node.colorBlendFactor = blink ? 0.7 : 0
+            case .active: Self.playAny(node, ["fall", "hang", "idle", "still"])
+            case .landed: Self.playAny(node, ["burn", "shatter", "idle", "still"])
+            default: Self.playAny(node, ["hang", "idle", "still"])
+            }
+        case .spikeKappa:
+            // Closed shell, opening lotus, then throwing.
+            switch entity.state {
+            case .warning: Self.playAny(node, ["open", "idle"])
+            case .active: if !node.isBusy { Self.playAny(node, ["attack", "open"]) }
+            default: Self.playAny(node, ["closed", "idle"])
+            }
+        case .ninjaTanuki:
+            if entity.state == .warning, !node.isBusy {
+                Self.playAny(node, ["idle", "walk"])
+            } else if entity.state == .active, !node.isBusy {
+                Self.playAny(node, ["attack", "walk"])
+            }
+        case .lanternPendulum:
+            // The rope, from the pivot above where it hangs down to the lantern.
+            if let swing = entity.kind.spec.pendulum {
+                let pivot = CGPoint(x: screenX(entity.home), y: screenY(world.groundHeight(at: entity.home) + swing.pivot))
+                let rope = (node.childNode(withName: "rope") as? SKShapeNode) ?? {
+                    let rope = SKShapeNode()
+                    rope.name = "rope"
+                    rope.strokeColor = SKColor(red: 0.35, green: 0.2, blue: 0.15, alpha: 1)
+                    rope.lineWidth = 1
+                    rope.zPosition = -1
+                    node.addChild(rope)
+                    return rope
+                }()
+                let path = CGMutablePath()
+                path.move(to: CGPoint(x: 0, y: node.size.height))
+                path.addLine(to: CGPoint(x: pivot.x - node.position.x, y: pivot.y - node.position.y))
+                rope.path = path
             }
         case .icicle, .debris:
             switch entity.state {
@@ -1308,11 +1368,48 @@ final class GameScene: SKScene {
             } else if !node.isBusy {
                 Self.playAny(node, Self.restAnimation(entity.kind))
             }
-        case .hedgehog, .snailCat, .iceHedgehog:
+        case .hedgehog, .snailCat, .iceHedgehog, .rollingOnigiri:
             // Normally started by the `curled` event; this catches a node made after it fired.
             let names = Self.curlAnimation[entity.kind] ?? ("curl", ["rolled"])
             if entity.state == .curled, node.current != names.start, !names.hold.contains(node.current) {
                 node.play(names.start) { [weak node] in Self.playAny(node, names.hold) }
+            }
+        case .spikePlant:
+            switch entity.state {
+            case .warning: Self.playAny(node, ["open", "idle"])
+            case .active: Self.playAny(node, ["attack", "open"])
+            default: Self.playAny(node, ["idle", "closed"])
+            }
+        case .bambooSpikes:
+            // Low spikes on a rhythm: down, blinking just before, then up.
+            switch entity.state {
+            case .warning:
+                Self.playAny(node, ["warn", "idle", "still"])
+                node.color = .white
+                node.colorBlendFactor = blink ? 0.5 : 0
+            case .active: Self.playAny(node, ["rise", "attack", "idle", "still"])
+            default: Self.playAny(node, ["idle", "still"])
+            }
+        case .sakuraBunny:
+            if entity.state == .warning, !node.isBusy {
+                Self.playAny(node, ["walk", "idle"])
+            } else if entity.state == .active, !node.isBusy {
+                Self.playAny(node, ["attack", "run"])
+            }
+        case .sakuraSlime:
+            // Shuffles in bursts; a little bounce lunge once close (drawn only).
+            let moving = entity.kind.spec.burst?.isMoving(at: world.time + entity.cycleOffset) ?? true
+            if abs(entity.x - world.distance) < 40, node.has("attack") {
+                node.play("attack")
+            } else if !node.isBusy {
+                Self.playAny(node, moving ? ["walk", "idle"] : ["idle"])
+            }
+        case .birdCrow:
+            // Its dive, once it drops toward the ground.
+            if entity.y - world.groundHeight(at: entity.x) < 36, !node.isBusy {
+                Self.playAny(node, ["attack", "fly"])
+            } else if !node.isBusy {
+                Self.playAny(node, Self.restAnimation(.birdCrow))
             }
         case .iciclePlant:
             switch entity.state {
@@ -1393,7 +1490,9 @@ final class GameScene: SKScene {
     private func renderPlatforms() {
         for view in platformViews {
             let platform = world.platforms[view.index]
-            view.node.position = CGPoint(x: screenX(platform.at).rounded(), y: screenY(platform.y) - view.height)
+            // Where it is now: a moving ledge swings on the world clock.
+            view.node.position = CGPoint(x: screenX(world.platformLeft(view.index)).rounded(),
+                                         y: screenY(world.platformTop(view.index)) - view.height)
             let state = world.platformState(view.index)
             var texture: SKTexture?
             switch (platform.mode, state) {
@@ -1525,6 +1624,8 @@ final class GameScene: SKScene {
         "boss_icedragon": ["shard_fan": "shards", "freezing_breath": "breath", "dive": "dive", "*": "breath"],
         "boss_phantom": ["summon_ghosts": "summon", "spectral_waves": "teleport", "split": "split", "*": "summon"],
         "boss_mecha": ["rockets": "rockets", "tail_sweep": "tail", "core_barrage": "core", "*": "rockets"],
+        "boss_kitsune": ["claw_slash": "claw", "double_claw": "claw", "bloom_shots": "bloom", "bloom_volley": "bloom", "spirit_summon": "summon", "*": "attack"],
+        "boss_toad": ["tongue_strike": "tongue", "lantern_arc": "lanterns", "area_slam": "slam", "*": "attack"],
         "boss_voidcat": ["shadow_paws": "paws", "star_fall": "stars", "portal_paws": "portal",
                          "portal_shards": "portal", "phase_rush": "phase", "phase_storm": "phase", "*": "attack"],
     ]

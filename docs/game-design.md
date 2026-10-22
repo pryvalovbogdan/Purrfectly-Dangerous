@@ -273,6 +273,56 @@ the kitten looks and nothing else (the simulation never sees it).
 - The catalog and rules are `Skin` and `SaveGame.unlock(skin:)` / `select(skin:)` in GameCore. Names
   and one-line descriptions are in Lore.json as `skin.<id>.name` and `skin.<id>.desc`.
 
+## Routes (each cat's own worlds)
+
+A cat can have its own route: some level slots are replaced by that cat's own levels. The playing
+order is the normal five worlds with the selected cat's levels swapped in; the LEVELS panel and the
+endless run follow it. Progress, medals and best scores are kept per level id, so a cat's own level
+is tracked on its own (unlocking stays per slot: a slot opens for every cat once it is beaten in an
+endless run). Every cat without a route plays the normal five worlds. A cat's levels are files
+`route_<skin>_NN.json` next to the `level_NN.json` files (see `docs/level-format.md`).
+
+### Sakura route
+From the concept's §12 ("Playable Character Route — Sakura"): Sakura 1-1 and 1-2 so far; slots 3–5
+stay the normal worlds until more Sakura sheets arrive.
+
+| Slot | Level | Theme | Boss | Notes |
+| --- | --- | --- | --- | --- |
+| 1 | `sakura_01` — **Blossom Path** | `sakura` | `boss_kitsune` — **Blossom Kitsune Guardian** (claw slash low; bloom shots high and low; summons little `sakura_spirit`s) | speed 110, starts at kitten level 1, a yarn basket raises it to 2, the boss grants 3 (as level 1). Placeholder level for the level designer |
+| 2 | `sakura_02` — **Petal Bridges** | `sakura_dusk` (a sunset cliffside town) | `boss_toad` — **Lantern Toad Guardian** (long tongue strike low; arcing lantern shots high and low; an area slam with falling rocks and a low wave) | speed 120, starts at kitten level 3 (Sakura arrives with Double Pounce), the boss grants 4. Placeholder level for the level designer |
+| 3–5 | the normal worlds | | | |
+
+Blossom Path pieces (the concept's obstacles): a **spike pit** is a ravine; a **moving wooden
+platform** is a `moves` ledge (it swings sideways or up and down on the world clock, carrying the
+kitten); a **crumbling platform** is a `crumbles` ledge; **bamboo spikes** are a low trap on a
+rhythm; **falling petals** are art only; the **wind gust** is not built yet.
+
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `sakura_slime` | sakura slime | shuffles in, in short bursts (its little bounce lunge is drawn); a stomp kills | stomp, yarn, or hop |
+| `sakura_bunny` | sakura bunny | runs in fast; close up (~90) it hops back once, then lunges at 150 with a crescent swipe out in front of it; a stomp kills | jump it as it lunges, stomp, or yarn |
+| `lantern_spirit` | lantern spirit | hovers at 36 (over a standing kitten) and sends slow blossom shots along the ground every 2.4 s | jump the shots; yarn from a hop |
+| `bird_crow` | bird crow | hovers high, then dives as it nears, all the way to the ground | jump it late, or yarn it |
+| `spike_plant` | spike plant | a trap like `plant_cat`: shut and harmless, opening, then open (hurts) and spitting a blossom shot low; 2 HP | jump the shot; pass while shut; 2 yarn |
+| `rolling_onigiri` | rolling onigiri | sits still until the kitten is ~110 away, then curls and rolls in fast; curled, no stomp and yarn bounces off | jump it, or stomp/yarn before it rolls |
+| `bamboo_spikes` | bamboo spikes | a low row of spikes (18 high) that rise on a rhythm, blinking first | pass while down, or jump |
+| `sakura_spirit` | sakura spirit | summoned by the boss: skims in low | jump it, or yarn |
+
+Petal Bridges pieces: a **cliff gap** is a wide ravine (Double Pounce); a **hanging bridge** is a
+`moves` ledge swaying up and down (or a `crumbles` one); a **breakable floor** is a `crumbles` ledge;
+a **lantern pendulum** swings across the way; a **falling lantern** drops and burns briefly; the
+**water current** is not built yet.
+
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `lantern_slime` | lantern slime | bounces in, in bursts, dropping a little lantern flame that burns on the ground for 0.6 s; a stomp kills | hop the flames; stomp, yarn |
+| `ninja_tanuki` | ninja tanuki | walks in; close up (~80) it stops to wind up, then slashes forward with a crescent out in front; 2 HP, a stomp kills | jump it as it slashes, stomp, or 2 yarn |
+| `sakura_bat` | sakura bat | like the forest bat: swoops to just over a standing kitten (28) | stay down; yarn |
+| `shadow_spirit` | shadow spirit | floats at 36 and casts homing spirit flames (like the void wisp's orbs); 2 HP | jump late or Ghost Dash; 2 yarn from hops |
+| `spike_kappa` | spike kappa | a shell on a rhythm: shut and harmless, opening, then open as a lotus (hurts) throwing a fan of three spike balls that land ahead and roll on; 2 HP | hop the spike balls; pass while shut; 2 yarn |
+| `lantern_pendulum` | lantern pendulum | a lantern on a rope swinging across the way on the world clock: low in the middle of its swing, high at the ends | pass under when it is up at an end, or jump it |
+| `falling_lantern` | falling lantern | hangs; blinks (a warning shake), drops, and burns as a hot patch for a second | pass before it falls, or wait, or hop it |
+
 ## Names
 
 Every displayed name — the title, tagline "One cat. Nine lives. Zero fish.", worlds, bosses,

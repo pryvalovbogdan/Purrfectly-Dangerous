@@ -183,6 +183,24 @@ SPEC = {
     "void_wisp": ((50, 54), {"idle": 2, "move": 4, "attack": 3, "hit": 2, "death": 4}),
     "homing_orb": ((14, 12), {"fly": 4}),
     "mini_void_cat": ((56, 34), {"idle": 2, "teleport": 4, "attack": 4, "hit": 2, "death": 4}),
+    # Sakura world, level 1 critters (characters/sakura_critters.py)
+    "sakura_slime": ((34, 28), {"idle": 2, "walk": 4, "attack": 3, "hurt": 2, "death": 4}),
+    "sakura_bunny": ((44, 36), {"idle": 2, "walk": 4, "run": 4, "attack": 4, "hurt": 2, "death": 4}),
+    "lantern_spirit": ((34, 38), {"idle": 2, "float": 4, "attack": 3, "hurt": 2, "death": 4}),
+    "blossom_shot": ((12, 12), {"fly": 4}),
+    "bird_crow": ((48, 34), {"fly": 4, "attack": 3, "hurt": 2, "death": 4}),
+    "spike_plant": ((36, 32), {"idle": 2, "open": 2, "attack": 3, "hurt": 2, "death": 4}),
+    "rolling_onigiri": ((44, 28), {"idle": 2, "roll": 4, "attack": 4, "hurt": 2, "death": 4}),
+    "sakura_spirit": ((24, 24), {"float": 4, "death": 3}),
+    # Sakura world, level 2 (dusk) critters (characters/sakura_dusk_critters.py)
+    "lantern_slime": ((34, 32), {"idle": 2, "walk": 4, "attack": 3, "hurt": 2, "death": 4}),
+    "lantern_flame": ((12, 12), {"fly": 4}),
+    "ninja_tanuki": ((48, 40), {"idle": 2, "walk": 4, "attack": 4, "hurt": 2, "death": 4}),
+    "sakura_bat": ((46, 32), {"fly": 4, "attack": 3, "hurt": 2, "death": 3}),
+    "shadow_spirit": ((38, 38), {"idle": 2, "cast": 3, "attack": 3, "hurt": 2, "death": 4}),
+    "spirit_flame": ((14, 12), {"fly": 4}),
+    "spike_kappa": ((40, 32), {"closed": 2, "open": 2, "attack": 3, "hurt": 2, "death": 4}),
+    "spike_ball": ((12, 12), {"fly": 4}),
     "gear": ((30, 30), {"spin": 4}),
     "crate_wall": ((24, 124), {"still": 1, "break": 5}),
     # The citadel's lava pit and terrain (characters/cataclysm.py), the forest contracts
@@ -225,11 +243,61 @@ SPEC = {
     "terrain_void_fill": ((16, 16), {"still": 1}),
     "island_void": ((48, 24), {"still": 1}),
     "bridge_void": ((48, 12), {"still": 1, "crumble": 4}),
+    # Sakura's Blossom Path (characters/sakura_world.py), the forest contracts
+    "ravine_sakura": ((8, 16), {"still": 1}),
+    "ravine_sakura_b": ((8, 16), {"still": 1}),
+    "ravine_sakura_rim": ((12, 24), {"still": 1}),
+    "ravine_sakura_vines": ((6, 24), {"still": 1}),
+    "ravine_sakura_back": ((16, 16), {"still": 1}),
+    "ravine_sakura_falls": ((16, 16), {"flow": 4}),
+    "ravine_sakura_falls_edge": ((4, 16), {"flow": 4}),
+    "ravine_sakura_lip": ((16, 6), {"flow": 4}),
+    "ravine_sakura_surface": ((16, 8), {"wave": 4}),
+    "ravine_sakura_pool": ((16, 24), {"churn": 4}),
+    "ravine_sakura_splash": ((16, 12), {"splash": 4}),
+    "ravine_sakura_floor": ((16, 16), {"still": 1}),
+    "ravine_sakura_fill": ((8, 48), {"still": 1}),
+    "ravine_sakura_deep": ((16, 16), {"still": 1}),
+    "terrain_sakura_top": ((16, 16), {"still": 1}),
+    "terrain_sakura_edge": ((8, 16), {"still": 1}),
+    "terrain_sakura_wall": ((8, 16), {"still": 1}),
+    "terrain_sakura_fill": ((16, 16), {"still": 1}),
+    "island_sakura": ((48, 24), {"still": 1}),
+    "bridge_sakura": ((48, 12), {"still": 1, "crumble": 4}),
+    "platform_sakura_moving": ((48, 12), {"still": 1}),
+    "bamboo_spikes": ((22, 20), {"idle": 1, "warn": 2, "rise": 3}),
+    # Sakura route level 2, "Petal Bridges" (characters/sakura_dusk.py), the forest contracts
+    "ravine_sakura_dusk": ((8, 16), {"still": 1}),
+    "ravine_sakura_dusk_b": ((8, 16), {"still": 1}),
+    "ravine_sakura_dusk_rim": ((12, 24), {"still": 1}),
+    "ravine_sakura_dusk_vines": ((6, 24), {"still": 1}),
+    "ravine_sakura_dusk_back": ((16, 16), {"still": 1}),
+    "ravine_sakura_dusk_falls": ((16, 16), {"flow": 4}),
+    "ravine_sakura_dusk_falls_edge": ((4, 16), {"flow": 4}),
+    "ravine_sakura_dusk_lip": ((16, 6), {"flow": 4}),
+    "ravine_sakura_dusk_surface": ((16, 8), {"wave": 4}),
+    "ravine_sakura_dusk_pool": ((16, 24), {"churn": 4}),
+    "ravine_sakura_dusk_splash": ((16, 12), {"splash": 4}),
+    "ravine_sakura_dusk_floor": ((16, 16), {"still": 1}),
+    "ravine_sakura_dusk_fill": ((8, 48), {"still": 1}),
+    "ravine_sakura_dusk_deep": ((16, 16), {"still": 1}),
+    "terrain_sakura_dusk_top": ((16, 16), {"still": 1}),
+    "terrain_sakura_dusk_edge": ((8, 16), {"still": 1}),
+    "terrain_sakura_dusk_wall": ((8, 16), {"still": 1}),
+    "terrain_sakura_dusk_fill": ((16, 16), {"still": 1}),
+    "island_sakura_dusk": ((48, 24), {"still": 1}),
+    "bridge_sakura_dusk": ((48, 12), {"still": 1, "crumble": 4}),
+    "platform_sakura_dusk_moving": ((48, 12), {"still": 1}),
+    "lantern_pendulum": ((20, 40), {"swing": 8}),
+    "falling_lantern": ((14, 18), {"hang": 2, "fall": 2, "burn": 4}),
     "boss_mecha": ((168, 124), {"idle": 4, "rockets": 6, "tail": 6, "core": 4, "hurt": 2, "death": 8}),
     # Final world
     "boss_voidcat": ((170, 140), {"idle": 4, "paws": 8, "stars": 6, "portal": 6, "phase": 6, "swipe": 6, "hurt": 2,
                                   "death": 10}),
     "portal": ((26, 36), {"open": 4, "close": 4}),
+    # Sakura route boss
+    "boss_kitsune": ((150, 120), {"idle": 4, "walk": 6, "claw": 6, "bloom": 6, "summon": 6, "hurt": 2, "death": 8}),
+    "boss_toad": ((150, 120), {"idle": 4, "tongue": 6, "lanterns": 6, "slam": 8, "hurt": 2, "death": 8}),
     # Pickups and award art
     "fish": ((16, 12), {"spin": 6}),
     "yarn_basket": ((28, 28), {"glow": 4}),
@@ -312,7 +380,7 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
 
 
 @pytest.mark.parametrize("name", ["hero", *(f"hero_{skin}" for skin in HERO_SKINS), "boss_squirrel",
-                                  "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat",
+                                  "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat", "boss_kitsune", "boss_toad",
                                   "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
                                   "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat",
                                   "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
@@ -322,7 +390,10 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                                   "lava_slime", "fire_imp", "stone_guard", "hell_hound", "ember_bat", "flame_archer",
                                   "chainsaw_cat", "fire_wisp",
                                   "void_slime", "void_bat", "void_sentinel", "rift_hound", "void_mage", "rift_turret",
-                                  "void_wisp", "mini_void_cat"])
+                                  "void_wisp", "mini_void_cat",
+                                  "sakura_slime", "sakura_bunny", "lantern_spirit", "bird_crow", "spike_plant",
+                                  "rolling_onigiri", "sakura_spirit",
+                                  "lantern_slime", "ninja_tanuki", "sakura_bat", "shadow_spirit", "spike_kappa"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():
@@ -357,7 +428,7 @@ def test_output_is_deterministic(sprites):
 
 def test_animation_actually_moves(sprites):
     for name in ("hero", "squirrel", "hedgehog", "penguin", "ghost_cat", "mech_mouse", "boss_squirrel",
-                 "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat"):
+                 "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat", "boss_kitsune", "boss_toad"):
         anim = next(iter(sprites[name].anims.values()))
         assert len({frame.tobytes() for frame in anim.frames}) > 1, f"{name}: all frames identical"
 
@@ -380,7 +451,8 @@ def test_manifest_and_atlas_match_the_code(sprites):
 def test_every_thing_the_game_can_show_has_a_sprite(sprites):
     resources = ROOT / "App" / "Resources"
     needed = set()
-    for path in sorted((resources / "Levels").glob("level_*.json")):
+    levels = sorted((resources / "Levels").glob("level_*.json")) + sorted((resources / "Levels").glob("route_*.json"))
+    for path in levels:                                  # the main levels and every cat's route
         level = json.loads(path.read_text())
         needed |= {item["kind"] for item in level["items"]}
         needed |= {level["boss"], f"ground_{level['background']}", f"ground_{level['background']}_fill",
@@ -411,7 +483,7 @@ def test_hero_skins_match_the_hero(sprites, skin):
     assert differs > 0, f"hero_{skin} looks exactly like the hero"
 
 
-THEMES = ("forest", "frost", "haunted", "citadel", "void")
+THEMES = ("forest", "frost", "haunted", "citadel", "void", "sakura", "sakura_dusk")
 THEME_LAYERS = ("sky", "sky_top", "puffs", "clouds", "far", "near", "bushes")
 PIT_PIECES = ("", "_b", "_rim", "_vines", "_back", "_falls", "_falls_edge", "_lip", "_surface", "_pool", "_splash", "_floor",
               "_fill", "_deep")

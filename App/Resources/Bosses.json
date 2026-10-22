@@ -770,5 +770,257 @@
     ]
    }
   ]
+ },
+ {
+  "id": "boss_kitsune",
+  "hp": 20,
+  "width": 50,
+  "height": 70,
+  "baseY": 0,
+  "vulnerable": "always",
+  "attacks": [
+   {
+    "name": "claw_slash",
+    "telegraph": 1.0,
+    "duration": 0.8,
+    "recover": 1.3,
+    "hazards": [
+     {
+      "kind": "claw_slash",
+      "delay": 0.3,
+      "y": 0,
+      "width": 26,
+      "height": 12,
+      "closingSpeed": 190
+     }
+    ]
+   },
+   {
+    "name": "double_claw",
+    "telegraph": 1.0,
+    "duration": 1.4,
+    "recover": 1.3,
+    "hazards": [
+     {
+      "kind": "claw_slash",
+      "delay": 0.2,
+      "y": 0,
+      "width": 26,
+      "height": 12,
+      "closingSpeed": 190
+     },
+     {
+      "kind": "claw_slash",
+      "delay": 1.2,
+      "y": 0,
+      "width": 26,
+      "height": 12,
+      "closingSpeed": 190
+     }
+    ]
+   },
+   {
+    "name": "bloom_shots",
+    "telegraph": 1.0,
+    "duration": 1.4,
+    "recover": 1.3,
+    "hazards": [
+     {
+      "kind": "bloom_shot",
+      "delay": 0.2,
+      "y": 0,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 160
+     },
+     {
+      "kind": "bloom_shot_high",
+      "delay": 1.1,
+      "y": 36,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 160
+     }
+    ]
+   },
+   {
+    "name": "bloom_volley",
+    "telegraph": 0.9,
+    "duration": 1.8,
+    "recover": 1.3,
+    "hazards": [
+     {
+      "kind": "bloom_shot_high",
+      "delay": 0.1,
+      "y": 36,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 160
+     },
+     {
+      "kind": "bloom_shot",
+      "delay": 0.9,
+      "y": 0,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 160
+     },
+     {
+      "kind": "bloom_shot_high",
+      "delay": 1.7,
+      "y": 36,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 160
+     }
+    ]
+   },
+   {
+    "name": "spirit_summon",
+    "telegraph": 1.0,
+    "duration": 1.4,
+    "recover": 1.4,
+    "hazards": [],
+    "summons": [
+     {
+      "kind": "sakura_spirit",
+      "delay": 0.3
+     },
+     {
+      "kind": "sakura_spirit",
+      "delay": 1.3
+     }
+    ]
+   }
+  ],
+  "phases": [
+   {
+    "startsBelow": 1,
+    "attacks": [
+     "claw_slash",
+     "double_claw"
+    ]
+   },
+   {
+    "startsBelow": 0.66,
+    "attacks": [
+     "bloom_shots",
+     "claw_slash",
+     "bloom_volley"
+    ]
+   },
+   {
+    "startsBelow": 0.33,
+    "attacks": [
+     "spirit_summon",
+     "bloom_shots",
+     "double_claw",
+     "spirit_summon",
+     "bloom_volley"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "boss_toad",
+  "hp": 22,
+  "width": 60,
+  "height": 60,
+  "baseY": 0,
+  "vulnerable": "always",
+  "attacks": [
+   {
+    "name": "tongue_strike",
+    "telegraph": 0.8,
+    "duration": 0.8,
+    "recover": 1.2,
+    "hazards": [
+     {
+      "kind": "toad_tongue",
+      "delay": 0.3,
+      "y": 0,
+      "width": 40,
+      "height": 10,
+      "closingSpeed": 230
+     }
+    ]
+   },
+   {
+    "name": "lantern_arc",
+    "telegraph": 0.8,
+    "duration": 1.2,
+    "recover": 1.2,
+    "hazards": [
+     {
+      "kind": "lantern_shot",
+      "delay": 0.2,
+      "y": 0,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 170
+     },
+     {
+      "kind": "lantern_shot_high",
+      "delay": 0.8,
+      "y": 34,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 170
+     }
+    ]
+   },
+   {
+    "name": "area_slam",
+    "telegraph": 1.0,
+    "duration": 1.2,
+    "recover": 1.6,
+    "hazards": [
+     {
+      "kind": "slam_rock",
+      "delay": 0.0,
+      "y": 140,
+      "width": 12,
+      "height": 12,
+      "closingSpeed": 120,
+      "ahead": 220,
+      "arm": 0.6,
+      "falls": true
+     },
+     {
+      "kind": "slam_wave",
+      "delay": 0.6,
+      "y": 0,
+      "width": 16,
+      "height": 10,
+      "closingSpeed": 200
+     }
+    ]
+   }
+  ],
+  "phases": [
+   {
+    "startsBelow": 1,
+    "attacks": [
+     "tongue_strike",
+     "lantern_arc"
+    ]
+   },
+   {
+    "startsBelow": 0.66,
+    "attacks": [
+     "lantern_arc",
+     "area_slam",
+     "tongue_strike"
+    ]
+   },
+   {
+    "startsBelow": 0.33,
+    "attacks": [
+     "area_slam",
+     "tongue_strike",
+     "lantern_arc"
+    ]
+   }
+  ]
  }
 ]

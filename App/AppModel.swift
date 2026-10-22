@@ -26,7 +26,13 @@ final class AppModel {
         case nextLevel(level: Int)
     }
 
-    let levels: [LevelDefinition]
+    /// The normal five worlds (`level_NN.json`).
+    let baseLevels: [LevelDefinition]
+    /// The cats' own routes (`route_<skin>_NN.json`), swapped in for the selected cat.
+    let routes: RouteBook
+    /// The levels in play order for the selected cat: its route, or the normal worlds. The LEVELS
+    /// panel and the endless run both follow it; progress and bests are kept per level id.
+    var levels: [LevelDefinition] { routes.levels(for: save.selectedSkin, base: baseLevels) }
     let bosses: [String: BossDefinition]
     let sprites: SpriteLibrary
     private let lore: Lore
@@ -54,7 +60,8 @@ final class AppModel {
 
     init(bundle: Bundle = .main) {
         do {
-            levels = try ContentLoader.levels(in: bundle)
+            baseLevels = try ContentLoader.levels(in: bundle)
+            routes = try ContentLoader.routes(in: bundle)
             bosses = try ContentLoader.bosses(in: bundle)
             guard let loreURL = bundle.url(forResource: "Lore", withExtension: "json") else {
                 throw ContentError.missing("Lore.json")

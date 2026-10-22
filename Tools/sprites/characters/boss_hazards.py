@@ -292,5 +292,99 @@ def void() -> list[Sprite]:
             hazard("portal_ring", portal, fps=10), hazard("void_wave", wave, fps=12), hazard("star_shard", shard, fps=12)]
 
 
+def sakura() -> list[Sprite]:
+    """The Blossom Kitsune's attacks, after the EFFECTS row of docs/concept/Sakura Fox Boss Sprite Sheet.png: a glowing
+    five-petal blossom (hitbox 10x10, low and high) and a magenta claw crescent raking along the ground (hitbox
+    26x12). Frames are 2 px larger than the hitbox for the outline."""
+    from characters.boss_kitsune import blossom, petal
+
+    def shot(i: int, high: bool) -> Canvas:
+        c = Canvas(12, 12)
+        glow = Canvas(12, 12)
+        glow.ellipse(5.5, 6, 5.5, 5.5, P.KT_MAGENTA)
+        glow.ellipse(5.5, 6, 4.5, 4.5, P.SK_PINK)
+        c.paste(see_through(glow.img, 140 + (i % 2) * 30))     # the pulsing glow
+        blossom(c, 5.5, 6, 4.4, i * 0.3, (P.SK_PINK_L, P.WHITE, P.KT_MAGENTA))
+        c.px(10, 5 + (i % 2), P.SK_PINK_L)                      # a petal shed behind (to the right)
+        if high:
+            c.px(1 + i % 3, 1 + (i % 2) * 9, P.WHITE)
+        return c.outline(P.KT_MAGENTA_D)
+
+    low = [shot(i, False) for i in range(4)]
+    high = [shot(i, True) for i in range(4)]
+
+    slash = []                                                   # a magenta crescent, convex edge first, bright core
+    for i in range(3):
+        c = Canvas(28, 14)
+        glow = Canvas(28, 14)
+        for k in range(20):
+            t = k / 19
+            a = math.radians(-82 + 164 * t)
+            thick = 2.4 * math.sin(math.pi * t) + 0.5
+            x, y = 15 - math.cos(a) * 11 + i * 0.5, 7 + math.sin(a) * 5.6
+            glow.ellipse(x, y, thick + 1.2, thick + 1.2, P.SK_PINK)
+            c.ellipse(x, y, thick, thick * 0.85, P.KT_MAGENTA)
+            c.ellipse(x - thick * 0.35, y, thick * 0.5, thick * 0.45, P.SK_PINK_L)
+            c.px(x - thick * 0.8, y, P.WHITE)
+        out = Canvas(28, 14)
+        out.paste(see_through(glow.img, 110))
+        out.paste(c.outline(P.KT_MAGENTA_D))
+        for k in range(3):                                       # petals flying off behind
+            petal(out, 21 + k * 2 + i, 3 + k * 3, k + i)
+        slash.append(out)
+    return [hazard("bloom_shot", low, fps=12), hazard("bloom_shot_high", high, fps=12),
+            hazard("claw_slash", slash, fps=12)]
+
+
+def toad() -> list[Sprite]:
+    """The Lantern Toad's attacks. Frames are 2 px larger than the Bosses.json hitboxes for the outline: lantern shots
+    (10x10, low and high), a falling slam rock (12x12), a slam wave of dust and pink energy (16x10) and the long tongue
+    lashing along the ground (40x10), its sticky tip leading on the left."""
+    from characters.boss_kitsune import blossom, petal
+    from characters.boss_toad import EDGE, lantern_ball, rock
+
+    def shot(i: int, high: bool) -> Canvas:
+        c = Canvas(12, 12)
+        lantern_ball(c, 5.5, 6, i, halo=False)
+        c.px(10 + (i % 2), 5 + (i % 2), P.TD_FIRE)                   # embers trailing behind
+        if high:
+            c.px(1 + i % 3, 1, P.WHITE)
+        return c.outline(EDGE)
+
+    low = [shot(i, False) for i in range(4)]
+    high = [shot(i, True) for i in range(4)]
+
+    rocks = []                                                   # a mossy rock dropping, pink energy trailing above
+    for i in range(4):
+        c = Canvas(14, 14)
+        for k in range(3):
+            c.px(7 + (k - 1) * 3, 1 + k + (i + k) % 2, P.SK_PINK_L if k != 1 else P.SK_PINK)
+        rock(c, 7, 8.5, 4.2, i)
+        rocks.append(c.outline(EDGE))
+
+    wave = []                                                    # a burst of dust and pink energy along the ground
+    for i in range(3):
+        c = Canvas(18, 12)
+        for k in range(5):
+            x = 3 + k * 3.2
+            h = (9, 7, 5, 4, 3)[k] - (i + k) % 2
+            c.ellipse(x, 11 - h / 2, 2.2, h / 2, (P.TD_STONE_L, P.SK_PINK, P.SK_PINK_L, P.TD_STONE, P.SK_PINK)[k])
+        blossom(c, 4, 3, 2.5, i)
+        petal(c, 10 + i, 2 + i % 2, i)
+        wave.append(c.outline(EDGE))
+
+    tongue = []                                                  # the long tongue, sticky tip first (left)
+    for i in range(2):
+        c = Canvas(42, 12)
+        with part(c, {P.TD_TONGUE: (P.SK_PINK_L, P.TD_TONGUE_D)}, EDGE, up=1, down=1, left=1, right=1) as k:
+            tube(k, [(40, 6, 2.6), (24, 6 + (i * 2 - 1) * 0.8, 2.4), (8, 6, 2.6)], P.TD_TONGUE)
+            k.ellipse(5.5, 6, 4.5, 4.2, P.TD_TONGUE)
+        c.px(4, 4, P.WHITE)
+        c.line((10, 6), (38, 6), P.TD_TONGUE_D)                   # the groove down its middle
+        tongue.append(c)
+    return [hazard("lantern_shot", low, fps=12), hazard("lantern_shot_high", high, fps=12),
+            hazard("slam_rock", rocks, fps=12), hazard("slam_wave", wave, fps=12), hazard("toad_tongue", tongue, fps=8)]
+
+
 def build() -> list[Sprite]:
-    return [*acorns(), *frost(), *haunted(), *citadel(), *void()]
+    return [*acorns(), *frost(), *haunted(), *citadel(), *void(), *sakura(), *toad()]

@@ -44,6 +44,14 @@ public enum PlatformMode: String, Codable, Sendable {
     case crumbles
     /// There for `solidFor` seconds out of every `period`, on the world clock.
     case blinks
+    /// Swings back and forth `travel` either way along `axis` on the world clock (a smooth swing,
+    /// one full cycle every `period`, shifted by `offset`). The hero rides it.
+    case moves
+}
+
+/// Which way a moving platform swings: along the run (`x`) or up and down (`y`).
+public enum PlatformAxis: String, Codable, Sendable {
+    case x, y
 }
 
 /// A one-way ledge: the hero lands on it from above and jumps up through it. It can bridge a ravine.
@@ -59,8 +67,11 @@ public struct Platform: Codable, Sendable, Equatable {
     public var crumbleAfter: Double?
     public var period: Double?
     public var solidFor: Double?
-    /// Seconds added to the world clock for a blinking platform.
+    /// Seconds added to the world clock for a blinking or moving platform.
     public var offset: Double?
+    /// A moving platform: which way it swings, and how far either way of where it is placed.
+    public var axis: PlatformAxis?
+    public var travel: Double?
 
     public static let defaultCrumbleAfter = 0.5
     public static let defaultPeriod = 2.4
@@ -71,7 +82,10 @@ public struct Platform: Codable, Sendable, Equatable {
     public var end: Double { at + width }
 
     public init(at: Double, width: Double, y: Double, mode: PlatformMode = .solid, kind: String? = nil,
-                crumbleAfter: Double? = nil, period: Double? = nil, solidFor: Double? = nil, offset: Double? = nil) {
+                crumbleAfter: Double? = nil, period: Double? = nil, solidFor: Double? = nil, offset: Double? = nil,
+                axis: PlatformAxis? = nil, travel: Double? = nil) {
+        self.axis = axis
+        self.travel = travel
         self.at = at
         self.width = width
         self.y = y
@@ -84,6 +98,18 @@ public struct Platform: Codable, Sendable, Equatable {
     }
 
     public func spans(_ x: Double) -> Bool { x >= at && x <= end }
+
+    /// How far a moving platform is from where it was placed at world time `time` (0 if it doesn't move).
+    public func shift(at time: Double) -> Double {
+        guard mode == .moves, let travel, travel > 0 else { return 0 }
+        let period = period ?? Self.defaultPeriod
+        return travel * sin(2 * Double.pi * (time + (offset ?? 0)) / period)
+    }
+
+    /// Its left end and its top at world time `time`.
+    public func left(at time: Double) -> Double { at + (axis == .x ? shift(at: time) : 0) }
+    public func top(at time: Double) -> Double { y + (axis == .y ? shift(at: time) : 0) }
+    public func spans(_ x: Double, at time: Double) -> Bool { x >= left(at: time) && x <= left(at: time) + width }
 
     /// The on/off rhythm of a blinking platform.
     public var cycle: CycleSpec {
