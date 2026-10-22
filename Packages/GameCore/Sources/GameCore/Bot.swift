@@ -399,9 +399,13 @@ public enum LevelValidator {
             var guaranteed = level.entryHeroLevel
             if let shrineAt, let shrineLevel = level.shrineLevel, at > shrineAt { guaranteed = max(guaranteed, shrineLevel) }
             let reach = climbHeight(heroLevel: guaranteed, tuning: tuning)
+            let canDouble = Progression.abilities(forLevel: guaranteed).contains(.doublePounce)
             if rise > reach {
-                let how = Progression.abilities(forLevel: guaranteed).contains(.doublePounce) ? "a Double Pounce" : "one jump"
+                let how = canDouble ? "a Double Pounce" : "one jump"
                 problems.append("step at \(Int(at)) rises \(Int(rise)); \(how) at hero level \(guaranteed) climbs at most \(Int(reach))")
+            } else if let problem = runUpProblem(at: at, rise: rise, canDouble: canDouble, level: level, ground: ground,
+                                                 tuning: tuning) {
+                problems.append(problem)
             }
         }
         for item in items where item.y == nil && item.kind.spec.baseY == 0 && !item.kind.isPickup {
@@ -418,6 +422,32 @@ public enum LevelValidator {
             }
         }
         return problems
+    }
+
+    /// A kitten that bumps the rise at `at` is knocked back far enough to climb it at the next go
+    /// (`Tuning.climbRunUp`), unless a ravine rim or a higher face behind stops the knockback short:
+    /// then the layout leaves too little run-up, and that is reported.
+    static func runUpProblem(at: Double, rise: Double, canDouble: Bool, level: LevelDefinition, ground: GroundProfile,
+                             tuning: Tuning) -> String? {
+        guard let runUp = tuning.climbRunUp(height: rise, speed: level.speed)
+                ?? (canDouble ? tuning.climbRunUp(height: rise, speed: level.speed, double: true) : nil) else { return nil }
+        let half = tuning.heroWidth / 2
+        let knock = max(tuning.bumpBack * tuning.bumpBackSpeed, runUp)
+        // Where the kitten's middle would come to rest, knocked back from the face.
+        let target = at - half - knock
+        var room = Double.infinity
+        var what = ""
+        for ravine in level.ravines ?? [] where ravine.end > target && ravine.end <= at {
+            let left = at - half - ravine.end
+            if left < room { room = left; what = "the ravine ending at \(Int(ravine.end))" }
+        }
+        let feet = ground.height(leftOf: at)
+        if let face = ground.wall(behind: at - tuning.heroWidth, to: target - half, feet: feet, step: tuning.stepUp) {
+            let left = at - tuning.heroWidth - face
+            if left < room { room = left; what = "the higher step at \(Int(face))" }
+        }
+        guard room < runUp else { return nil }
+        return "step at \(Int(at)) rises \(Int(rise)): knocked back off it at speed \(Int(level.speed)) the kitten needs \(Int(runUp.rounded(.up))) of run-up to climb it, but \(what) leaves \(Int(max(room, 0)))"
     }
 
     public static func problems(in boss: BossDefinition) -> [String] {

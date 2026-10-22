@@ -59,11 +59,14 @@ Levels can raise blocks of ground (mossy earth in the forest) or sink dips into 
 the level file). Everything stands on the ground where it is: the kitten, enemies, traps and fish.
 
 - **Bump back.** Running into the face of a step more than 4 above its feet, on the ground or in
-  the air, knocks the kitten back: a squash, dust kicked off the face, and 0.26 s moving backwards at
-  120 units/s (with a small hop if it was on the ground; a Double Pounce is still there). `distance`
-  shrinks meanwhile and the scenery scrolls back. It then holds its place until it lands (or jumps
-  again) and runs on, with a fresh run-up of about 31: enough for a held jump pressed on the way down
-  to climb a 44 step at speed 140. No heart is lost and the immunity timer is untouched. The knockback
+  the air, knocks the kitten back: a squash, dust kicked off the face, and 0.26 s moving backwards
+  (with a small hop if it was on the ground; a Double Pounce is still there). `distance` shrinks
+  meanwhile and the scenery scrolls back. It then holds its place until it lands (or jumps again)
+  and runs on. **The knockback always leaves the run-up the face needs:** as far back as a held jump
+  from a standing start at the run speed needs to get on top of that face, plus 10 to react (or a
+  Double Pounce at the top of the jump, for a face taller than one jump when the kitten has it), and
+  never less than 31. So after a bump, a jump pressed on the way down (or on landing) and held climbs
+  the face first time. No heart is lost and the immunity timer is untouched. The knockback
   never carries the kitten's middle over a ravine (it stops at the rim) nor its back into the face of
   a higher step behind. A lip of 4 or less is walked onto. A dip's far wall works the same way.
 - Off the edge of a step the kitten drops to the lower ground with a Double Pounce still left, as

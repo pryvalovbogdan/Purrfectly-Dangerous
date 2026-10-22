@@ -196,5 +196,9 @@ the bot was hit, e.g. `no-hit bot failed at distance 4431 (dead)` — a distance
 the boss pattern is the problem. `no-hit bot bounced off the step at 1210 more than 3 times`
 or `no-hit bot was held back by the step at 1210 for over 4 s` means the bot could not get onto a
 step (a softlock); `no-hit bot made no progress at distance 1210 for over 4 s` that it got nowhere. Terrain messages name the piece or the rise,
-e.g. `step at 996 rises 40; one jump at hero level 2 climbs at most 44`,
+e.g. `step at 996 rises 40; one jump at hero level 2 climbs at most 58`. A rise also needs clear
+ground before it, so that a kitten knocked back off it gets the run-up to climb it at the level's
+speed (from 41 for a 40 step to 57 for a 56 step at speed 150): a ravine rim or a higher face too
+close behind fails with `step at 1200 rises 48: knocked back off it at speed 150 the kitten needs 49
+of run-up to climb it, but the ravine ending at 1170 leaves 22`. Other examples:
 `terrain at 1210 is too close to the ravine at 1260`, `bush at 1000 stands across a step`.

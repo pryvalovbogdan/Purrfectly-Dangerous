@@ -48,11 +48,14 @@ public struct Tuning: Sendable, Equatable {
     public var victoryDelay = 2.0
     /// A lip of ground up to this high is stepped onto without a jump.
     public var stepUp = 4.0
-    /// Running into a step face too high to get onto knocks the hero back for this long, at this
-    /// speed, with a small hop if it was on the ground; it then holds its place until it lands (or
-    /// jumps) and runs on. The run-up it gets back (31 units) is what a held jump needs to climb a
-    /// 44-high step at the fastest level speed (140), with the jump pressed on landing.
+    /// Running into a step face too high to get onto knocks the hero back for this long, with a small
+    /// hop if it was on the ground; it then holds its place until it lands (or jumps) and runs on.
+    /// It is knocked back at least `bumpBack` × `bumpBackSpeed`, and further when the face needs more:
+    /// as far as `climbRunUp` says a held jump from a standing start needs to get on top of it at
+    /// the run speed (or a Double Pounce, if the face is taller than one jump and it has one).
     public var bumpBack = 0.26
+    /// Extra run-up a knockback leaves for the player to react before jumping (see `climbRunUp`).
+    public var climbMargin = 10.0
     public var bumpBackSpeed = 120.0
     public var bumpHop = 140.0
 
@@ -66,6 +69,39 @@ public struct Tuning: Sendable, Equatable {
         guard after > 0 else { return (speed * speed / (2 * boosted), speed / boosted) }
         return (speed * holdBoost - boosted * holdBoost * holdBoost / 2 + after * after / (2 * gravity),
                 holdBoost + after / gravity)
+    }
+
+    /// Seconds after take-off until the feet of a full held jump reach `height`, or nil if they never
+    /// do. With `double`, a Double Pounce is pressed at the top of the first jump for anything the
+    /// first can't reach.
+    public func timeToClimb(_ height: Double, double: Bool = false) -> Double? {
+        let first = heldRise(from: jumpVelocity)
+        if height <= first.height { return riseTime(from: jumpVelocity, to: height) }
+        guard double, let second = riseTime(from: jumpVelocity * doubleJumpScale, to: height - first.height) else {
+            return nil
+        }
+        return first.time + second
+    }
+
+    /// Seconds for a held rise from take-off speed `speed` to gain `height`, or nil if it never does.
+    func riseTime(from speed: Double, to height: Double) -> Double? {
+        guard height > 0 else { return 0 }
+        let boosted = gravity * holdGravity
+        let boostTop = speed * holdBoost - boosted * holdBoost * holdBoost / 2
+        let after = speed - boosted * holdBoost
+        if height <= boostTop || after <= 0 {
+            let disc = speed * speed - 2 * boosted * height
+            return disc < 0 ? nil : (speed - disc.squareRoot()) / boosted
+        }
+        let disc = after * after - 2 * gravity * (height - boostTop)
+        return disc < 0 ? nil : holdBoost + (after - disc.squareRoot()) / gravity
+    }
+
+    /// Room a player needs between the front of the kitten and a face `height` above its feet to get
+    /// on top with one held jump (or a Double Pounce at its top, with `double`) from a standing start
+    /// at run speed `speed`: the take-off run plus `climbMargin` to react. Nil if it can't be climbed.
+    public func climbRunUp(height: Double, speed: Double, double: Bool = false) -> Double? {
+        timeToClimb(height, double: double).map { $0 * speed + climbMargin }
     }
 
     /// Height of a tapped jump (no boost).
@@ -435,6 +471,8 @@ public struct RunnerWorld: Sendable {
     public private(set) var lastBumpFace: Double?
     /// Knocked back and not yet landed or jumped again: no forward motion, so the run-up is kept.
     private var bumpHold = false
+    /// Speed of the knockback in progress: as fast as covering its distance in `bumpBack` needs.
+    private var bumpSpeed = 0.0
 
     private var nextItem = 0
     private var nextID = 1
@@ -587,6 +625,16 @@ public struct RunnerWorld: Sendable {
 
     public var isBumpedBack: Bool { bumpBackLeft > 0 }
 
+    /// How far a bump off the face at `wall` knocks the hero back: enough run-up to climb it at the
+    /// next go (see `Tuning.climbRunUp`), never less than the usual knockback.
+    private func knockback(fromFace wall: Double) -> Double {
+        let rise = ground.height(at: wall) - groundHeight(at: distance)
+        let speed = level.speed * slickFactor
+        let runUp = tuning.climbRunUp(height: rise, speed: speed)
+            ?? (stats.has(.doublePounce) ? tuning.climbRunUp(height: rise, speed: speed, double: true) : nil)
+        return max(tuning.bumpBack * tuning.bumpBackSpeed, runUp ?? 0)
+    }
+
     /// Runs forward. Running into the face of a step higher than the feet (by more than `stepUp`)
     /// stops the hero at it and knocks it back for `bumpBack` seconds, with a small hop from the
     /// ground; no harm done. The knockback never carries the hero's middle over a ravine, nor its
@@ -597,7 +645,7 @@ public struct RunnerWorld: Sendable {
         isAgainstWall = false
         if bumpBackLeft > 0 {
             bumpBackLeft = max(0, bumpBackLeft - dt)
-            var target = distance - tuning.bumpBackSpeed * dt
+            var target = distance - bumpSpeed * dt
             for ravine in ravines where ravine.end <= distance + GroundProfile.epsilon {
                 target = max(target, ravine.end)
             }
@@ -616,6 +664,7 @@ public struct RunnerWorld: Sendable {
                 isAgainstWall = true
                 lastBumpFace = wall
                 bumpBackLeft = tuning.bumpBack
+                bumpSpeed = knockback(fromFace: wall) / tuning.bumpBack
                 bumpHold = true
                 events.append(.bumped)
                 if onGround {

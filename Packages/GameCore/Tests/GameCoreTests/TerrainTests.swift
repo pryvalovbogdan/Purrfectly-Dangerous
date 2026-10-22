@@ -182,6 +182,95 @@ import Testing
         #expect(world.distance > 300)
     }
 
+    /// After a bump the face can always be climbed at the next go: knocked back, the kitten lands,
+    /// the jump (pressed on the way down, or right on landing) is held, and it gets on top first time.
+    @Test(arguments: [110.0, 120, 130, 140, 150], [16.0, 24, 32, 40, 48, 56])
+    func afterABumpOneHeldJumpClimbsTheFace(speed: Double, height: Double) {
+        for pressOnLanding in [false, true] {
+            var level = level([Terrain(at: 400, width: 200, height: height)])
+            level.speed = speed
+            var world = RunnerWorld(level: level, boss: nil)
+            let bumps = runIntoWall(&world)
+            #expect(bumps.contains(.bumped))
+            var events: [GameEvent] = []
+            if pressOnLanding {
+                events += advance(&world, limit: 2) { $0.onGround }
+                events += world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            } else {
+                events += advance(&world, limit: 1) { $0.heroVY < 0 }
+                events += world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            }
+            events += advance(&world, limit: 3, Input(jumpHeld: true)) { $0.onGround && $0.heroY == height }
+            let how = pressOnLanding ? "pressed on landing" : "pressed during the hop"
+            #expect(events.contains(.jumped(double: false)), "speed \(Int(speed)) face \(Int(height)) \(how): no jump")
+            #expect(!events.contains(.bumped), "speed \(Int(speed)) face \(Int(height)) \(how): bumped again")
+            #expect(world.heroY == height && world.distance > 400, "speed \(Int(speed)) face \(Int(height)) \(how)")
+        }
+    }
+
+    /// With Double Pounce, any face up to its climbing limit: the jump pressed on landing and held,
+    /// the second at the top of the first.
+    @Test(arguments: [110.0, 130, 150])
+    func afterABumpADoublePounceClimbsUpToItsLimit(speed: Double) {
+        let limit = LevelValidator.climbHeight(heroLevel: 3, tuning: Tuning())
+        for height in [60.0, 72, limit] {
+            var level = level([Terrain(at: 400, width: 200, height: height)], entry: 3, reward: 3)
+            level.speed = speed
+            var world = RunnerWorld(level: level, boss: nil, stats: hero(3))
+            _ = runIntoWall(&world)
+            var events = advance(&world, limit: 2) { $0.onGround }
+            events += world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            events += advance(&world, limit: 1, Input(jumpHeld: true)) { $0.heroVY <= 0 }
+            events += world.step(Input(jumpPressed: true, jumpHeld: true), dt: dt)
+            events += advance(&world, limit: 3, Input(jumpHeld: true)) { $0.onGround }
+            #expect(events.contains(.jumped(double: true)), "speed \(Int(speed)) face \(Int(height))")
+            #expect(!events.contains(.bumped), "speed \(Int(speed)) face \(Int(height)): bumped again")
+            #expect(world.heroY == height, "speed \(Int(speed)) face \(Int(height))")
+        }
+    }
+
+    /// The knockback is as long as the climb needs: worked out from the jump, the face and the speed.
+    @Test func theKnockbackGivesTheRunUpTheFaceNeeds() throws {
+        let tuning = Tuning()
+        for speed in [110.0, 150] {
+            for height in [24.0, 56] {
+                var level = level([Terrain(at: 400, width: 200, height: height)])
+                level.speed = speed
+                var world = RunnerWorld(level: level, boss: nil)
+                _ = runIntoWall(&world)
+                let contact = world.distance
+                advance(&world, limit: 2) { $0.onGround }
+                let runUp = try #require(tuning.climbRunUp(height: height, speed: speed))
+                #expect(contact - world.distance >= runUp - 1)
+                #expect(contact - world.distance <= max(runUp, tuning.bumpBack * tuning.bumpBackSpeed) + 3)
+            }
+        }
+        // The taller face and the faster level need more.
+        let low = try #require(tuning.climbRunUp(height: 24, speed: 110))
+        let high = try #require(tuning.climbRunUp(height: 56, speed: 150))
+        #expect(high > low)
+        #expect(tuning.climbRunUp(height: tuning.jumpApex + 1, speed: 150) == nil)
+        #expect(tuning.climbRunUp(height: tuning.jumpApex + 1, speed: 150, double: true) != nil)
+    }
+
+    /// A rise with a ravine or a higher face too close behind it would cut the knockback short of
+    /// the run-up the climb needs: the validator reports it.
+    @Test func aRiseNeedsClearGroundBeforeItForTheRunUp() {
+        var crowded = level([Terrain(at: 400, width: 200, height: 48)])
+        crowded.speed = 150
+        crowded.ravines = [Ravine(at: 340, width: 30)]
+        let problems = LevelValidator.terrainProblems(in: crowded, items: [], tuning: Tuning())
+        #expect(problems.contains { $0.contains("step at 400") && $0.contains("run-up") })
+        var roomy = crowded
+        roomy.ravines = [Ravine(at: 250, width: 30)]
+        #expect(!LevelValidator.terrainProblems(in: roomy, items: [], tuning: Tuning()).contains { $0.contains("run-up") })
+        // A higher block just behind clamps it too.
+        var stacked = level([Terrain(at: 300, width: 60, height: 50), Terrain(at: 400, width: 100, height: 40)])
+        stacked.speed = 150
+        #expect(LevelValidator.terrainProblems(in: stacked, items: [], tuning: Tuning())
+            .contains { $0.contains("step at 400") && $0.contains("run-up") })
+    }
+
     @Test func aDoublePounceOnceKnockedBackClimbs() {
         var world = RunnerWorld(level: level([Terrain(at: 300, width: 100, height: 40)], entry: 3, reward: 3),
                                 boss: nil, stats: hero(3))
