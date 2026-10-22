@@ -78,5 +78,14 @@
  "ui.need_more": "need {n} more",
  "ui.previous_cat": "Previous cat",
  "ui.next_cat": "Next cat",
- "ui.fish": "fish"
+ "ui.fish": "fish",
+ "ui.golden_fish_count": "golden fish",
+ "ui.get_golden": "GET GOLDEN FISH",
+ "ui.golden_hint": "Every cat can also be won with fish from your runs.",
+ "ui.golden_thanks": "Thank you! Your golden fish are in.",
+ "ui.golden_pending": "Waiting for approval. Your golden fish arrive once it goes through.",
+ "ui.golden_failed": "The purchase did not go through. Please try again later.",
+ "ui.store_loading": "Loading the store",
+ "ui.store_unavailable": "The store is not available right now.",
+ "ui.try_again": "TRY AGAIN"
 }

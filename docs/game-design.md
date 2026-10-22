@@ -273,6 +273,55 @@ the kitten looks and nothing else (the simulation never sees it).
 - The catalog and rules are `Skin` and `SaveGame.unlock(skin:)` / `select(skin:)` in GameCore. Names
   and one-line descriptions are in Lore.json as `skin.<id>.name` and `skin.<id>.desc`.
 
+## Golden fish (in-app purchases)
+
+**Golden fish** are a separate, premium currency bought with real money and spent only on cats. Every
+cat can be bought with **either** its fish price **or** its golden price, so every cat stays
+earnable for free by playing. Ordinary fish are never bought or converted, and nothing else is sold
+(no unlock-all, no ads, nothing that changes the game).
+
+Golden prices are set per cat in `Skin.catalog` (`goldenPrice`, so they can be tuned); they were
+first set as fish price / 20, rounded up to a multiple of 5, at least 10:
+
+| Id | Fish | Golden |
+| --- | --- | --- |
+| `fluffy` | 0 | — |
+| `shadow` | 150 | 10 |
+| `misty` | 200 | 10 |
+| `sakura` | 250 | 15 |
+| `honey` | 300 | 15 |
+| `pixie` | 400 | 20 |
+| `clover` | 500 | 25 |
+| `snowball` | 600 | 30 |
+| `napster` | 750 | 40 |
+| `toffee` | 900 | 45 |
+| `cabage` | 2000 | 100 |
+| `sharky` | 2000 | 100 |
+
+Four consumable packs (`GoldenFish.packs`); the price list is App Store Connect's and the app only
+shows StoreKit's localized `displayPrice`:
+
+| Product id | Golden fish | Price tier (USD) |
+| --- | --- | --- |
+| `com.pryvalov.purrfectlydangerous.golden50` | 50 | 1.99 |
+| `com.pryvalov.purrfectlydangerous.golden150` | 150 | 4.99 |
+| `com.pryvalov.purrfectlydangerous.golden350` | 350 | 9.99 |
+| `com.pryvalov.purrfectlydangerous.golden800` | 800 | 19.99 |
+
+- The CATS screen shows the golden balance next to the fish wallet; tapping it opens GET GOLDEN FISH
+  with the four packs. A locked cat has two buttons, its fish price and its golden price, each
+  greyed with what is missing when it can't be afforded.
+- The save never stores a golden balance. It keeps `goldenPurchases` (App Store transaction id →
+  golden fish credited) and `goldenSkins` (cat → golden fish paid); the balance is the first total
+  less the second. Crediting a transaction id already credited does nothing, so a purchase replayed
+  by the App Store is never counted twice. A transaction is finished only after its credit is saved.
+- Golden fish and owned cats are backed up to iCloud (key-value store). Both sides only grow, so a
+  backup merges by union (`SaveGame.merge`) in any order without losing anything. If two phones spent
+  the same golden fish while apart, the merged balance shows 0 and the next purchase pays the
+  difference first. The fish wallet, scores and selected cat stay on the phone.
+- Debug bot, silent and UI-test runs (`-autoplay`, `-silent`, `-uitest-jump`) never touch the App
+  Store or iCloud. Running from Xcode buys from `App/Store/Products.storekit` instead of the store.
+
 ## Routes (each cat's own worlds)
 
 A cat can have its own route: some level slots are replaced by that cat's own levels. The playing

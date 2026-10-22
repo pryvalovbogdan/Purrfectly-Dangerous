@@ -13,12 +13,25 @@ targets:
     platform: iOS
     sources:
       - path: App
+        # Local StoreKit testing config: used by the scheme's Run action only, never copied into the app.
+        excludes:
+          - Store/Products.storekit
+      - path: App/Store/Products.storekit
+        buildPhase: none
     dependencies:
       - package: GameCore
+    # iCloud key-value store: the golden fish and owned cats are backed up there (App/Store/CloudSync.swift).
+    entitlements:
+      path: App/PurrfectlyDangerous.entitlements
+      properties:
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
     # The shared scheme also runs the UI tests (`xcodebuild test`); a plain build ignores them.
+    # Running from Xcode (the Debug Run action) buys golden fish from App/Store/Products.storekit
+    # instead of the App Store; archives and TestFlight builds use the real store (Sandbox on TestFlight).
     scheme:
       testTargets:
         - PurrfectlyDangerousUITests
+      storeKitConfiguration: App/Store/Products.storekit
     settings:
       base:
         # Must match the App ID registered in the Apple Developer account and App Store Connect.

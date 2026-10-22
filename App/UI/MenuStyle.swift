@@ -515,14 +515,18 @@ private struct Sunburst: View {
 /// A chunky pixel button: dark edge, a light (primary) or orange (secondary) line inside it, and a
 /// shadow underneath that the button sinks into when pressed.
 struct ChunkyButtonStyle: ButtonStyle {
-    enum Kind { case primary, secondary }
+    /// Primary orange, secondary cream, golden for what is paid in golden fish.
+    enum Kind { case primary, secondary, golden }
     var kind = Kind.primary
     var padding: CGFloat = 14
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
-        let fill = kind == .primary ? Color.menuOrange : Color.menuCream
-        let line = kind == .primary ? Color.menuYellow.opacity(0.85) : Color.menuOrange
+        let (fill, line): (Color, Color) = switch kind {
+        case .primary: (.menuOrange, Color.menuYellow.opacity(0.85))
+        case .secondary: (.menuCream, .menuOrange)
+        case .golden: (.menuGold, Color.menuCream.opacity(0.9))
+        }
         configuration.label
             .foregroundStyle(kind == .primary ? Color.menuPaper : Color.menuInk)
             .padding(.horizontal, padding)

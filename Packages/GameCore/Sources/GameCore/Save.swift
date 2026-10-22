@@ -16,6 +16,12 @@ public struct SaveGame: Codable, Sendable, Equatable {
     public private(set) var fishWallet = 0
     /// Cats unlocked in the shop, by id; always holds the free one.
     public private(set) var ownedSkins: Set<String> = [Skin.free]
+    /// Golden fish bought: App Store transaction id → golden fish credited for it. Keyed by
+    /// transaction so the same purchase can never be credited twice, and so copies merge cleanly.
+    public private(set) var goldenPurchases: [String: Int] = [:]
+    /// Cats bought with golden fish: cat id → golden fish paid. The balance is what was bought less
+    /// what was paid here (see `goldenFish`), so it is never stored and never conflicts.
+    public private(set) var goldenSkins: [String: Int] = [:]
 
     /// The skin every player has from the start.
     public static let defaultSkin = Skin.free
@@ -36,7 +42,12 @@ public struct SaveGame: Codable, Sendable, Equatable {
         fishWallet = max(0, try values.decodeIfPresent(Int.self, forKey: .fishWallet) ?? 0)
         // Only cats the game has; the free one always.
         let owned = try values.decodeIfPresent(Set<String>.self, forKey: .ownedSkins) ?? []
-        ownedSkins = owned.filter { Skin.named($0) != nil }.union([Skin.free])
+        goldenPurchases = (try values.decodeIfPresent([String: Int].self, forKey: .goldenPurchases) ?? [:])
+            .filter { $0.value > 0 }
+        goldenSkins = (try values.decodeIfPresent([String: Int].self, forKey: .goldenSkins) ?? [:])
+            .filter { $0.value > 0 }
+        // A cat paid for in golden fish is owned.
+        ownedSkins = owned.union(goldenSkins.keys).filter { Skin.named($0) != nil }.union([Skin.free])
         let selected = try values.decodeIfPresent(String.self, forKey: .selectedSkin) ?? Self.defaultSkin
         selectedSkin = ownedSkins.contains(selected) ? selected : Self.defaultSkin
     }
@@ -50,15 +61,77 @@ public struct SaveGame: Codable, Sendable, Equatable {
         fishWallet += max(0, count)
     }
 
-    /// Buys `skin` with fish from the wallet, if there are enough and it is not owned yet.
+    /// Buys `skin` with fish from the wallet, or with golden fish, if there are enough and it is not
+    /// owned yet. Otherwise nothing changes.
     @discardableResult
-    public mutating func unlock(skin id: String) -> SkinUnlock {
+    public mutating func unlock(skin id: String, with currency: Currency = .fish) -> SkinUnlock {
         guard let skin = Skin.named(id) else { return .unknownSkin }
         guard !owns(id) else { return .alreadyOwned }
-        guard fishWallet >= skin.price else { return .notEnoughFish(missing: skin.price - fishWallet) }
-        fishWallet -= skin.price
+        switch currency {
+        case .fish:
+            guard fishWallet >= skin.price else { return .notEnoughFish(missing: skin.price - fishWallet) }
+            fishWallet -= skin.price
+        case .golden:
+            guard let price = skin.goldenPrice, price > 0 else { return .notForGoldenFish }
+            guard goldenFish >= price else { return .notEnoughGoldenFish(missing: price - goldenFish) }
+            goldenSkins[id] = price
+        }
         ownedSkins.insert(id)
         return .unlocked
+    }
+
+    // MARK: Golden fish
+
+    /// Golden fish ever credited from purchases.
+    public var goldenBought: Int { goldenPurchases.values.reduce(0, +) }
+    /// Golden fish ever paid for cats.
+    public var goldenSpent: Int { goldenSkins.values.reduce(0, +) }
+    /// Golden fish to spend. Never below 0: if two phones spent the same golden fish while apart,
+    /// the merged save owes the difference and later purchases pay it off first.
+    public var goldenFish: Int { max(0, goldenBought - goldenSpent) }
+
+    /// Credits `amount` golden fish for the App Store transaction `transactionID`. A transaction
+    /// already credited (a replayed or merged one) changes nothing. Returns whether it was new.
+    @discardableResult
+    public mutating func creditGolden(transaction transactionID: String, amount: Int) -> Bool {
+        guard amount > 0, !transactionID.isEmpty, goldenPurchases[transactionID] == nil else { return false }
+        goldenPurchases[transactionID] = amount
+        return true
+    }
+
+    /// Whether the transaction `transactionID` has been credited.
+    public func hasCredited(transaction transactionID: String) -> Bool {
+        goldenPurchases[transactionID] != nil
+    }
+
+    /// What goes to iCloud: purchases, golden-bought cats and owned cats.
+    public var cloudBackup: CloudBackup {
+        CloudBackup(goldenPurchases: goldenPurchases, goldenSkins: goldenSkins, ownedSkins: ownedSkins)
+    }
+
+    /// Takes in a copy kept elsewhere (iCloud, another phone): the union of purchases, golden-bought
+    /// cats and owned cats. Never removes anything, so merging in any order, any number of times,
+    /// gives the same result. Cats this version does not know are not owned here. Returns whether anything changed.
+    @discardableResult
+    public mutating func merge(_ remote: CloudBackup) -> Bool {
+        let before = (goldenPurchases, goldenSkins, ownedSkins)
+        for (transaction, amount) in remote.goldenPurchases where amount > 0 {
+            // The same transaction always carries the same amount; max keeps the merge order-free.
+            goldenPurchases[transaction] = max(goldenPurchases[transaction] ?? 0, amount)
+        }
+        // Kept even for a cat this version does not know (bought in a newer one), so its price stays
+        // spent and the entry is not dropped from iCloud when this copy is written back.
+        for (id, price) in remote.goldenSkins where price > 0 {
+            goldenSkins[id] = max(goldenSkins[id] ?? 0, price)
+        }
+        ownedSkins.formUnion(remote.ownedSkins.union(remote.goldenSkins.keys).filter { Skin.named($0) != nil })
+        return before != (goldenPurchases, goldenSkins, ownedSkins)
+    }
+
+    /// `merge(_:)` with another whole save.
+    @discardableResult
+    public mutating func merge(_ remote: SaveGame) -> Bool {
+        merge(remote.cloudBackup)
     }
 
     /// Picks the cat to play as; only an owned one. Returns whether it is now selected.

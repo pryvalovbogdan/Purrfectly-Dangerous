@@ -37,6 +37,12 @@ final class AppModel {
     let sprites: SpriteLibrary
     private let lore: Lore
     private let store = DefaultsSaveStore()
+    /// The iCloud copy of golden fish and owned cats.
+    private let cloud = CloudSync()
+    /// Golden fish packs from the App Store.
+    let golden = GoldenStore()
+    /// Off in debug bot, silent and UI-test runs: no App Store and no iCloud there.
+    private(set) var purchasesEnabled = false
 
     var screen = Screen.menu {
         didSet { updateMusic() }
@@ -92,6 +98,8 @@ final class AppModel {
             }
         }
         #endif
+        purchasesEnabled = !autoplay && !silent && !jumpTest
+        if purchasesEnabled { startPurchasesAndCloud() }
         updateMusic()
     }
 
@@ -228,11 +236,14 @@ final class AppModel {
     /// The cat in use, by id.
     var selectedSkin: String { save.selectedSkin }
 
-    /// Buys a cat with fish from the wallet; saved when it works.
+    /// Golden fish to spend (bought with real money; see `GoldenStore`).
+    var goldenFish: Int { save.goldenFish }
+
+    /// Buys a cat with fish from the wallet or with golden fish; saved (and backed up) when it works.
     @discardableResult
-    func unlockSkin(_ id: String) -> SkinUnlock {
-        let result = save.unlock(skin: id)
-        if result == .unlocked { store.save(save) }
+    func unlockSkin(_ id: String, with currency: Currency = .fish) -> SkinUnlock {
+        let result = save.unlock(skin: id, with: currency)
+        if result == .unlocked { persistBackedUp() }
         return result
     }
 
@@ -247,6 +258,44 @@ final class AppModel {
 
     /// Every cat the shop offers, by neutral id, in shop order; the first is everyone's from the start.
     static let skins = Skin.catalog.map(\.id)
+
+    // MARK: - Golden fish and iCloud (rules in GameCore: `GoldenFish`, `SaveGame.creditGolden` / `merge`)
+
+    /// From launch: merge the iCloud copy in, follow later changes to it, and listen for App Store
+    /// transactions (including ones that finished while the app was closed).
+    private func startPurchasesAndCloud() {
+        cloud.start { [weak self] remote in self?.mergeCloud(remote) }
+        if let remote = cloud.read() {
+            mergeCloud(remote)
+        } else {
+            cloud.write(save.cloudBackup)
+        }
+        golden.start { [weak self] transaction, product, quantity in
+            self?.creditGolden(transaction: transaction, product: product, quantity: quantity) ?? false
+        }
+    }
+
+    /// Credits a verified App Store transaction once, saves, and backs up. True when the golden fish
+    /// are in the save (just now or from before), so the transaction can be finished.
+    private func creditGolden(transaction: String, product: String, quantity: Int) -> Bool {
+        guard let amount = GoldenFish.amount(forProduct: product) else { return false }
+        if save.creditGolden(transaction: transaction, amount: amount * max(1, quantity)) {
+            persistBackedUp()
+        }
+        return save.hasCredited(transaction: transaction)
+    }
+
+    /// Takes in a copy from iCloud (union, never removes) and writes the result back if it has more.
+    private func mergeCloud(_ remote: CloudBackup) {
+        if save.merge(remote) { store.save(save) }
+        if save.cloudBackup != remote { cloud.write(save.cloudBackup) }
+    }
+
+    /// Saves on the phone, then copies the golden fish and cats to iCloud.
+    private func persistBackedUp() {
+        store.save(save)
+        if purchasesEnabled { cloud.write(save.cloudBackup) }
+    }
 
     func setSound(on: Bool) {
         save.soundOn = on

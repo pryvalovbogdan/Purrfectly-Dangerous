@@ -1,0 +1,77 @@
+{
+  "identifier": "5D3B6F2A",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "1.99",
+      "familyShareable": false,
+      "internalID": "6740000001",
+      "localizations": [
+        {
+          "description": "50 golden fish to spend on cats.",
+          "displayName": "50 Golden Fish",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.pryvalov.purrfectlydangerous.golden50",
+      "referenceName": "Golden Fish 50",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "6740000002",
+      "localizations": [
+        {
+          "description": "150 golden fish to spend on cats.",
+          "displayName": "150 Golden Fish",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.pryvalov.purrfectlydangerous.golden150",
+      "referenceName": "Golden Fish 150",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "6740000003",
+      "localizations": [
+        {
+          "description": "350 golden fish to spend on cats.",
+          "displayName": "350 Golden Fish",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.pryvalov.purrfectlydangerous.golden350",
+      "referenceName": "Golden Fish 350",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "19.99",
+      "familyShareable": false,
+      "internalID": "6740000004",
+      "localizations": [
+        {
+          "description": "800 golden fish to spend on cats.",
+          "displayName": "800 Golden Fish",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.pryvalov.purrfectlydangerous.golden800",
+      "referenceName": "Golden Fish 800",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storeKitErrors": [],
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

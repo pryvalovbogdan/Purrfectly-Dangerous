@@ -3,8 +3,8 @@ import SwiftUI
 
 /// The CATS screen, after docs/concept/Pixel Cat Selection Adventure.png: the CATS plank over the
 /// forest, the highlighted cat big in the scene with arrows either side, a parchment card with its
-/// name and description, a 4×3 grid of cats, and SELECT (or UNLOCK for a price in fish) at the
-/// bottom. On its side the preview is on the left and the card, grid and button on the right.
+/// name and description, a 4×3 grid of cats, and SELECT (or two unlock buttons, for its price in
+/// fish or in golden fish) at the bottom. The golden fish wallet at the top opens the packs. On its side the preview is on the left and the card, grid and button on the right.
 /// Skins are looks only, so there are no stat bars. Display only: owning, paying and selecting are
 /// the model's (see `CatsScreenModel`).
 struct CatsScreen: View {
@@ -13,6 +13,7 @@ struct CatsScreen: View {
     /// The cat shown big and framed in the grid; starts on the one in use.
     @State private var highlighted: String?
     @State private var sparkle: UUID?
+    @State private var showGoldenShop = false
 
     private var data: CatsScreenModel { model.catsScreenModel }
 
@@ -30,7 +31,12 @@ struct CatsScreen: View {
                     }
                 }
             }
+            if showGoldenShop {
+                GoldenShopOverlay(close: { showGoldenShop = false })
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeOut(duration: 0.15), value: showGoldenShop)
         .onAppear { if highlighted == nil { highlighted = data.selected } }
     }
 
@@ -104,18 +110,29 @@ struct CatsScreen: View {
 
     // MARK: Pieces
 
-    /// Back at the left, the fish wallet at the right.
+    /// Back at the left, the fish and golden fish wallets at the right: side by side, smaller if they
+    /// do not fit (the left column of a small phone on its side), or one over the other.
     private func topBar(data: CatsScreenModel) -> some View {
-        HStack {
+        HStack(spacing: 8) {
             Button(action: onBack) {
                 Image(systemName: "arrow.left").font(.system(size: 20, weight: .black))
             }
             .buttonStyle(ChunkyButtonStyle(kind: .secondary, padding: 0))
             .frame(width: 48, height: 46)
             .accessibilityLabel(model.ui("back"))
-            Spacer()
-            FishWallet(amount: data.wallet)
+            Spacer(minLength: 0)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { wallets(data: data, compact: false) }
+                HStack(spacing: 6) { wallets(data: data, compact: true) }
+                VStack(alignment: .trailing, spacing: 4) { wallets(data: data, compact: true) }
+            }
         }
+    }
+
+    @ViewBuilder
+    private func wallets(data: CatsScreenModel, compact: Bool) -> some View {
+        FishWallet(amount: data.wallet, compact: compact)
+        GoldenWallet(amount: data.golden, compact: compact) { showGoldenShop = true }
     }
 
     /// The highlighted cat, big, standing on the grass, with arrows to step through the cats.
@@ -187,48 +204,58 @@ struct CatsScreen: View {
             .disabled(current.id == data.selected)
             .opacity(current.id == data.selected ? 0.7 : 1)
         } else {
-            let short = current.price - data.wallet
-            if short > 0 {
-                // Greyed: what is still missing.
-                HStack(spacing: 8) {
-                    Text(model.ui("unlock")).font(.pixel(20))
-                    PixelIcon(sprite: "fish", height: 18)
-                    Text("\(current.price)").font(.pixel(18))
-                    Text(model.ui("need_more").replacingOccurrences(of: "{n}", with: "\(short)"))
-                        .font(.pixel(11)).opacity(0.85)
+            // Two ways to pay, side by side; one that cannot be afforded is greyed with what is missing.
+            HStack(spacing: 10) {
+                unlockButton(data: data, current: current, currency: .fish)
+                if current.goldenPrice != nil {
+                    unlockButton(data: data, current: current, currency: .golden)
                 }
-                .foregroundStyle(Color.menuPaper.opacity(0.8))
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .background(Color.gray.opacity(0.7), in: PixelRect())
-                .overlay(PixelRect().strokeBorder(Color.menuInk, lineWidth: 3))
-                .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(.isButton)
-                .accessibilityAddTraits(.isStaticText)
-            } else {
-                Button {
-                    if data.unlock(current.id) {
-                        data.select(current.id)
-                        sparkle = UUID()
-                        let shown = sparkle
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(0.9))
-                            if sparkle == shown { sparkle = nil }
-                            // After the unlock sparkle, back to the start page with the new cat.
-                            onBack()
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        OutlinedText(text: model.ui("unlock"), size: 22)
-                        PixelIcon(sprite: "fish", height: 20)
-                        OutlinedText(text: "\(current.price)", size: 20)
-                    }
-                }
-                .buttonStyle(ChunkyButtonStyle(kind: .primary))
-                .frame(height: 52)
-                .accessibilityLabel("\(model.ui("unlock")) \(current.name), \(current.price)")
             }
         }
+    }
+
+    private func unlockButton(data: CatsScreenModel, current: CatsScreenModel.Cat, currency: Currency) -> some View {
+        let price = (currency == .fish ? current.price : current.goldenPrice) ?? 0
+        let short = price - (currency == .fish ? data.wallet : data.golden)
+        let currencyName = model.ui(currency == .fish ? "fish" : "golden_fish_count")
+        return Button {
+            if data.unlock(current.id, currency) {
+                data.select(current.id)
+                sparkle = UUID()
+                let shown = sparkle
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.9))
+                    if sparkle == shown { sparkle = nil }
+                    // After the unlock sparkle, back to the start page with the new cat.
+                    onBack()
+                }
+            }
+        } label: {
+            VStack(spacing: 1) {
+                HStack(spacing: 6) {
+                    if currency == .fish {
+                        PixelIcon(sprite: "fish", height: 20)
+                    } else {
+                        GoldenFishIcon(height: 20)
+                    }
+                    OutlinedText(text: "\(price)", size: 20)
+                }
+                if short > 0 {
+                    Text(model.ui("need_more").replacingOccurrences(of: "{n}", with: "\(short)"))
+                        .font(.pixel(10))
+                        .opacity(0.9)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+        }
+        .buttonStyle(ChunkyButtonStyle(kind: currency == .fish ? .primary : .golden, padding: 6))
+        .frame(height: 52)
+        .disabled(short > 0)
+        .saturation(short > 0 ? 0 : 1)
+        .opacity(short > 0 ? 0.7 : 1)
+        .accessibilityLabel("\(model.ui("unlock")) \(current.name), \(price) \(currencyName)")
+        .accessibilityValue(short > 0 ? model.ui("need_more").replacingOccurrences(of: "{n}", with: "\(short)") : "")
     }
 }
 
@@ -240,6 +267,8 @@ struct CatsScreenModel {
         let name: String
         let description: String
         let price: Int
+        /// Golden fish it costs instead; nil for the free cat.
+        let goldenPrice: Int?
         let owned: Bool
         /// The cut-out portrait image asset (`cat_<id>`).
         let portrait: String
@@ -249,9 +278,11 @@ struct CatsScreenModel {
 
     let cats: [Cat]
     let wallet: Int
+    /// Golden fish to spend.
+    let golden: Int
     let selected: String
-    /// Pays for and gives the cat; false if it can't be afforded.
-    let unlock: (String) -> Bool
+    /// Pays for and gives the cat with fish or golden fish; false if it can't be afforded.
+    let unlock: (String, Currency) -> Bool
     let select: (String) -> Void
 }
 
@@ -345,14 +376,15 @@ private struct CatCard: View {
 struct FishWallet: View {
     @Environment(AppModel.self) private var model
     let amount: Int
+    var compact = false
 
     var body: some View {
-        HStack(spacing: 6) {
-            PixelIcon(sprite: "fish", height: 18)
-            Text("\(amount)").font(.pixel(16)).foregroundStyle(Color.menuPaper).monospacedDigit()
+        HStack(spacing: compact ? 4 : 6) {
+            PixelIcon(sprite: "fish", height: compact ? 14 : 18)
+            Text("\(amount)").font(.pixel(compact ? 13 : 16)).foregroundStyle(Color.menuPaper).monospacedDigit()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.horizontal, compact ? 8 : 12)
+        .padding(.vertical, compact ? 5 : 6)
         .background(Color.menuInk.opacity(0.85), in: Capsule())
         .overlay(Capsule().stroke(Color(red: 0.35, green: 0.37, blue: 0.45), lineWidth: 2.5))
         .accessibilityElement(children: .ignore)
@@ -377,11 +409,11 @@ extension AppModel {
     var catsScreenModel: CatsScreenModel {
         let cats = Skin.catalog.map { skin in
             CatsScreenModel.Cat(id: skin.id, name: text(skin.nameKey), description: text(skin.descriptionKey),
-                                price: skin.price, owned: ownedSkins.contains(skin.id), portrait: "cat_\(skin.id)",
+                                price: skin.price, goldenPrice: skin.goldenPrice, owned: ownedSkins.contains(skin.id), portrait: "cat_\(skin.id)",
                                 sprite: sprites.sheet("hero_\(skin.id)") != nil ? "hero_\(skin.id)" : nil)
         }
-        return CatsScreenModel(cats: cats, wallet: fishWallet, selected: selectedSkin,
-                               unlock: { [weak self] id in self?.unlockSkin(id) == .unlocked },
+        return CatsScreenModel(cats: cats, wallet: fishWallet, golden: goldenFish, selected: selectedSkin,
+                               unlock: { [weak self] id, currency in self?.unlockSkin(id, with: currency) == .unlocked },
                                select: { [weak self] id in _ = self?.selectSkin(id) })
     }
 }
