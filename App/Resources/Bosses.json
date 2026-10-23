@@ -1022,5 +1022,173 @@
     ]
    }
   ]
+ },
+ {
+  "id": "boss_guardian_cat",
+  "hp": 28,
+  "width": 56,
+  "height": 64,
+  "baseY": 0,
+  "vulnerable": "always",
+  "attacks": [
+   {
+    "name": "petal_volley",
+    "telegraph": 0.8,
+    "duration": 1.3,
+    "recover": 1.2,
+    "hazards": [
+     {
+      "kind": "guardian_petal",
+      "delay": 0.2,
+      "y": 0,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 170
+     },
+     {
+      "kind": "guardian_petal_high",
+      "delay": 0.8,
+      "y": 34,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 170
+     },
+     {
+      "kind": "guardian_petal",
+      "delay": 1.3,
+      "y": 0,
+      "width": 10,
+      "height": 10,
+      "closingSpeed": 170
+     }
+    ]
+   },
+   {
+    "name": "petal_storm",
+    "telegraph": 0.9,
+    "duration": 1.4,
+    "recover": 1.3,
+    "hazards": [
+     {
+      "kind": "petal_ring",
+      "delay": 0.2,
+      "y": 0,
+      "width": 20,
+      "height": 10,
+      "closingSpeed": 190
+     },
+     {
+      "kind": "petal_ring",
+      "delay": 1.2,
+      "y": 0,
+      "width": 20,
+      "height": 10,
+      "closingSpeed": 190
+     }
+    ]
+   },
+   {
+    "name": "paw_slam",
+    "telegraph": 1.0,
+    "duration": 1.3,
+    "recover": 1.5,
+    "hazards": [
+     {
+      "kind": "guardian_paw",
+      "delay": 0.0,
+      "y": 140,
+      "width": 20,
+      "height": 20,
+      "closingSpeed": 130,
+      "ahead": 220,
+      "arm": 0.6,
+      "falls": true
+     },
+     {
+      "kind": "paw_burst",
+      "delay": 0.7,
+      "y": 0,
+      "width": 16,
+      "height": 28,
+      "closingSpeed": 200
+     }
+    ]
+   },
+   {
+    "name": "torii_beam",
+    "telegraph": 1.0,
+    "duration": 1.2,
+    "recover": 1.3,
+    "hazards": [
+     {
+      "kind": "torii_beam",
+      "delay": 0.2,
+      "y": 0,
+      "width": 40,
+      "height": 10,
+      "closingSpeed": 230
+     },
+     {
+      "kind": "torii_beam",
+      "delay": 1.1,
+      "y": 34,
+      "width": 40,
+      "height": 10,
+      "closingSpeed": 230
+     }
+    ]
+   },
+   {
+    "name": "spirit_summon",
+    "telegraph": 1.0,
+    "duration": 1.4,
+    "recover": 1.4,
+    "hazards": [
+     {
+      "kind": "spirit_kitten",
+      "delay": 0.3,
+      "y": 0,
+      "width": 14,
+      "height": 12,
+      "closingSpeed": 200
+     },
+     {
+      "kind": "spirit_kitten",
+      "delay": 1.3,
+      "y": 0,
+      "width": 14,
+      "height": 12,
+      "closingSpeed": 200
+     }
+    ]
+   }
+  ],
+  "phases": [
+   {
+    "startsBelow": 1,
+    "attacks": [
+     "petal_volley",
+     "petal_storm"
+    ]
+   },
+   {
+    "startsBelow": 0.66,
+    "attacks": [
+     "torii_beam",
+     "petal_volley",
+     "paw_slam"
+    ]
+   },
+   {
+    "startsBelow": 0.33,
+    "attacks": [
+     "spirit_summon",
+     "paw_slam",
+     "torii_beam",
+     "petal_storm",
+     "petal_volley"
+    ]
+   }
+  ]
  }
 ]

@@ -372,6 +372,17 @@ a **lantern pendulum** swings across the way; a **falling lantern** drops and bu
 | `lantern_pendulum` | lantern pendulum | a lantern on a rope swinging across the way on the world clock: low in the middle of its swing, high at the ends | pass under when it is up at an end, or jump it |
 | `falling_lantern` | falling lantern | hangs; blinks (a warning shake), drops, and burns as a hot patch for a second | pass before it falls, or wait, or hop it |
 
+Sakura level 3 (theme `sakura_night`, a night world; level and boss `boss_guardian_cat` to come) — creatures
+from `docs/concept/Sakura World Level 3 Enemy Sprites.png`:
+
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `shadow_slime` | shadow slime | lurches in, in quick bursts (its leap is drawn); a stomp kills | stomp, yarn, or hop |
+| `samurai_ronin` | samurai ronin | walks in; close up (~90) it stands in its stance, then lunges with a crescent slash out in front; 2 HP, a stomp kills | jump it as it lunges, stomp, or 2 yarn |
+| `oni_cat` | oni cat | slow, big bruiser; its club reaches out in front and it lobs rocks that land ahead and roll on; can't be stomped, 4 HP. Needs kitten level 3 | hop the rocks; Double Pounce over it, or 4 yarn |
+| `tengu_crow` | tengu crow | flies high, then dives as it nears, all the way to the ground (like the bird crow) | jump it late, or yarn it |
+| `spirit_wisp` | spirit wisp | floats at 36 and shoots homing wisp fireballs (like the shadow spirit); 2 HP | jump late or Ghost Dash; 2 yarn from hops |
+
 ## Names
 
 Every displayed name — the title, tagline "One cat. Nine lives. Zero fish.", worlds, bosses,

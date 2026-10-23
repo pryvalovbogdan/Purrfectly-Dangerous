@@ -1,0 +1,414 @@
+{
+ "id": "sakura_03",
+ "nameKey": "level.sakura_3.name",
+ "background": "sakura_night",
+ "speed": 130,
+ "length": 4600,
+ "entryHeroLevel": 4,
+ "boss": "boss_guardian_cat",
+ "bossRewardLevel": 5,
+ "ravines": [
+  {
+   "at": 1420,
+   "width": 80
+  },
+  {
+   "at": 2610,
+   "width": 120
+  },
+  {
+   "at": 3540,
+   "width": 100
+  }
+ ],
+ "platforms": [
+  {
+   "at": 2640,
+   "width": 60,
+   "y": 14,
+   "mode": "moves",
+   "kind": "bridge",
+   "axis": "y",
+   "travel": 6,
+   "period": 2.4
+  },
+  {
+   "at": 3560,
+   "width": 56,
+   "y": 12,
+   "mode": "crumbles",
+   "kind": "bridge",
+   "crumbleAfter": 0.6
+  }
+ ],
+ "terrain": [
+  {
+   "at": 2300,
+   "width": 140,
+   "height": 28
+  }
+ ],
+ "items": [
+  {
+   "at": 240,
+   "kind": "fish"
+  },
+  {
+   "at": 262,
+   "kind": "fish"
+  },
+  {
+   "at": 284,
+   "kind": "fish"
+  },
+  {
+   "at": 306,
+   "kind": "fish"
+  },
+  {
+   "at": 344,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 360,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 376,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 470,
+   "kind": "shadow_slime"
+  },
+  {
+   "at": 600,
+   "kind": "fish"
+  },
+  {
+   "at": 622,
+   "kind": "fish"
+  },
+  {
+   "at": 644,
+   "kind": "fish"
+  },
+  {
+   "at": 704,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 720,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 736,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 820,
+   "kind": "samurai_ronin"
+  },
+  {
+   "at": 960,
+   "kind": "fish"
+  },
+  {
+   "at": 982,
+   "kind": "fish"
+  },
+  {
+   "at": 1004,
+   "kind": "fish"
+  },
+  {
+   "at": 1064,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 1080,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 1096,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 1180,
+   "kind": "tengu_crow"
+  },
+  {
+   "at": 1300,
+   "kind": "fish"
+  },
+  {
+   "at": 1322,
+   "kind": "fish"
+  },
+  {
+   "at": 1344,
+   "kind": "fish"
+  },
+  {
+   "at": 1444,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 1460,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 1476,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 1560,
+   "kind": "fish"
+  },
+  {
+   "at": 1582,
+   "kind": "fish"
+  },
+  {
+   "at": 1604,
+   "kind": "fish"
+  },
+  {
+   "at": 1680,
+   "kind": "spirit_wisp"
+  },
+  {
+   "at": 1820,
+   "kind": "fish"
+  },
+  {
+   "at": 1842,
+   "kind": "fish"
+  },
+  {
+   "at": 1864,
+   "kind": "fish"
+  },
+  {
+   "at": 1914,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 1930,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 1946,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 2050,
+   "kind": "oni_cat"
+  },
+  {
+   "at": 2220,
+   "kind": "fish"
+  },
+  {
+   "at": 2242,
+   "kind": "fish"
+  },
+  {
+   "at": 2264,
+   "kind": "fish"
+  },
+  {
+   "at": 2314,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 2330,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 2346,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 2380,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2390,
+   "kind": "shadow_slime"
+  },
+  {
+   "at": 2410,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2520,
+   "kind": "fish"
+  },
+  {
+   "at": 2542,
+   "kind": "fish"
+  },
+  {
+   "at": 2564,
+   "kind": "fish"
+  },
+  {
+   "at": 2640,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2662,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2684,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2800,
+   "kind": "fish"
+  },
+  {
+   "at": 2822,
+   "kind": "fish"
+  },
+  {
+   "at": 2844,
+   "kind": "fish"
+  },
+  {
+   "at": 2900,
+   "kind": "samurai_ronin"
+  },
+  {
+   "at": 3020,
+   "kind": "tengu_crow"
+  },
+  {
+   "at": 3130,
+   "kind": "fish"
+  },
+  {
+   "at": 3152,
+   "kind": "fish"
+  },
+  {
+   "at": 3174,
+   "kind": "fish"
+  },
+  {
+   "at": 3240,
+   "kind": "spirit_wisp"
+  },
+  {
+   "at": 3320,
+   "kind": "shadow_slime"
+  },
+  {
+   "at": 3424,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 3440,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 3456,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 3560,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 3580,
+   "kind": "fish",
+   "y": 34
+  },
+  {
+   "at": 3600,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 3700,
+   "kind": "fish"
+  },
+  {
+   "at": 3722,
+   "kind": "fish"
+  },
+  {
+   "at": 3744,
+   "kind": "fish"
+  },
+  {
+   "at": 3820,
+   "kind": "oni_cat"
+  },
+  {
+   "at": 3960,
+   "kind": "tengu_crow"
+  },
+  {
+   "at": 4080,
+   "kind": "fish"
+  },
+  {
+   "at": 4102,
+   "kind": "fish"
+  },
+  {
+   "at": 4124,
+   "kind": "fish"
+  },
+  {
+   "at": 4180,
+   "kind": "samurai_ronin"
+  },
+  {
+   "at": 4300,
+   "kind": "spirit_wisp"
+  },
+  {
+   "at": 4420,
+   "kind": "fish"
+  },
+  {
+   "at": 4442,
+   "kind": "fish"
+  },
+  {
+   "at": 4464,
+   "kind": "fish"
+  }
+ ]
+}

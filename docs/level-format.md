@@ -132,6 +132,11 @@ still possible then. Running off the rim of a ravine on the ground allows no jum
 | sakura_dusk | `spike_kappa` | Trap on the world clock: open (22×18, hurts) for 0.6 s of every 3 s, opening 0.6 s before; each time it opens in range it throws a fan of three `spike_ball`s (8×8) from 16 up, at 50/80/110 forward and 140/170/200 up, that land ahead and roll on; yarn any time, 2 HP. Mind its rhythm: it only throws if the hero is 30–300 away when it opens |
 | sakura_dusk | `lantern_pendulum` | A 14×14 lantern on a 90 rope from a pivot 110 above where it is placed, swinging 1 rad either way every 3.2 s (`cycleOffset` shifts it): bottom of the swing 13 up (in the way), the ends about 54 up. Leave room either side (it swings about 76 each way) |
 | sakura_dusk | `falling_lantern` | Hangs 70 up; 130 from the hero it blinks 0.4 s, drops, and burns on the ground as a 16×8 hot patch for 1 s, then is gone |
+| sakura_night | `shadow_slime` | 20×16 walker at 30/s in bursts (0.4 s moving, 0.4 s still); its leap is drawn only; a stomp kills |
+| sakura_night | `samurai_ronin` | 18×22 walker at 32/s; within 90 it stands 0.3 s in its stance, then lunges at 130/s with a 16×18 crescent slash in front that hurts; a stomp kills; 2 HP |
+| sakura_night | `oni_cat` | 24×28 slow walker at 8/s with a 10×20 club always out in front that hurts like its body; every 3 s in range lobs an `oni_rock` (8×8) from 24 up that lands ahead and rolls on at 60/s; no stomp; 4 HP; needs kitten level 3 (Double Pounce over it) |
+| sakura_night | `tengu_crow` | 18×14, flies at 52, diving as it nears (from 170 away to 60) all the way to the ground, at 55/s; jump it late or yarn it |
+| sakura_night | `spirit_wisp` | 16×20, floats 36 up, drifting in at 12/s; every 2.4 s a homing `wisp_shot` (8×8, 110/s, turning toward the hero's middle at up to 40/s); 2 HP |
 | any | `fish` | +5 XP and +1 fish |
 | any | `yarn_basket` | Raises the hero to `shrineLevel` |
 
