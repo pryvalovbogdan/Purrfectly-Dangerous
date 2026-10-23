@@ -46,6 +46,9 @@ struct MenuBackground: View {
                 if let scene {
                     // Only the running scene scrolls; at rest half the frame rate is plenty.
                     SpriteView(scene: scene, preferredFramesPerSecond: pose == .running || celebrate ? 60 : 30)
+                        // SpriteView keeps presenting its first scene when handed a new one, so a rebuilt
+                        // scene (another cat picked, a rotation) needs a new view.
+                        .id(ObjectIdentifier(scene))
                 }
             }
             .onAppear { scene = makeScene(proxy.size) }
@@ -309,7 +312,12 @@ extension SpriteLibrary {
         if let cached = OpaqueBoundsCache.values[key] { return cached }
         var union: CGRect?
         for image in images(sprite, animation) {
-            guard let box = Self.opaqueBox(image) else { continue }
+            guard var box = Self.opaqueBox(image) else { continue }
+            // Painted heroes ship 3x images; measure in sprite pixels like the 1x ones.
+            if let width = sheet(sprite)?.width, width > 0, CGFloat(image.width) != width {
+                let scale = CGFloat(image.width) / width
+                box = CGRect(x: box.minX / scale, y: box.minY / scale, width: box.width / scale, height: box.height / scale)
+            }
             union = union.map { $0.union(box) } ?? box
         }
         OpaqueBoundsCache.values[key] = union

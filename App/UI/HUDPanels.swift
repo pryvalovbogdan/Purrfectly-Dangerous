@@ -301,10 +301,26 @@ struct BossHealth: View {
     static let banners: [String: String] = ["boss_squirrel": "boss_banner_squirrel"]
     static let barSprites = ["boss_bar_frame", "boss_bar_fill", "boss_bar_fill_low", "boss_bar_flash"]
 
+    /// Bosses of Sakura's route: the painted blossom plaque and bar (`SakuraBossHealth`).
+    static let sakuraBosses: Set<String> = ["boss_kitsune", "boss_toad", "boss_guardian_cat"]
+
+    /// Bosses whose health plate opens the fight with its own entrance and shows the name, so the
+    /// scene leaves out the plain name banner (it would only repeat the name under the plate).
+    static func introducesItself(_ id: String) -> Bool {
+        sakuraBosses.contains(id)
+    }
+
     var body: some View {
         let banner = id.flatMap { Self.banners[$0] }
         let barsDrawn = Self.barSprites.allSatisfy { model.sprites.sheet($0) != nil }
-        if let banner, barsDrawn {
+        if let id, Self.sakuraBosses.contains(id) {
+            // Upright about the HUD row's width; on its side half the width, its height capped
+            // (SakuraBossHealth.maxPlateHeight) so it stays a slim strip over the play area.
+            SakuraBossHealth(name: name, fraction: fraction, hits: hits)
+                .containerRelativeFrame(.horizontal) { width, _ in
+                    (width * (verticalSizeClass == .compact ? 0.5 : 0.9)).rounded()
+                }
+        } else if let banner, barsDrawn {
             // About 70% of an upright screen wide; on its side 30%, which keeps the banner and bar to
             // about a fifth of the screen's height.
             let share: CGFloat = verticalSizeClass == .compact ? 0.3 : 0.7

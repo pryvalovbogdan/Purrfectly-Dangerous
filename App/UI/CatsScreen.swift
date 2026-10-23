@@ -14,6 +14,8 @@ struct CatsScreen: View {
     @State private var highlighted: String?
     @State private var sparkle: UUID?
     @State private var showGoldenShop = false
+    /// The purchase whose banner is showing.
+    @State private var banner: GoldenStore.Delivery?
 
     private var data: CatsScreenModel { model.catsScreenModel }
 
@@ -35,8 +37,29 @@ struct CatsScreen: View {
                 GoldenShopOverlay(close: { showGoldenShop = false })
                     .transition(.opacity)
             }
+            if let banner {
+                VStack {
+                    // Below the wallets, so the golden fish counting up stays in view.
+                    GoldenPurchaseBanner(amount: banner.amount)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 72)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .task(id: banner.id) {
+                    try? await Task.sleep(for: .seconds(2.8))
+                    if self.banner?.id == banner.id { self.banner = nil }
+                }
+            }
         }
         .animation(.easeOut(duration: 0.15), value: showGoldenShop)
+        .animation(.spring(duration: 0.45, bounce: 0.3), value: banner)
+        // A purchase went through: close the panel, then the banner and the balance counting up.
+        .onChange(of: model.golden.delivery) { _, delivery in
+            guard let delivery else { return }
+            showGoldenShop = false
+            banner = delivery
+        }
         .onAppear { if highlighted == nil { highlighted = data.selected } }
     }
 
@@ -54,11 +77,8 @@ struct CatsScreen: View {
             topBar(data: data)
                 .padding(.top, insets.top + MenuView.topBarInset)
             VStack(spacing: 4) {
-                Image("title_cats")
-                    .resizable().interpolation(.high).scaledToFit()
-                    .frame(width: min(width * 0.62, 300))
-                    .accessibilityLabel(model.ui("cats"))
-                    .accessibilityAddTraits(.isHeader)
+                TitlePlank(text: model.ui("cats"))
+                    .frame(width: min(width * 0.72, 350))
                 preview(current: current, data: data, height: max(90, sceneHeight - 160))
             }
             .frame(height: sceneHeight - 52, alignment: .bottom)
@@ -83,11 +103,8 @@ struct CatsScreen: View {
         return HStack(alignment: .top, spacing: 14) {
             VStack(spacing: 6) {
                 topBar(data: data)
-                Image("title_cats")
-                    .resizable().interpolation(.high).scaledToFit()
-                    .frame(width: min(usable - right - 14, 240))
-                    .accessibilityLabel(model.ui("cats"))
-                    .accessibilityAddTraits(.isHeader)
+                TitlePlank(text: model.ui("cats"))
+                    .frame(width: min(usable - right - 14, 280))
                 Spacer(minLength: 0)
                 preview(current: current, data: data, height: max(80, size.height * 0.42))
                     .padding(.bottom, 40 * 2)
@@ -415,5 +432,27 @@ extension AppModel {
         return CatsScreenModel(cats: cats, wallet: fishWallet, golden: goldenFish, selected: selectedSkin,
                                unlock: { [weak self] id, currency in self?.unlockSkin(id, with: currency) == .unlocked },
                                select: { [weak self] id in _ = self?.selectSkin(id) })
+    }
+}
+
+/// The screen's leafy wooden title plank (`title_plank`, the painted CATS plank with its lettering taken
+/// out) lettered from Lore.json, so the heading can be renamed there.
+struct TitlePlank: View {
+    let text: String
+
+    var body: some View {
+        Image("title_plank")
+            .resizable().interpolation(.high).scaledToFit()
+            .overlay {
+                GeometryReader { box in
+                    // Between the two painted paws, on the plank's middle line.
+                    PixelTitle(text: text, size: box.size.height * 0.34, alignment: .center, tint: .menuPaper)
+                        .frame(width: box.size.width * 0.56)
+                        .position(x: box.size.width * 0.5, y: box.size.height * 0.56)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
+            .accessibilityAddTraits(.isHeader)
     }
 }
