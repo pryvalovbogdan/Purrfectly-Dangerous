@@ -31,12 +31,17 @@ struct GoldenWallet: View {
     let amount: Int
     var compact = false
     let open: () -> Void
+    /// While the balance goes up after a purchase: the number counted so far (nil shows `amount`).
+    @State private var counted: Int?
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: compact ? 4 : 6) {
                 GoldenFishIcon(height: compact ? 14 : 18)
-                Text("\(amount)").font(.pixel(compact ? 13 : 16)).foregroundStyle(Color.menuGold).monospacedDigit()
+                Text("\(counted ?? amount)")
+                    .font(.pixel(compact ? 13 : 16)).foregroundStyle(Color.menuGold).monospacedDigit()
+                    .contentTransition(.numericText(value: Double(counted ?? amount)))
+                    .scaleEffect(counted == nil ? 1 : 1.15)
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: compact ? 13 : 16, weight: .black))
                     .foregroundStyle(Color.menuGold)
@@ -52,6 +57,53 @@ struct GoldenWallet: View {
         .accessibilityLabel("\(amount) \(model.ui("golden_fish_count"))")
         .accessibilityHint(model.ui("get_golden"))
         .accessibilityAddTraits(.isButton)
+        .onChange(of: amount) { old, new in
+            guard new > old else { counted = nil; return }
+            countUp(from: old, to: new)
+        }
+    }
+
+    /// Counts the shown balance up one by one (in bigger steps for a big pack) over about a second.
+    private func countUp(from old: Int, to new: Int) {
+        let steps = min(new - old, 50)
+        counted = old
+        Task { @MainActor in
+            for step in 1...steps {
+                try? await Task.sleep(for: .milliseconds(1200 / steps))
+                withAnimation(.snappy(duration: 0.08)) { counted = old + (new - old) * step / steps }
+            }
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.easeOut(duration: 0.2)) { counted = nil }
+        }
+    }
+}
+
+/// Slides in at the top after a purchase from the panel: the golden fish it gave and a thank-you.
+struct GoldenPurchaseBanner: View {
+    @Environment(AppModel.self) private var model
+    let amount: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            GoldenFishIcon(height: 26)
+            OutlinedText(text: "+\(amount)", size: 26)
+                .fixedSize()
+            Text(model.ui("golden_thanks"))
+                .font(.pixel(12))
+                .foregroundStyle(Color.menuInk)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 360)
+        .background(Color.menuGold, in: PixelRect())
+        .overlay(PixelRect().inset(by: 4).strokeBorder(Color.menuCream.opacity(0.9), lineWidth: 2))
+        .overlay(PixelRect().strokeBorder(Color.menuInk, lineWidth: 3))
+        .background(PixelRect().fill(Color.menuInk.opacity(0.6)).offset(y: 4))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
 
@@ -110,7 +162,7 @@ private struct GoldenShopPanel: View {
                     .padding(.vertical, 4)
                 }
                 .scrollBounceBehavior(.basedOnSize)
-                .frame(maxHeight: 136)
+                .frame(maxHeight: 170)
             case .idle, .loading:
                 ProgressView()
                     .tint(Color.parchmentInk)
@@ -167,7 +219,8 @@ private struct GoldenShopPanel: View {
     }
 }
 
-/// One pack: the golden fish it gives over its App Store price; a spinner while it is being bought.
+/// One pack: the painted pile of golden fish (`golden_pack_<amount>`, cut from the user's sheet)
+/// standing on a gold bar with the amount and the App Store price; a spinner while it is bought.
 private struct PackButton: View {
     @Environment(AppModel.self) private var model
     let pack: GoldenFish.Pack
@@ -179,25 +232,65 @@ private struct PackButton: View {
         Button {
             Task { await golden.buy(pack) }
         } label: {
-            VStack(spacing: 3) {
-                HStack(spacing: 5) {
-                    GoldenFishIcon(height: 18)
-                    OutlinedText(text: "\(pack.amount)", size: 18)
-                }
-                if busy {
-                    ProgressView().tint(Color.menuInk).frame(height: 14)
-                } else {
-                    Text(product?.displayPrice ?? "–")
-                        .font(.pixel(13))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
+            VStack(spacing: -3) {
+                Image("golden_pack_\(pack.amount)")
+                    .resizable().interpolation(.high).scaledToFit()
+                    .frame(height: 44)
+                PackBar(amount: pack.amount, price: product?.displayPrice, busy: busy)
             }
         }
-        .buttonStyle(ChunkyButtonStyle(kind: .golden, padding: 6))
-        .frame(height: 58)
+        .buttonStyle(PackButtonStyle())
         .disabled(product == nil || golden.buying != nil)
         .opacity(product == nil || (golden.buying != nil && !busy) ? 0.6 : 1)
         .accessibilityLabel("\(pack.amount) \(model.ui("golden_fish_count")), \(product?.displayPrice ?? "")")
+    }
+}
+
+/// The painted sheet's bar: gold with a dark edge, the amount by a golden fish on the left and the
+/// price in a cream pill on the right.
+private struct PackBar: View {
+    let amount: Int
+    let price: String?
+    let busy: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            GoldenFishIcon(height: 14)
+            OutlinedText(text: "\(amount)", size: 15)
+                .fixedSize()
+            Spacer(minLength: 2)
+            Group {
+                if busy {
+                    ProgressView().tint(Color.menuInk).controlSize(.small)
+                } else {
+                    Text(price ?? "–")
+                        .font(.pixel(11))
+                        .foregroundStyle(Color.menuInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                }
+            }
+            .padding(.horizontal, 5)
+            .frame(minWidth: 52, maxHeight: .infinity)
+            .background(Color.menuCream, in: PixelRect())
+            .overlay(PixelRect().strokeBorder(Color.menuOrange, lineWidth: 2))
+            .padding(.vertical, 5)
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+        .frame(height: 34)
+        .background(Color.menuGold, in: PixelRect())
+        .overlay(PixelRect().inset(by: 4).strokeBorder(Color.menuCream.opacity(0.9), lineWidth: 2))
+        .overlay(PixelRect().strokeBorder(Color.menuInk, lineWidth: 3))
+    }
+}
+
+/// Sinks the whole pack a little while pressed.
+private struct PackButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .offset(y: configuration.isPressed ? 2 : 0)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .contentShape(Rectangle())
     }
 }
