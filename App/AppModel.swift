@@ -79,6 +79,14 @@ final class AppModel {
             fatalError("Game content failed to load: \(error)")
         }
         save = store.load()
+        // TEMPORARY (free-sakura), for testing Sakura's route on TestFlight: every build, Release
+        // included, owns Sakura for free (the price is added to the wallet and spent at once, so the
+        // fish count is unchanged). Remove before the App Store; Tools/release-check.sh warns.
+        if !save.owns("sakura"), let price = Skin.named("sakura")?.price {
+            save.addFish(price)
+            _ = save.unlock(skin: "sakura")
+            store.save(save)
+        }
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         silent = arguments.contains("-silent")
