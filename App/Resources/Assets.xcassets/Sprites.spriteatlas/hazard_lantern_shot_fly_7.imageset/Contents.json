@@ -1,0 +1,13 @@
+{
+  "images": [
+    {
+      "filename": "hazard_lantern_shot_fly_7.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

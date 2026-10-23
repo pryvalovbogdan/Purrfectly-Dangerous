@@ -387,6 +387,12 @@ def flash(image: Image.Image, amount: float) -> Image.Image:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_kitsune_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_kitsune" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Blossom Kitsune Guardian (kept for reference; `boss_kitsune_painted.py` replaces it)."""
     boss = Sprite("boss_kitsune", SIZE, faces_left=True, cx=CX, ground=GROUND)
     boss.add("idle", [fox(FoxPose(step=k, bob=(0, -1, -1, 0)[k], tails=(0, 0.15, 0.25, 0.1)[k],
                                   eye="shut" if k == 3 else "open")) for k in range(4)], fps=5)

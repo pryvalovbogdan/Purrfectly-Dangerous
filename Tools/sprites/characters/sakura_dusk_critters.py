@@ -440,5 +440,7 @@ def spike_ball() -> Sprite:
 
 
 def build() -> list[Sprite]:
-    return [lantern_slime(), lantern_flame(), ninja_tanuki(), sakura_bat(), shadow_spirit(), spirit_flame(), spike_kappa(),
-            spike_ball()]
+    from characters.sakura_bat_painted import NAMES as painted     # cut from the user's painted sheet instead
+    sprites = [lantern_slime(), lantern_flame(), ninja_tanuki(), sakura_bat(), shadow_spirit(), spirit_flame(),
+               spike_kappa(), spike_ball()]
+    return [s for s in sprites if s.name not in painted]

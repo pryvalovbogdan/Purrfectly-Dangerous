@@ -746,6 +746,97 @@
    }
   }
  },
+ "bg_sakura_night_bushes": {
+  "width": 320,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_sakura_night_clouds": {
+  "width": 320,
+  "height": 150,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_sakura_night_far": {
+  "width": 320,
+  "height": 110,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_sakura_night_near": {
+  "width": 320,
+  "height": 150,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_sakura_night_puffs": {
+  "width": 320,
+  "height": 120,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_sakura_night_sky": {
+  "width": 16,
+  "height": 200,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bg_sakura_night_sky_top": {
+  "width": 8,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "bg_sakura_puffs": {
   "width": 320,
   "height": 120,
@@ -982,6 +1073,69 @@
    }
   }
  },
+ "boss_guardian_cat": {
+  "width": 160,
+  "height": 136,
+  "anchorX": 0.5219,
+  "anchorY": 0.0221,
+  "animations": {
+   "idle": {
+    "frames": 4,
+    "fps": 5,
+    "loop": true
+   },
+   "walk": {
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "prepare": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "volley": {
+    "frames": 6,
+    "fps": 10,
+    "loop": false
+   },
+   "spin": {
+    "frames": 6,
+    "fps": 12,
+    "loop": false
+   },
+   "slam": {
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "beam": {
+    "frames": 7,
+    "fps": 10,
+    "loop": false
+   },
+   "summon": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "enrage": {
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": true
+   },
+   "death": {
+    "frames": 8,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "boss_icedragon": {
   "width": 190,
   "height": 134,
@@ -1027,41 +1181,37 @@
   "anchorY": 0.025,
   "animations": {
    "idle": {
-    "frames": 4,
-    "fps": 5,
-    "loop": true
-   },
-   "walk": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 12,
+    "fps": 12,
     "loop": true
    },
    "claw": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 18,
+    "fps": 9.17,
     "loop": false
    },
    "bloom": {
-    "frames": 6,
+    "frames": 16,
     "fps": 10,
     "loop": false
    },
    "summon": {
-    "frames": 6,
+    "frames": 16,
     "fps": 8,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 3,
+    "fps": 9,
     "loop": true
    },
    "death": {
-    "frames": 8,
-    "fps": 8,
+    "frames": 12,
+    "fps": 10,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "boss_mecha": {
   "width": 168,
@@ -1184,46 +1334,47 @@
   "anchorY": 0.0221,
   "animations": {
    "idle": {
-    "frames": 4,
-    "fps": 5,
+    "frames": 9,
+    "fps": 9,
     "loop": true
    },
    "walk": {
-    "frames": 4,
-    "fps": 8,
+    "frames": 8,
+    "fps": 10,
     "loop": true
    },
    "prepare": {
-    "frames": 3,
-    "fps": 8,
+    "frames": 6,
+    "fps": 10,
     "loop": false
    },
    "tongue": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 11,
+    "fps": 7.5,
     "loop": false
    },
    "lanterns": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 14,
+    "fps": 9,
     "loop": false
    },
    "slam": {
-    "frames": 8,
+    "frames": 18,
     "fps": 10,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 12,
     "loop": true
    },
    "death": {
     "frames": 8,
-    "fps": 8,
+    "fps": 7,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "boss_voidcat": {
   "width": 170,
@@ -1351,6 +1502,24 @@
   }
  },
  "bridge_sakura_dusk": {
+  "width": 48,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   },
+   "crumble": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "bridge_sakura_night": {
   "width": 48,
   "height": 12,
   "anchorX": 0.5,
@@ -2376,6 +2545,45 @@
    }
   }
  },
+ "ground_sakura_night": {
+  "width": 32,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ground_sakura_night_earth": {
+  "width": 32,
+  "height": 36,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ground_sakura_night_fill": {
+  "width": 8,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "ground_void": {
   "width": 32,
   "height": 48,
@@ -2481,11 +2689,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 8,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_bloom_shot_high": {
   "width": 12,
@@ -2494,11 +2703,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 8,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_breath": {
   "width": 42,
@@ -2546,11 +2756,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 3,
+    "frames": 6,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_falling_star": {
   "width": 12,
@@ -2578,6 +2789,45 @@
    }
   }
  },
+ "hazard_guardian_paw": {
+  "width": 24,
+  "height": 26,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "hazard_guardian_petal": {
+  "width": 18,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
+ "hazard_guardian_petal_high": {
+  "width": 18,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "hazard_ice_spike": {
   "width": 12,
   "height": 18,
@@ -2598,11 +2848,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 8,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_lantern_shot_high": {
   "width": 12,
@@ -2611,8 +2862,35 @@
   "anchorY": 0,
   "animations": {
    "fly": {
+    "frames": 8,
+    "fps": 12,
+    "loop": true
+   }
+  },
+  "scale": 3
+ },
+ "hazard_paw_burst": {
+  "width": 22,
+  "height": 30,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
     "frames": 4,
     "fps": 12,
+    "loop": true
+   }
+  }
+ },
+ "hazard_petal_ring": {
+  "width": 22,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 14,
     "loop": true
    }
   }
@@ -2689,11 +2967,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 8,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_slam_wave": {
   "width": 18,
@@ -2702,7 +2981,21 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 3,
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  },
+  "scale": 3
+ },
+ "hazard_spirit_kitten": {
+  "width": 22,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
     "fps": 12,
     "loop": true
    }
@@ -2741,8 +3034,22 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  },
+  "scale": 3
+ },
+ "hazard_torii_beam": {
+  "width": 42,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 3,
+    "fps": 14,
     "loop": true
    }
   }
@@ -3570,91 +3877,92 @@
   "anchorY": 0.0278,
   "animations": {
    "run": {
-    "frames": 8,
-    "fps": 14,
+    "frames": 16,
+    "fps": 27,
     "loop": true
    },
    "stop": {
-    "frames": 4,
-    "fps": 10,
+    "frames": 8,
+    "fps": 20,
     "loop": false
    },
    "idle": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 8,
+    "fps": 8,
     "loop": true
    },
    "jump": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 5,
+    "fps": 16,
     "loop": true
    },
    "fall": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 6,
+    "fps": 20,
     "loop": true
    },
    "double": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 8,
+    "fps": 26,
     "loop": true
    },
    "throw": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 9,
+    "fps": 36,
     "loop": false
    },
    "dash": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 7,
+    "fps": 23,
     "loop": true
    },
    "pounce": {
-    "frames": 4,
-    "fps": 12,
+    "frames": 8,
+    "fps": 21,
     "loop": true
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 13,
     "loop": true
    },
    "death": {
-    "frames": 6,
-    "fps": 8,
+    "frames": 9,
+    "fps": 11,
     "loop": false
    },
    "peek": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 7,
+    "fps": 7,
     "loop": true
    },
    "cheer": {
-    "frames": 4,
-    "fps": 8,
+    "frames": 7,
+    "fps": 12,
     "loop": true
    },
    "sit_happy": {
-    "frames": 4,
-    "fps": 6,
+    "frames": 8,
+    "fps": 10,
     "loop": true
    },
    "menu": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 9,
+    "fps": 9,
     "loop": true
    },
    "ko": {
-    "frames": 2,
-    "fps": 3,
-    "loop": true
-   },
-   "ghost": {
     "frames": 4,
     "fps": 5,
     "loop": true
+   },
+   "ghost": {
+    "frames": 8,
+    "fps": 8,
+    "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hero_shadow": {
   "width": 44,
@@ -4476,6 +4784,19 @@
    }
   }
  },
+ "island_sakura_night": {
+  "width": 48,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "island_void": {
   "width": 48,
   "height": 24,
@@ -4972,6 +5293,52 @@
    }
   }
  },
+ "oni_cat": {
+  "width": 76,
+  "height": 56,
+  "anchorX": 0.5987,
+  "anchorY": 0.0536,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 7,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 9,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
+ "oni_rock": {
+  "width": 12,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
  "paw_trail": {
   "width": 16,
   "height": 16,
@@ -5101,6 +5468,19 @@
   }
  },
  "platform_sakura_moving": {
+  "width": 48,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "platform_sakura_night_moving": {
   "width": 48,
   "height": 12,
   "anchorX": 0.5,
@@ -6191,6 +6571,188 @@
    }
   }
  },
+ "ravine_sakura_night": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_b": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_back": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_deep": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_falls": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_falls_edge": {
+  "width": 4,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_fill": {
+  "width": 8,
+  "height": 48,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_floor": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_lip": {
+  "width": 16,
+  "height": 6,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "flow": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_pool": {
+  "width": 16,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "churn": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_rim": {
+  "width": 12,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_splash": {
+  "width": 16,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "splash": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_surface": {
+  "width": 16,
+  "height": 8,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "wave": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   }
+  }
+ },
+ "ravine_sakura_night_vines": {
+  "width": 6,
+  "height": 24,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
  "ravine_sakura_pool": {
   "width": 16,
   "height": 24,
@@ -6511,31 +7073,32 @@
   "anchorY": 0.0714,
   "animations": {
    "idle": {
-    "frames": 2,
-    "fps": 3,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "roll": {
-    "frames": 4,
-    "fps": 12,
+    "frames": 11,
+    "fps": 18,
     "loop": true
    },
    "attack": {
-    "frames": 4,
-    "fps": 10,
+    "frames": 6,
+    "fps": 16,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 12,
     "loop": false
    },
    "death": {
-    "frames": 4,
-    "fps": 8,
+    "frames": 6,
+    "fps": 10,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "sakura_bat": {
   "width": 46,
@@ -6544,26 +7107,27 @@
   "anchorY": 0.1875,
   "animations": {
    "fly": {
-    "frames": 4,
-    "fps": 12,
+    "frames": 8,
+    "fps": 14,
     "loop": true
    },
    "attack": {
-    "frames": 3,
-    "fps": 10,
+    "frames": 6,
+    "fps": 12,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 12,
     "loop": false
    },
    "death": {
-    "frames": 3,
-    "fps": 10,
+    "frames": 8,
+    "fps": 12,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "sakura_bunny": {
   "width": 44,
@@ -6572,36 +7136,37 @@
   "anchorY": 0.0556,
   "animations": {
    "idle": {
-    "frames": 2,
-    "fps": 3,
-    "loop": true
-   },
-   "walk": {
-    "frames": 4,
+    "frames": 6,
     "fps": 8,
     "loop": true
    },
+   "walk": {
+    "frames": 8,
+    "fps": 13,
+    "loop": true
+   },
    "run": {
-    "frames": 4,
-    "fps": 12,
+    "frames": 12,
+    "fps": 18,
     "loop": true
    },
    "attack": {
-    "frames": 4,
-    "fps": 10,
+    "frames": 5,
+    "fps": 11,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
+    "frames": 3,
     "fps": 10,
     "loop": false
    },
    "death": {
-    "frames": 4,
+    "frames": 6,
     "fps": 8,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "sakura_slime": {
   "width": 34,
@@ -6643,12 +7208,46 @@
   "anchorY": 0.125,
   "animations": {
    "float": {
-    "frames": 4,
-    "fps": 6,
+    "frames": 8,
+    "fps": 10,
     "loop": true
    },
    "death": {
-    "frames": 3,
+    "frames": 6,
+    "fps": 12,
+    "loop": false
+   }
+  },
+  "scale": 3
+ },
+ "samurai_ronin": {
+  "width": 52,
+  "height": 40,
+  "anchorX": 0.6058,
+  "anchorY": 0.05,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 4,
+    "fps": 10,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
     "fps": 8,
     "loop": false
    }
@@ -6683,6 +7282,39 @@
    "death": {
     "frames": 4,
     "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "shadow_slime": {
+  "width": 40,
+  "height": 34,
+  "anchorX": 0.5375,
+  "anchorY": 0.0882,
+  "animations": {
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "walk": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
     "loop": false
    }
   }
@@ -7156,6 +7788,39 @@
    }
   }
  },
+ "spirit_wisp": {
+  "width": 38,
+  "height": 38,
+  "anchorX": 0.5395,
+  "anchorY": 0.1053,
+  "animations": {
+   "float": {
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 8,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
+   }
+  }
+ },
  "spore": {
   "width": 10,
   "height": 10,
@@ -7292,6 +7957,39 @@
     "frames": 1,
     "fps": 1,
     "loop": true
+   }
+  }
+ },
+ "tengu_crow": {
+  "width": 54,
+  "height": 44,
+  "anchorX": 0.4907,
+  "anchorY": 0.1818,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+   },
+   "attack": {
+    "frames": 3,
+    "fps": 10,
+    "loop": false
+   },
+   "hurt": {
+    "frames": 2,
+    "fps": 10,
+    "loop": false
+   },
+   "death": {
+    "frames": 4,
+    "fps": 8,
+    "loop": false
    }
   }
  },
@@ -7570,6 +8268,58 @@
  },
  "terrain_sakura_fill": {
   "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_sakura_night_edge": {
+  "width": 8,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_sakura_night_fill": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_sakura_night_top": {
+  "width": 16,
+  "height": 16,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "terrain_sakura_night_wall": {
+  "width": 8,
   "height": 16,
   "anchorX": 0.5,
   "anchorY": 0,
@@ -7971,6 +8721,19 @@
     "frames": 4,
     "fps": 10,
     "loop": false
+   }
+  }
+ },
+ "wisp_shot": {
+  "width": 14,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
    }
   }
  },

@@ -18,6 +18,10 @@ SPEC = {
     "hero": ((44, 36), {"run": 8, "stop": 4, "idle": 4, "jump": 2, "fall": 2, "double": 4, "throw": 4, "dash": 4,
                         "pounce": 4, "hurt": 2, "death": 6, "peek": 4, "cheer": 4, "sit_happy": 4, "ko": 2,
                         "ghost": 4, "menu": 4}),
+    # Cut from the user's painting (characters/hero_painted.py), 3x PNGs: every painted frame of every row.
+    "hero_sakura": ((44, 36), {"run": 16, "stop": 8, "idle": 8, "jump": 5, "fall": 6, "double": 8, "throw": 9,
+                               "dash": 7, "pounce": 8, "hurt": 4, "death": 9, "peek": 7, "cheer": 7, "sit_happy": 8,
+                               "ko": 4, "ghost": 8, "menu": 9}),
     "yarn": ((12, 12), {"fly": 4, "impact": 5}),
     # World 1, forest
     "squirrel": ((36, 36), {"walk": 6, "death": 4}),
@@ -185,22 +189,34 @@ SPEC = {
     "mini_void_cat": ((56, 34), {"idle": 2, "teleport": 4, "attack": 4, "hit": 2, "death": 4}),
     # Sakura world, level 1 critters (characters/sakura_critters.py)
     "sakura_slime": ((34, 28), {"idle": 2, "walk": 4, "attack": 3, "hurt": 2, "death": 4}),
-    "sakura_bunny": ((44, 36), {"idle": 2, "walk": 4, "run": 4, "attack": 4, "hurt": 2, "death": 4}),
+    # Cut from the user's painting (characters/sakura_bunny_painted.py), 3x PNGs; run is JUMP then FALL, attack drops
+    # the painted projectile frame.
+    "sakura_bunny": ((44, 36), {"idle": 6, "walk": 8, "run": 12, "attack": 5, "hurt": 3, "death": 6}),
     "lantern_spirit": ((34, 38), {"idle": 2, "float": 4, "attack": 3, "hurt": 2, "death": 4}),
     "blossom_shot": ((12, 12), {"fly": 4}),
     "bird_crow": ((48, 34), {"fly": 4, "attack": 3, "hurt": 2, "death": 4}),
     "spike_plant": ((36, 32), {"idle": 2, "open": 2, "attack": 3, "hurt": 2, "death": 4}),
-    "rolling_onigiri": ((44, 28), {"idle": 2, "roll": 4, "attack": 4, "hurt": 2, "death": 4}),
-    "sakura_spirit": ((24, 24), {"float": 4, "death": 3}),
+    # Cut from the user's painting (characters/rolling_onigiri_painted.py), 3x PNGs; every painted frame of each row.
+    "rolling_onigiri": ((44, 28), {"idle": 6, "roll": 11, "attack": 6, "hurt": 4, "death": 6}),
+    "sakura_spirit": ((24, 24), {"float": 8, "death": 6}),
     # Sakura world, level 2 (dusk) critters (characters/sakura_dusk_critters.py)
     "lantern_slime": ((34, 32), {"idle": 2, "walk": 4, "attack": 3, "hurt": 2, "death": 4}),
     "lantern_flame": ((12, 12), {"fly": 4}),
     "ninja_tanuki": ((48, 40), {"idle": 2, "walk": 4, "attack": 4, "hurt": 2, "death": 4}),
-    "sakura_bat": ((46, 32), {"fly": 4, "attack": 3, "hurt": 2, "death": 3}),
+    # Cut from the user's painting (characters/sakura_bat_painted.py), 3x PNGs; attack drops the painted projectile cell.
+    "sakura_bat": ((46, 32), {"fly": 8, "attack": 6, "hurt": 4, "death": 8}),
     "shadow_spirit": ((38, 38), {"idle": 2, "cast": 3, "attack": 3, "hurt": 2, "death": 4}),
     "spirit_flame": ((14, 12), {"fly": 4}),
     "spike_kappa": ((40, 32), {"closed": 2, "open": 2, "attack": 3, "hurt": 2, "death": 4}),
     "spike_ball": ((12, 12), {"fly": 4}),
+    # Sakura world, level 3 (night) critters (characters/sakura_night_critters.py)
+    "shadow_slime": ((40, 34), {"idle": 2, "walk": 4, "attack": 3, "hurt": 2, "death": 4}),
+    "samurai_ronin": ((52, 40), {"idle": 2, "walk": 4, "attack": 4, "hurt": 2, "death": 4}),
+    "oni_cat": ((76, 56), {"idle": 2, "walk": 4, "attack": 4, "hurt": 2, "death": 4}),
+    "oni_rock": ((12, 12), {"fly": 4}),
+    "tengu_crow": ((54, 44), {"fly": 4, "idle": 2, "attack": 3, "hurt": 2, "death": 4}),
+    "spirit_wisp": ((38, 38), {"float": 4, "idle": 2, "attack": 3, "hurt": 2, "death": 4}),
+    "wisp_shot": ((14, 12), {"fly": 4}),
     "gear": ((30, 30), {"spin": 4}),
     "crate_wall": ((24, 124), {"still": 1, "break": 5}),
     # The citadel's lava pit and terrain (characters/cataclysm.py), the forest contracts
@@ -288,6 +304,28 @@ SPEC = {
     "island_sakura_dusk": ((48, 24), {"still": 1}),
     "bridge_sakura_dusk": ((48, 12), {"still": 1, "crumble": 4}),
     "platform_sakura_dusk_moving": ((48, 12), {"still": 1}),
+    # Sakura route level 3, the night (characters/sakura_night.py), the forest contracts
+    "ravine_sakura_night": ((8, 16), {"still": 1}),
+    "ravine_sakura_night_b": ((8, 16), {"still": 1}),
+    "ravine_sakura_night_rim": ((12, 24), {"still": 1}),
+    "ravine_sakura_night_vines": ((6, 24), {"still": 1}),
+    "ravine_sakura_night_back": ((16, 16), {"still": 1}),
+    "ravine_sakura_night_falls": ((16, 16), {"flow": 4}),
+    "ravine_sakura_night_falls_edge": ((4, 16), {"flow": 4}),
+    "ravine_sakura_night_lip": ((16, 6), {"flow": 4}),
+    "ravine_sakura_night_surface": ((16, 8), {"wave": 4}),
+    "ravine_sakura_night_pool": ((16, 24), {"churn": 4}),
+    "ravine_sakura_night_splash": ((16, 12), {"splash": 4}),
+    "ravine_sakura_night_floor": ((16, 16), {"still": 1}),
+    "ravine_sakura_night_fill": ((8, 48), {"still": 1}),
+    "ravine_sakura_night_deep": ((16, 16), {"still": 1}),
+    "terrain_sakura_night_top": ((16, 16), {"still": 1}),
+    "terrain_sakura_night_edge": ((8, 16), {"still": 1}),
+    "terrain_sakura_night_wall": ((8, 16), {"still": 1}),
+    "terrain_sakura_night_fill": ((16, 16), {"still": 1}),
+    "island_sakura_night": ((48, 24), {"still": 1}),
+    "bridge_sakura_night": ((48, 12), {"still": 1, "crumble": 4}),
+    "platform_sakura_night_moving": ((48, 12), {"still": 1}),
     "lantern_pendulum": ((20, 40), {"swing": 8}),
     "falling_lantern": ((14, 18), {"hang": 2, "fall": 2, "burn": 4}),
     "boss_mecha": ((168, 124), {"idle": 4, "rockets": 6, "tail": 6, "core": 4, "hurt": 2, "death": 8}),
@@ -296,9 +334,14 @@ SPEC = {
                                   "death": 10}),
     "portal": ((26, 36), {"open": 4, "close": 4}),
     # Sakura route boss
-    "boss_kitsune": ((150, 120), {"idle": 4, "walk": 6, "claw": 6, "bloom": 6, "summon": 6, "hurt": 2, "death": 8}),
-    "boss_toad": ((160, 136), {"idle": 4, "walk": 4, "prepare": 3, "tongue": 6, "lanterns": 6, "slam": 8, "hurt": 2,
-                               "death": 8}),
+    # Cut from the user's painting (characters/boss_kitsune_painted.py), 3x PNGs; every painted frame once.
+    "boss_kitsune": ((150, 120), {"idle": 12, "claw": 18, "bloom": 16, "summon": 16, "hurt": 3, "death": 12}),
+    # Cut from the user's painting (characters/boss_toad_painted.py), 3x PNGs; every painted frame once (SLAM 17-18,
+    # painted without the toad, left out).
+    "boss_toad": ((160, 136), {"idle": 9, "walk": 8, "prepare": 6, "tongue": 11, "lanterns": 14, "slam": 18,
+                               "hurt": 4, "death": 8}),
+    "boss_guardian_cat": ((160, 136), {"idle": 4, "walk": 6, "prepare": 3, "volley": 6, "spin": 6, "slam": 8, "beam": 7,
+                                       "summon": 6, "enrage": 6, "hurt": 2, "death": 8}),
     # Pickups and award art
     "fish": ((16, 12), {"spin": 6}),
     "yarn_basket": ((28, 28), {"glow": 4}),
@@ -352,7 +395,8 @@ SPEC = {
 }
 
 
-# Recoloured heroes (`hero_<id>`): every one must match `hero` exactly in size, anchor and animations.
+# Recoloured heroes (`hero_<id>`): every one must match `hero` in size, anchor and animations (see
+# `test_hero_skins_match_the_hero` for what painted skins may differ in).
 HERO_SKINS = ("shadow", "misty", "sakura", "honey", "pixie", "clover", "snowball", "napster", "toffee", "cabage",
               "sharky")
 
@@ -374,7 +418,9 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
     for sprite in sprites.values():
         for name, anim in sprite.anims.items():
             for index, frame in enumerate(anim.frames):
-                assert frame.size == sprite.size, f"{sprite.name}/{name}[{index}]"
+                # Painted sprites (`Sprite.scale` > 1) keep more pixels per point; the size is in points.
+                assert frame.size == (sprite.size[0] * sprite.scale, sprite.size[1] * sprite.scale), \
+                    f"{sprite.name}/{name}[{index}]"
                 # The last frames of a death may dissolve to nothing; everything else must draw something.
                 if name != "death":
                     assert frame.getbbox() is not None, f"{sprite.name}/{name}[{index}] is empty"
@@ -382,6 +428,7 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
 
 @pytest.mark.parametrize("name", ["hero", *(f"hero_{skin}" for skin in HERO_SKINS), "boss_squirrel",
                                   "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat", "boss_kitsune", "boss_toad",
+                                  "boss_guardian_cat",
                                   "squirrel", "hedgehog", "ghost_cat", "skeleton_mouse", "penguin", "mech_mouse",
                                   "mushroom_cat", "forest_bat", "plant_cat", "bee_cat", "stump_cat", "snail_cat",
                                   "ice_slime", "snow_cat", "ice_bat", "ice_golem", "penguin_soldier", "snowy_owl",
@@ -394,7 +441,8 @@ def test_every_frame_has_its_sprite_size_and_is_not_blank(sprites):
                                   "void_wisp", "mini_void_cat",
                                   "sakura_slime", "sakura_bunny", "lantern_spirit", "bird_crow", "spike_plant",
                                   "rolling_onigiri", "sakura_spirit",
-                                  "lantern_slime", "ninja_tanuki", "sakura_bat", "shadow_spirit", "spike_kappa"])
+                                  "lantern_slime", "ninja_tanuki", "sakura_bat", "shadow_spirit", "spike_kappa",
+                                  "shadow_slime", "samurai_ronin", "oni_cat", "tengu_crow", "spirit_wisp"])
 def test_big_creatures_are_not_clipped(sprites, name):
     """A sprite that reaches the side or top of its canvas loses a snout, tail or club: widen the canvas."""
     for anim, data in sprites[name].anims.items():
@@ -429,7 +477,8 @@ def test_output_is_deterministic(sprites):
 
 def test_animation_actually_moves(sprites):
     for name in ("hero", "squirrel", "hedgehog", "penguin", "ghost_cat", "mech_mouse", "boss_squirrel",
-                 "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat", "boss_kitsune", "boss_toad"):
+                 "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat", "boss_kitsune", "boss_toad",
+                 "boss_guardian_cat"):
         anim = next(iter(sprites[name].anims.values()))
         assert len({frame.tobytes() for frame in anim.frames}) > 1, f"{name}: all frames identical"
 
@@ -474,17 +523,35 @@ def test_every_thing_the_game_can_show_has_a_sprite(sprites):
 
 @pytest.mark.parametrize("skin", HERO_SKINS)
 def test_hero_skins_match_the_hero(sprites, skin):
-    """A skin is the same hero in another coat: same frame size, anchor, animations, frame counts and timing."""
+    """A skin is the same hero in another coat: same frame size, anchor, animations and loop flags. A code-drawn skin
+    also has the hero's frame counts and fps. A skin cut from a painted sheet (`characters/hero_painted.py`, painted
+    to `docs/hero-sheet-brief.md`) plays its own painted frames, so its counts and fps may differ, but each animation
+    lasts about as long as the hero's (within 25%); the throw fits the 0.25 s throw window and the hurt the 0.3 s
+    hurt window (`GameScene`'s `hurtUntil`), which the brief gives one full cycle."""
+    from characters.hero_painted import PAINTED
     hero, other = sprites["hero"], sprites[f"hero_{skin}"]
     assert (other.size, other.cx, other.ground, other.faces_left) == (hero.size, hero.cx, hero.ground, hero.faces_left)
-    assert {a: (len(d.frames), d.fps, d.loop) for a, d in other.anims.items()} == \
-        {a: (len(d.frames), d.fps, d.loop) for a, d in hero.anims.items()}
+    assert {a: d.loop for a, d in other.anims.items()} == {a: d.loop for a, d in hero.anims.items()}
+    if skin in PAINTED:
+        for name, data in other.anims.items():
+            seconds, hero_seconds = len(data.frames) / data.fps, len(hero.anims[name].frames) / hero.anims[name].fps
+            if name == "throw":
+                assert seconds <= 0.25 + 1e-9, f"hero_{skin}/throw lasts {seconds:.3f} s"
+            elif name == "hurt":
+                assert hero_seconds <= seconds <= 0.31, f"hero_{skin}/hurt lasts {seconds:.3f} s"
+            else:
+                assert abs(seconds / hero_seconds - 1) <= 0.25, \
+                    f"hero_{skin}/{name} lasts {seconds:.3f} s, the hero {hero_seconds:.3f} s"
+    else:
+        assert {a: d.fps for a, d in other.anims.items()} == {a: d.fps for a, d in hero.anims.items()}
+        for name, data in other.anims.items():
+            assert len(data.frames) == len(hero.anims[name].frames), f"hero_{skin}/{name}"
     differs = sum(a.tobytes() != b.tobytes() for name in hero.anims
                   for a, b in zip(hero.anims[name].frames, other.anims[name].frames))
     assert differs > 0, f"hero_{skin} looks exactly like the hero"
 
 
-THEMES = ("forest", "frost", "haunted", "citadel", "void", "sakura", "sakura_dusk")
+THEMES = ("forest", "frost", "haunted", "citadel", "void", "sakura", "sakura_dusk", "sakura_night")
 THEME_LAYERS = ("sky", "sky_top", "puffs", "clouds", "far", "near", "bushes")
 PIT_PIECES = ("", "_b", "_rim", "_vines", "_back", "_falls", "_falls_edge", "_lip", "_surface", "_pool", "_splash", "_floor",
               "_fill", "_deep")
@@ -503,3 +570,39 @@ def test_every_theme_has_its_whole_set(sprites, theme):
     for layer in ("puffs", "clouds", "far", "near", "bushes"):
         assert sprites[f"bg_{theme}_{layer}"].size[0] == 320, f"bg_{theme}_{layer} must tile at 320"
     assert sprites[f"ground_{theme}"].size == (32, 48) and sprites[f"ground_{theme}_earth"].size == (32, 36)
+
+
+def test_painted_heroes_are_cut_cleanly(sprites):
+    """Heroes cut from a painted sheet: hard alpha (no glow halo on dark backgrounds) except the see-through
+    ghost, and grounded poses standing on the frame's bottom row like `hero`."""
+    from characters.hero_painted import PAINTED
+    for skin in PAINTED:
+        sprite = sprites[f"hero_{skin}"]
+        for name, data in sprite.anims.items():
+            for index, frame in enumerate(data.frames):
+                alpha = frame.getchannel("A").histogram()
+                if name == "ghost":
+                    assert sum(alpha[200:]) == 0, f"hero_{skin}/ghost[{index}] is not see-through"
+                else:
+                    assert sum(alpha[1:255]) == 0, f"hero_{skin}/{name}[{index}] has soft alpha"
+                if name in ("run", "idle", "stop", "throw", "dash", "menu", "sit_happy", "peek", "ko"):
+                    assert frame.getbbox()[3] == frame.height, f"hero_{skin}/{name}[{index}] is off the ground"
+
+
+
+def test_painted_bosses_are_cut_cleanly(sprites):
+    """Bosses and their projectiles cut from a painted sheet (`sheet_boss.py`): 3x PNGs with hard alpha (no glow
+    halo on dark backgrounds); the boss's grounded poses stand on its ground row and nothing reaches below it."""
+    from characters import boss_kitsune_painted, boss_toad_painted
+    for module, boss_name in ((boss_kitsune_painted, "boss_kitsune"), (boss_toad_painted, "boss_toad")):
+        for name in module.NAMES:
+            sprite = sprites[name]
+            assert sprite.scale == 3, name
+            for anim, data in sprite.anims.items():
+                for index, frame in enumerate(data.frames):
+                    assert sum(frame.getchannel("A").histogram()[1:255]) == 0, f"{name}/{anim}[{index}] has soft alpha"
+        boss = sprites[boss_name]
+        bottom = (boss.ground + 1) * boss.scale
+        for anim, data in boss.anims.items():
+            for index, frame in enumerate(data.frames):
+                assert frame.getbbox()[3] == bottom, f"{boss_name}/{anim}[{index}] is not on the ground row"

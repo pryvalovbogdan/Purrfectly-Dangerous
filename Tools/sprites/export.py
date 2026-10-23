@@ -49,10 +49,12 @@ def write_gif(frames: list[Image.Image], fps: int, path: Path, scale: int) -> No
     big[0].save(path, save_all=True, append_images=big[1:], duration=max(20, round(1000 / fps)), loop=0, disposal=2)
 
 
-def write_atlas_image(image: Image.Image, name: str) -> None:
+def write_atlas_image(image: Image.Image, name: str, scale: int = 1) -> None:
+    """One atlas frame. `scale` > 1 (painted sprites at 3x detail) tags the PNG so SpriteKit sizes the
+    texture in points: a 132×108 PNG at 3x is a 44×36 texture."""
     folder = ATLAS / f"{name}.imageset"
     write_png(image, folder / f"{name}.png")
-    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal", "scale": "1x"}],
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal", "scale": f"{scale}x"}],
                 "info": {"author": "xcode", "version": 1}}
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
 
@@ -83,12 +85,14 @@ def export(sprites: list[Sprite], only: set[str] | None = None) -> dict:
                  "anchorX": round(1 - anchor_x if sprite.faces_left else anchor_x, 4),
                  "anchorY": 0 if sprite.ground is None else round((h - 1 - sprite.ground) / h, 4),
                  "animations": {}}
+        if sprite.scale != 1:
+            entry["scale"] = sprite.scale
         for anim_name, anim in sprite.anims.items():
             frames = frames_of(sprite, anim_name)
             for index, frame in enumerate(frames):
-                write_atlas_image(frame, frame_name(sprite.name, anim_name, index))
+                write_atlas_image(frame, frame_name(sprite.name, anim_name, index), sprite.scale)
             write_png(sheet(frames), OUT / "sheets" / f"{sprite.name}_{anim_name}.png")
-            scale = max(1, min(8, 256 // max(sprite.size)))
+            scale = max(1, min(8, 256 // max(sprite.size)) // sprite.scale)
             write_gif(frames, anim.fps, OUT / "preview" / f"{sprite.name}_{anim_name}.gif", scale)
             entry["animations"][anim_name] = {"frames": len(frames), "fps": anim.fps, "loop": anim.loop}
         manifest[sprite.name] = entry
@@ -200,9 +204,84 @@ def cut_title(source: str, box: tuple, cleared: list, name: str) -> None:
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
 
 
+# The CATS plank with its lettering taken out, for the screen to letter itself from Lore.json (`ui.cats`):
+# the painted left end (leaves, paw), the clean wood between the paw and the first letter stretched to
+# `PLANK_MIDDLE` pixels (the grain runs along the plank, so it stretches cleanly), the painted right end.
+PLANK_LEFT, PLANK_CLEAN, PLANK_RIGHT, PLANK_MIDDLE = 122, (124, 144), 338, 300
+
+
+def blank_plank() -> None:
+    im = Image.open(ATLAS.parent / "title_cats.imageset/title_cats.png").convert("RGBA")
+    w, h = im.size
+    left = im.crop((0, 0, PLANK_LEFT, h))
+    wood = im.crop((PLANK_CLEAN[0], 0, PLANK_CLEAN[1], h)).resize((PLANK_MIDDLE, h), Image.NEAREST)
+    right = im.crop((PLANK_RIGHT, 0, w, h))
+    out = Image.new("RGBA", (left.width + PLANK_MIDDLE + right.width, h), (0, 0, 0, 0))
+    out.paste(left, (0, 0))
+    out.paste(wood, (left.width, 0))
+    out.paste(right, (left.width + PLANK_MIDDLE, 0))
+    name = "title_plank"
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(out, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}],
+                "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+# The Sakura route's boss health bar, from the user's painting (real transparency with a pink haze):
+# (box in the sheet, asset name). The boxes are fixed (not trimmed), because the HUD places the name and
+# the fill by where the plaque and the track sit in them (`SakuraBossHealth` in App/UI/HUDPanels.swift).
+SAKURA_BAR_SOURCE = "sakura_boss_bar_source.png"
+SAKURA_BAR_CUTS = [
+    ((95, 25, 1435, 232), "boss_plate_sakura"),            # name plaque; text area x 305-1035, y 73-175
+    ((60, 240, 1480, 375), "boss_bar_frame_sakura"),       # bar frame; track x 165-1240, y 40-90
+    ((186, 397, 222, 461), "boss_bar_fill_sakura_left"),   # the red fill's rounded ends and a middle slice
+    ((700, 397, 708, 461), "boss_bar_fill_sakura_mid"),
+    ((1315, 397, 1351, 461), "boss_bar_fill_sakura_right"),
+]
+
+
+def cut_alpha_piece(source: str, box: tuple, name: str, alpha: int = 200) -> None:
+    """One piece of a painting with real transparency: pixels under `alpha` (the soft haze) cleared, the rest
+    made fully opaque, and loose specks smaller than 40 pixels dropped. A regular image, outside the atlas."""
+    im = Image.open(Path(__file__).parent / source).convert("RGBA").crop(box)
+    w, h = im.size
+    px = im.load()
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            px[x, y] = (r, g, b, 255) if a >= alpha else (0, 0, 0, 0)
+    seen = set()
+    for start in ((x, y) for y in range(h) for x in range(w)):
+        if start in seen or px[start][3] == 0:
+            continue
+        shape, stack = [start], [start]
+        seen.add(start)
+        while stack:
+            x, y = stack.pop()
+            for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= n[0] < w and 0 <= n[1] < h and n not in seen and px[n][3]:
+                    seen.add(n)
+                    stack.append(n)
+                    shape.append(n)
+        if len(shape) < 40:
+            for p in shape:
+                px[p] = (0, 0, 0, 0)
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(im, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}],
+                "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
 def titles() -> None:
     for title in TITLES:
         cut_title(*title)
+    blank_plank()
+    for box, name in SAKURA_BAR_CUTS:
+        cut_alpha_piece(SAKURA_BAR_SOURCE, box, name)
     for cut in SHEET_CUTS:
         cut_from_sheet(*cut)
     cat_portraits()
@@ -231,8 +310,17 @@ def _checker_only(p: tuple) -> bool:
     return max(r, g, b) - min(r, g, b) <= 4 and min(r, g, b) > 200
 
 
+def _checker_and_glow(p: tuple) -> bool:
+    """The checkerboard, also where the painting's pale yellow sparkle glow was laid over it."""
+    r, g, b = p[:3]
+    grey = max(r, g, b) - min(r, g, b) <= 16 and min(r, g, b) > 170
+    glow = min(r, g) > 232 and b > 176
+    return grey or glow
+
+
 PAUSE_SOURCE = "pause_source.png"
 CATS_SOURCE = "cats_source.png"
+GOLDEN_PACKS_SOURCE = "golden_packs_source.png"
 CAT_SKINS = ["fluffy", "shadow", "misty", "sakura", "honey", "pixie", "clover", "snowball",
              "napster", "toffee", "cabage", "sharky"]
 
@@ -329,13 +417,20 @@ SHEET_CUTS = [
     (PAUSE_SOURCE, (1130, 258, 1516, 378), "pause_resume_pressed", _checker_only),
     (PAUSE_SOURCE, (728, 414, 1116, 534), "pause_quit", _checker_only),
     (PAUSE_SOURCE, (1130, 414, 1516, 534), "pause_quit_pressed", _checker_only),
+    # The golden fish packs: only the picture above each painted price bar. The game draws the bar
+    # itself, because the price must be the App Store's, in the player's currency.
+    (GOLDEN_PACKS_SOURCE, (140, 60, 720, 314), "golden_pack_50", _checker_and_glow, 80),
+    (GOLDEN_PACKS_SOURCE, (815, 25, 1400, 314), "golden_pack_150", _checker_and_glow, 80),
+    (GOLDEN_PACKS_SOURCE, (140, 490, 720, 824), "golden_pack_350", _checker_and_glow, 80),
+    (GOLDEN_PACKS_SOURCE, (815, 480, 1410, 824), "golden_pack_800", _checker_and_glow, 80),
 ]
 
 
-def cut_from_sheet(source: str, box: tuple, name: str, background=None) -> None:
+def cut_from_sheet(source: str, box: tuple, name: str, background=None, keep_min: int = 0) -> None:
     """One piece from a user UI sheet, like the titles: the checkerboard (and any navy panel behind
     the piece) is flood-filled away from the edges, stopped by the art's outline, then only the
-    largest connected shape is kept, which drops stray specks."""
+    largest connected shape is kept, which drops stray specks. With `keep_min`, every shape of at
+    least that many pixels is kept instead (sparkles floating around the piece)."""
     im = Image.open(Path(__file__).parent / source).convert("RGBA").crop(box)
     w, h = im.size
     px = im.load()
@@ -349,7 +444,7 @@ def cut_from_sheet(source: str, box: tuple, name: str, background=None) -> None:
         px[x, y] = (0, 0, 0, 0)
         todo += [(nx, ny) for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
                  if 0 <= nx < w and 0 <= ny < h and not clear[nx][ny]]
-    seen, best = set(), []
+    seen, best, kept = set(), [], []
     for start in ((x, y) for x in range(w) for y in range(h)):
         if start in seen or px[start][3] == 0:
             continue
@@ -363,7 +458,9 @@ def cut_from_sheet(source: str, box: tuple, name: str, background=None) -> None:
                     seen.add(n)
                     stack.append(n)
         best = max(best, shape, key=len)
-    keep = set(best)
+        if keep_min and len(shape) >= keep_min:
+            kept += shape
+    keep = set(kept or best)
     for x in range(w):
         for y in range(h):
             if (x, y) not in keep:
@@ -377,14 +474,19 @@ def cut_from_sheet(source: str, box: tuple, name: str, background=None) -> None:
 
 
 def contact_sheet(sprites: list[Sprite], path: Path, scale: int = 4) -> None:
-    """One PNG with every animation of the given sprites as labelled rows, for quick review."""
+    """One PNG with every animation of the given sprites as labelled rows, for quick review. Sprites
+    exported at more than 1x (`Sprite.scale`) are shown at their own pixels, enlarged by `scale // sprite.scale`."""
     rows = [(s, name) for s in sprites for name in s.anims]
-    width = max(s.size[0] * len(s.anims[name].frames) for s, name in rows) * scale
-    height = sum(s.size[1] for s, _ in rows) * scale
+
+    def k(s: Sprite) -> int:
+        return s.scale * max(1, scale // s.scale)
+    width = max(s.size[0] * len(s.anims[name].frames) * k(s) for s, name in rows)
+    height = sum(s.size[1] * k(s) for s, _ in rows)
     out = Image.new("RGBA", (width, height), PREVIEW_BG)
     y = 0
     for sprite, name in rows:
         strip = sheet(frames_of(sprite, name))
-        out.alpha_composite(strip.resize((strip.width * scale, strip.height * scale), Image.NEAREST), (0, y))
-        y += sprite.size[1] * scale
+        grow = k(sprite) // sprite.scale
+        out.alpha_composite(strip.resize((strip.width * grow, strip.height * grow), Image.NEAREST), (0, y))
+        y += sprite.size[1] * k(sprite)
     write_png(out, path)

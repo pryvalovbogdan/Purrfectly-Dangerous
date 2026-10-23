@@ -957,8 +957,11 @@ def speed_lines(i: int, colours=(P.WHITE, P.CREAM), reach: float = 6):
 
 
 def build() -> list[Sprite]:
+    from characters.hero_painted import PAINTED            # skins cut from the user's painted sheets instead
     sprites = [hero_sprite("hero"), yarn()]
     for skin in SKINS:
+        if skin.id in PAINTED:
+            continue
         with wearing(skin):
             sprites.append(hero_sprite(f"hero_{skin.id}"))
     return sprites

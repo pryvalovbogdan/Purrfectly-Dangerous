@@ -14,7 +14,8 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | Sprite | Size | Animations (frames) |
 | --- | --- | --- |
 | hero | 44×36 | run 8, stop 4, idle 4 (stands, cape stirring, blinks; chunky legs and paws), jump 2 (legs tucked), fall 2 (arm up), double 4 (tucked forward flip), throw 4, dash 4 (blue-white see-through, after-images, speed lines), pounce 4 (stretched flat leap, speed lines), hurt 2 (flinch, star), death 6 (slumps, flops flat, fades); for the screens: peek 4 (lying on its belly on a ledge, paws flopped over the edge, cape draped over its back, blinks; the ledge is row 34), cheer 4 (one paw thrust up, "^ ^" eyes, open smile, cape flapping), sit_happy 4 (sitting, "^ ^" eyes, smile, tail swishing), ko 2 (stretched out on its belly about 40 px long, head resting at the right with its ears up, "x x" eyes, tongue out; tail out to the left, cape draped over its back only; each part outlined; 1 px twitch of tail tip and hind paw), menu 4 (start screen: crouched low, three-quarter view facing right, both front legs planted with white paws, tucked haunch with the white hind foot, tail curled behind, cape and scarf flowing back over the upper back; open eyes and smile; frame 2 cape flutters, 3 blinks, 4 tail flicks; legs never move), ghost 4 (see-through pale blue spirit with a round front-facing head and two upright ears, big sad eyes and a frown, gold halo, white wings; bobs 0-2 px; floats about 3-5 px above row 34). Feet on row 34, body centred on x 22; the 16×24 hitbox covers the body and head, ears, cape and tail stick out |
-| hero_&lt;skin&gt; | 44×36 | the hero in another coat, every animation of `hero` with the same frames, anchor and timing (checked by `test_hero_skins_match_the_hero`). Skins: `shadow` (black fur, red cape, green eyes), `misty` (grey tabby, blue), `sakura` (white, pink, a pink flower by the ear), `honey` (cream, yellow), `pixie` (black-violet, purple, violet eyes), `clover` (orange tabby, green), `snowball` (white, blue, blue eyes), `napster` (grey tabby, white muzzle, brown), `toffee` (calico, brown), `cabage` (orange, green frog hood with frog eyes), `sharky` (orange, blue shark hood with a fin and teeth). Drawn by `hero.py` with the palette swapped (`SKINS`, `wearing`) and the head grid dressed (`dress`) |
+| hero_&lt;skin&gt; | 44×36 | the hero in another coat, every animation of `hero` with the same frames, anchor and timing (checked by `test_hero_skins_match_the_hero`). Skins: `shadow` (black fur, red cape, green eyes), `misty` (grey tabby, blue), `honey` (cream, yellow), `pixie` (black-violet, purple, violet eyes), `clover` (orange tabby, green), `snowball` (white, blue, blue eyes), `napster` (grey tabby, white muzzle, brown), `toffee` (calico, brown), `cabage` (orange, green frog hood with frog eyes), `sharky` (orange, blue shark hood with a fin and teeth). Drawn by `hero.py` with the palette swapped (`SKINS`, `wearing`) and the head grid dressed (`dress`) |
+| hero_sakura | 44×36 (132×108 PNGs at 3x) | cut from the user's painting `docs/concept/Sakura Cat Pixel Sprite Sheet v3.png` (painted to `docs/hero-sheet-brief.md`, copied to `Tools/sprites/hero_sakura_source.png`) by `characters/hero_painted.py` with `sheet_hero.py` — see "Heroes from painted sheets" below. Same names, anchor and loop flags as `hero`; every painted frame of each row, in order, with the fps set so each animation lasts about as long as the hero's: run 16 at 27 fps ← RUN, stop 8 at 20 ← STOP, idle 8 at 8 ← IDLE (the 8th blinks), jump 5 at 16 ← JUMP (labelled 6), fall 6 at 20 ← FALL, double 8 at 26 ← DOUBLE JUMP (the flip), throw 9 at 36 ← THROW (labelled 8; 0.25 s), dash 7 at 23 ← DASH (labelled 8; its painted speed streaks stay), pounce 8 at 21 ← POUNCE, hurt 4 at 13 ← HURT (one cycle in the 0.3 s hurt window), death 9 at 11 ← DEATH (labelled 12), ko 4 at 5 ← KO, ghost 8 at 8 ← GHOST (at 70% opacity), menu 9 at 9 ← MENU (labelled 8), sit_happy 8 at 10 ← SIT HAPPY, cheer 7 at 12 ← CHEER (labelled 8), peek 7 at 7 ← PEEK (labelled 8; the wooden box she peeks over is kept). The code-drawn Sakura in `hero.py` is skipped |
 | yarn | 12×12 | fly 4, impact 5 |
 | squirrel | 36×36 | walk 6, death 4. The Squirrel Thief: orange, cat-faced, teal scarf, huge curled tail, striding jointed legs; feet on row 34, x 18; covers its 18×24 hitbox |
 | acorn | 14×14 | roll 4, death 4 (12×11 hitbox) |
@@ -132,27 +133,35 @@ Sizes are frame sizes; the figure inside is smaller and anchored at its feet (`c
 | homing_orb | 14×12 | fly 4. Bright orb about 10×10 with a curling trail |
 | mini_void_cat | 56×34 | idle 2, teleport 4, attack 4 (crouch, dash, big magenta crescent slash, recover), hit 2, death 4. The shadow cat's build in void colours: black cat with a magenta rim, glowing eyes and violet smoke; feet on row 31, x 26; 18×20 hitbox |
 | sakura_slime | 34×28 | idle 2, walk 4, attack 3 (squash, spring with a puff of petals, settle), hurt 2, death 4 (melts in petals). Glossy pink dome with a blossom on its crown; feet on row 25, x 17; 20×14 hitbox |
-| sakura_bunny | 44×36 | idle 2, walk 4 (hops), run 4 (stretched leaps, petal trail), attack 4 (crouch, lunge, swipe with a pink crescent, land), hurt 2, death 4 (lies down, petals). White bunny with pink-lined ears and a blossom at its neck; feet on row 33, x 18; 18×20 hitbox |
+| sakura_bunny | 44×36 | cut from the user's painted sheet (`characters/sakura_bunny_painted.py`, 3x PNGs): idle 6 (sitting, ears twitching, a blink), walk 8 (hops), run 12 (the sheet's JUMP then FALL rows: two bounds, crouch to crouch), attack 5 (crouch, deeper crouch, a pink blossom burst at the muzzle, follow-through, hunched recovery; the painted projectile frame left out), hurt 3, death 6 (collapses, ends on a pile of petals). White-and-pink bunny with long pink ears, a blossom and ribbons at its neck; feet on row 33 (lowest pixel row 34), x 18; 18×20 hitbox |
 | lantern_spirit | 34×38 | idle 2, float 4 (blossoms circling), attack 3 (glows, fires a blossom shot, settle), hurt 2, death 4. Glowing paper lantern with a cute face, lacquered cap and base and a red bow with tassels; tassel ends on row 34, x 17; 16×18 hitbox |
 | blossom_shot | 12×12 | fly 4. Glowing pink blossom about 10×10, turning |
 | bird_crow | 48×34 | fly 4, attack 3 (wings up, dive with pink speed lines and petals, pull out), hurt 2, death 4. Dark purple crow with pink-tipped feathers and a pink flower on its head; feet on row 27, x 22 (the dive drops it a few rows); 18×14 hitbox |
 | spike_plant | 36×32 | idle 2 (closed pointed bud), open 2 (petals parting to a glowing heart with a face), attack 3 (spits a blossom shot), hurt 2, death 4. Pink lotus on broad green leaves; leaves on row 29, x 16; 18×20 hitbox |
-| rolling_onigiri | 44×28 | idle 2, roll 4 (turning, petal dust behind), attack 4 (squash, charge rolling with speed streaks and dust, stop), hurt 2, death 4. Rice ball with a nori wrap, a face and a pink blossom on top; bottom on row 25, x 22; 18×16 hitbox |
-| sakura_spirit | 24×24 | float 4, death 3. A tiny fox-spirit flame (summoned by the boss, as on the boss sheet): pink flame licks streaming back from a little fox head with pointed ears and a dark eye, a soft pink glow; lowest pixel on row 20, x 12; 12×12 hitbox |
+| rolling_onigiri | 44×28 | cut from the user's painted sheet (`characters/rolling_onigiri_painted.py`, 3x PNGs): idle 6 (sitting, a blink), roll 11 (one full turn from upright to upright: tipping over, the ball turning with the swoosh arcs cut away; played from the start on curling up, then looped), attack 6 (the charge, speed streaks cut at the nori's back, a blossom burst in 4), hurt 4, death 6 (bursts, ends on a pile of rice). Rice ball with a nori wrap, a face and a pink blossom on top; bottom on row 25 (lowest pixel row 26), x 22; 18×16 hitbox |
+| sakura_spirit | 24×24 (72×72 PNGs at 3x) | float 8 (10 fps), death 6 (12 fps, once). Cut from SAKURA SPIRIT - FLOAT and SAKURA SPIRIT - DEATH of the v2 boss sheet (`characters/boss_kitsune_painted.py`; the code-drawn one in `sakura_critters.py` is no longer built): a small glowing pink fox-spirit flame with a face. The float frames are painted facing right and mirrored on export like every enemy; the death row (painted facing left) is turned first; all float frames at one size (about 17×20 points), the death burst shrunk to fit, its last petals cut at a lower alpha so it fades; lowest pixel on row 20, x 12; 12×12 hitbox |
 | lantern_slime | 34×32 | idle 2, walk 4 (hops), attack 3 (squash, bounce with a pink swoosh, land), hurt 2, death 4. Glowing paper lantern sitting like a slime: red pagoda cap with a gold knob, a red blossom painted on the paper (a face when hurt), a pink blossom on the cap; rim on row 30, x 17; 20×16 hitbox |
 | lantern_flame | 12×12 | fly 4. Small orange flame about 10×10 |
 | ninja_tanuki | 48×40 | idle 2, walk 4, attack 4 (sword raised twice, slash with a pink crescent, follow through), hurt 2, death 4. Grey tanuki in a navy gi with a dark eye mask, red scarf, wide straw hat with a blossom, ringed tail; feet on row 37, x 18; 18×22 hitbox |
-| sakura_bat | 46×32 | fly 4, attack 3 (wings up, dive with pink streaks and petals, pull up), hurt 2, death 3. Cream bat with pink-red wings and a blossom between its ears; feet on row 25, x 23; 18×14 hitbox |
+| sakura_bat | 46×32 | cut from the user's painted sheet (`characters/sakura_bat_painted.py`, 3x PNGs), side-on: fly 8 (one wingbeat), attack 6 (the swoop, mouth open; the painted projectile cell left out), hurt 4, death 8 (tumbling, bursting into blossoms, petals settling). Cream bat with long pink ears, pink wings and a blossom at its neck; every frame lined up by the centroid of its fur 3 points in front of x 23 and 18 points down, so the body holds still over the 18×14 hitbox (anchor row 25) while the wings beat |
 | shadow_spirit | 38×38 | idle 2, cast 3 (claw raised, pink flame gathering), attack 3 (flame flung, homing), hurt 2, death 4 (rises away). Navy cloak of shadow trailing wisps, a pale slit-eyed mask with a red stripe, a blossom in its hood; lowest wisp on row 36, x 17; 16×20 hitbox |
 | spirit_flame | 14×12 | fly 4. Homing pink fireball about 12×10 with a hot pale core |
 | spike_kappa | 40×32 | closed 2 (mossy stone shell ringed with blossoms), open 2 (a dark mouth with a pink flame, then a pink lotus spread on the mossy rim), attack 3 (mouth open, throws spike balls), hurt 2, death 4. Rim on row 30, x 19; 22×18 hitbox |
 | spike_ball | 12×12 | fly 4. Pink ball with eight spikes, about 10×10, turning |
+| shadow_slime | 40×34 | idle 2, walk 4 (hops), attack 3 (crouch, leap forward with magenta streaks behind and a magenta crescent in front, land), hurt 2, death 4 (melts in petals). Possessed dark-violet dome with drips at its foot, magenta glitter swirling inside, glowing red angry eyes and a pink blossom on its crown, a magenta moon-rim; feet on row 30, x 18; 20×14 hitbox |
+| samurai_ronin | 52×40 | idle 2, walk 4, attack 4 (katana raised over the shoulder twice, slash with a big magenta crescent and streaks, follow through low), hurt 2, death 4. Dark cat ronin in a wide red-brown straw hat with a blossom, a pale cat face with dark eyes, a red scarf streaming back, a dark violet gi with a magenta obi, a katana held forward; feet on row 37, x 20; 16×26 hitbox |
+| oni_cat | 76×56 | idle 2, walk 4, attack 4 (club raised high twice, swung forward through a big magenta crescent, slammed on the ground in a magenta burst with petals), hurt 2, death 4. Big hunched shaggy dark oni cat, clearly bulkier than the ronin: two pink-red horns, a white oni mask with red markings, glowing red eyes and fangs, big red prayer beads, a red loincloth on a gold rope, a studded kanabo with blossoms tied on; feet on row 52, x 30; 28×36 hitbox (horns and club stick out) |
+| oni_rock | 12×12 | fly 4. Dark slate rock about 10×10 with a magenta rim and two petals, tumbling |
+| tengu_crow | 54×44 | fly 4, idle 2 (hover, slower beats), attack 3 (wings up, dive with magenta streaks and petals, pull out), hurt 2, death 4. Dark violet crow in a white tengu mask with a hooked beak-nose, red markings, a pink mask ear and a blossom; big ragged wings and tail tipped magenta, red talons; talons on row 35, x 27 (the dive drops it a few rows); 18×14 hitbox |
+| spirit_wisp | 38×38 | float 4, idle 2, attack 3 (swells, shoots a `wisp_shot`, settles), hurt 2, death 4 (rises away in petals). Pink-magenta flame spirit with a pale face, dark eyes and a little mouth, flame licks streaming up and back, a soft see-through pink glow (reaching 4 rows below the body) and petals drifting round; body bottom on row 33, x 17; 14×16 hitbox |
+| wisp_shot | 14×12 | fly 4. Glowing pink-magenta fireball about 12×10 with a white-hot core, a flame tail and a see-through halo |
 | gear | 30×30 | spin 4 |
 | crate_wall | 24×124 | still 1, break 5 |
 | boss_mecha | 168×124 | idle 4, rockets 6, tail 6, core 4 (chest open), hurt 2, death 8 |
 | boss_voidcat | 170×140 | idle 4, paws 8 (both paws rear up, then slam down one after the other with shadow smoke bursting on the ground), stars 6 (right paw raised, stars gathering round it and streaking up), portal 6 (the chest portal yawns open, small portals open on the ground at its sides), phase 6 (the final phase: the body flares bright, the eyes blaze; loops), swipe 6 (one big claw swipe across: paw raised, raked down through a magenta crescent; not looping), hurt 2, death 10 (dissolves into stars drifting up). The final boss, after the giant cat in `docs/concept/Void Cat Final Boss Tileset.png`: a front-facing cat of black-violet smoke with a starfield inside, blazing white-violet slanted eyes, two huge paws with crescent claws and a magenta portal in its chest; a 1 px magenta rim and a violet glow so it reads on the dark purple backdrop. Ground row 136, x 85; suggested hitbox 60×90 on the ground (baseY 0): the body column from the feet to the eyes, the paws and ears stick out |
-| boss_kitsune | 150×120 | idle 4 (sitting, tails sway, petals drift, blinks), walk 6 (on all fours; the engine may not use it), claw 6 (crouch, lunge with the forepaw thrust out through a big magenta crescent, the crescent breaks into petals; GameScene plays it for `claw_slash` as `claw`), bloom 6 (crouch, a glowing blossom gathers at the mouth and bursts with petals), summon 6 (a pink swirl round it, fox-spirit flames appear), hurt 2 (pink flash that keeps the outline), death 8 (sinks, lies flat, collapses into a heap of petals that blows away). The Blossom Kitsune Guardian, after `docs/concept/Sakura Fox Boss Sprite Sheet.png`: a white fox in soft cream fur shaded pink, three big fluffy tails tipped pink and magenta, branching brown antlers flowering with blossoms, purple ear insides, a magenta forehead mark, a narrow pink eye with a purple line, a dark purple scarf with a gold rope, a gold bell and red tassels, a pink blossom spot on the haunch, petals everywhere and a dark navy outline (`KT_LINE`). Ground row 116, x 72; suggested hitbox 50×70 on the ground (baseY 0): haunch, chest and neck; tails, antlers and muzzle stick out |
-| boss_toad | 160×136 | idle 4 (throat puffing, lanterns swaying, a blink), walk 4 (a squat shuffle, hat rocking; the engine may not use it), prepare 3 (leans in, pink energy gathers at the mouth), tongue 6 (charges, then the long pink tongue with a pink lantern-ball tip shoots out to the frame edge and snaps back; GameScene plays it for `tongue_strike`), lanterns 6 (charges, spits a red paper lantern with a white blossom crest that leaves the mouth arcing up; GameScene plays it for `lantern_arc` as `lanterns`), slam 8 (crouch, leap 24 px with arms raised, land flattened while pink energy spikes, rocks and petals burst out, recover), hurt 2 (white flash that keeps the outline, "x"-star eyes, hat askew), death 8 (slumps, the hat tips over and slides off, collapses, fades in a pink burst, leaving only the mossy rock). The Sakura Toad Guardian, after `docs/concept/Sakura Toad Guardian Sprite Sheet.png`: a squat crimson toad in three-quarter view facing right: a huge head with a wide cream jaw and a wide pouting mouth line, a big heavy-lidded golden near eye with a black slit (the far eye smaller, half hidden), a big rounded near haunch at the back with painted gold-orange speckle patches and a speckle-blossom, the near arm tucked in front of the cream belly, 3-4 tone crimson shading; a thick dark woven straw dome with a gold band and finial sitting on the head, its wide brim drooping at the edges, loose clouds of pink blossoms spilling over the top and the back side, red paper lanterns hanging at different heights; a thick gold rope collar with a tassel; sitting on a mossy rock. Dark outline `TD_LINE`. Ground row 132 (the bottom of a wide mossy rock base of several stones), x 76; suggested hitbox 60×60 on the ground (baseY 0), as Bosses.json has it: body and face under the brim; the hat, lanterns and rock stick out |
+| boss_kitsune | 150×120 (450×360 PNGs at 3x) | cut from the user's painting `docs/concept/Kitsune Sakura Boss Sprite Sheet v2.png` (painted to `docs/boss-kitsune-sheet-brief.md`, real transparency, copied to `Tools/sprites/boss_kitsune_source.png`) by `characters/boss_kitsune_painted.py` with `sheet_boss.py` — see "Bosses from painted sheets" below. Every painted frame plays once, in order; painted frame N (0-based) shows at N / fps: idle 12 at 12 fps (1 s loop, IDLE painted 12, labelled 8), claw 18 at 9.17 fps, once (CLAW painted 18, labelled 16; the strike, 11, the lunge through the big crescent, at 1.2 s; `claw_slash`/`double_claw`), bloom 16 at 10 fps, once (BLOOM painted 16, labelled 14; the release, 11, the burst at the mouth, at 1.1 s; `bloom_shots`/`bloom_volley`), summon 16 at 8 fps, once (the release, 10, the swirl at its fullest, at 1.25 s; `spirit_summon`), hurt 3 at 9 fps (HURT painted 3, labelled 4; 0.33 s), death 12 at 10 fps, once (ends in a pile of petals). No walk (the engine does not use one). The Blossom Kitsune Guardian: a white fox in cream fur shaded pink, three big fluffy tails tipped pink, branching antlers flowering with blossoms, a magenta forehead mark, a purple scarf, a gold bell and red tassels, a dark outline. Ground row 116 (lowest pixel); 0.83 points per sheet pixel (CLAW ×1.1, BLOOM ×1.12 but its last frame, painted smaller), so it keeps the first painted fox's size (about 87 points wide sitting) and haunch, chest and neck fill the 50×70 hitbox on x 72; tails, antlers, muzzle and effects stick out. Each frame is lined up with the one before by its lower body (`best_shift`), so the body stays put and only the rears, lunges and recoils move. The code-drawn fox in `boss_kitsune.py` (`drawn()`) is no longer built |
+| boss_toad | 160×136 (480×408 PNGs at 3x) | cut from the user's painting `docs/concept/Sakura Lantern Toad Boss Sprite Sheet v2.png` (painted to `docs/boss-toad-sheet-brief.md`, real transparency, its sheets A and B side by side, copied to `Tools/sprites/boss_toad_source.png`) by `characters/boss_toad_painted.py` with `sheet_boss.py` — see "Bosses from painted sheets" below. Every painted frame plays once, in order (painted frame N, 0-based, at N / fps): idle 9 at 9 fps (1 s loop; IDLE painted 9, labelled 8), walk 8 at 10 fps (unused by the engine), prepare 6 at 10 fps, once (unused), tongue 11 at 7.5 fps, once (TONGUE painted 11, labelled 14; the strike, 8, the tongue shooting out, cropped about 25 sheet px past the mouth, at 1.07 s; `tongue_strike`), lanterns 14 at 9 fps, once (LANTERNS painted 14, labelled 18; the first spit, 9, at 1.0 s, the second, 11, at 1.22 s; `lantern_arc`), slam 18 at 10 fps, once (SLAM painted 20; 4-7 in the air, drawn over SLAM 3's rock; the landing, 16, flattened under the hat, at 1.6 s; SLAM 17-18, painted without the toad, are left out; `area_slam`), hurt 4 at 12 fps (0.33 s), death 8 at 7 fps, once (DEATH painted 8, labelled 12; ends with only the mossy rock). The Lantern Toad Guardian: a squat crimson toad with gold speckles, a cream belly, heavy-lidded golden eyes, a wide dark straw hat with a gold rim and finial piled with blossoms, a red paper lantern hanging from each side, a gold rope collar, sitting on a mossy rock; dark outline. Ground row 132 (lowest pixel, the bottom of the rock), x 76 = the middle of the rock in every frame; 0.85 points per sheet pixel (rows painted smaller scaled up to IDLE's size: `ROW_SIZE`), so body and face under the brim fill the 60×60 hitbox; the hat, lanterns and rock stick out. The code-drawn toad in `boss_toad.py` (`drawn()`) is no longer built |
+| boss_guardian_cat | 160×136 | idle 4 (sitting under its torii, tails swaying, lanterns glowing, a blink), walk 6 (the torii gone, floats and runs low with its five tails fanned out behind; the engine may not use it), prepare 3 (the torii fades away as it drops into its floating crouch), volley 6 (light gathers in front of the mouth, then three glowing blossom bolts fan out; for the sakura projectiles), spin 6 (rises and spins, the tail fan swinging round through three pink rings of petals; petal storm), slam 8 (crouch, the near paw goes up beside the head under a giant glowing paw print, a short leap, the paw slams down and a pink energy pillar bursts in front, recover), beam 7 (the torii fades back in, the lanterns flare with rays, light gathers at the mouth, a pink laser with a blossom head fires to the frame edge, fades; not looping), summon 6 (a pink swirl, three small spirit kittens appear round it), enrage 6 (under the torii, eyes shut then blazing, lanterns flaring, pink flames rising behind and a pink glow round the whole figure; for the phase change; not looping), hurt 2 (white flash that keeps the outline, "> <" eyes), death 8 ("x" eyes, slumps while the torii sinks away and the crown falls off, lies flat, blows away as petals). The Sakura Guardian Cat, route level 3 boss, after `docs/concept/Sakura Guardian Cat Boss Sprite Sheet.png`: a cream-white chibi shrine-cat spirit with big red slit eyes under slanted lids, a red flame mark on the brow and red cheek stripes, pink blush and ear insides, a gold three-point crown with a red jewel, a red collar with a big gold bell, blossoms by the ear and five big fluffy pink tails dotted with blossoms; at rest under a small red torii (black upswept top beam, gold plaque, stone footings) with a glowing red paper lantern hanging at each end. Dark outline `GC_LINE`, colours `GC_` in palette.py. Ground row 132, x 76; suggested hitbox 56×64 on the ground (baseY 0): the sitting body and the head up to the brow; ears, crown, tails, torii and lanterns stick out. Attack animations by name: `volley`, `spin`, `slam`, `beam`, `summon`, `enrage` (map them in GameScene) |
 | portal | 26×36 | open 4 (loop; a swirling magenta portal, an upright oval about 16×28, 20×32 with its glow, standing on its bottom row, centred), close 4 (not looping; shrinks down onto its bottom row to a last spark). The boss portals the engine draws; uses the Void Cat's `ring` drawing |
 | fish | 16×12 | spin 6 |
 | yarn_basket | 28×28 | glow 4 |
@@ -205,13 +214,15 @@ yarn); and a `hazard_<kind>` sprite with a `fly` animation for every hazard kind
 (40×14, a smoky paw raking low along the ground, claws first, 4 frames), `falling_star` (12×16, a star with its
 trail above it, 4), `portal_ring` (24×24, a swirling magenta ring, 4), `void_wave` (20×10, a low smoke wave with a
 lit crest, 3) and `star_shard` (12×8, a white-violet shard flying point first, 2); for the Blossom Kitsune,
-`bloom_shot` and `bloom_shot_high` (12×12 for a 10×10 hitbox: a glowing pale five-petal blossom with a magenta heart
-and a pulsing pink glow, 4; the high one sparkles) and `claw_slash` (28×14 for 26×12: a magenta crescent with a bright
-core and pink glow raking along the ground, convex edge first, petals flying off behind, 3); for the Lantern Toad,
-`lantern_shot` and `lantern_shot_high` (12×12 for 10×10: a red paper lantern with dark caps and a white blossom crest,
-4; the high one trails a pink glow), `slam_rock` (14×14 for 12×12: a dark mossy rock with pink energy above it, 4),
-`slam_wave` (18×12 for 16×10: a low burst of pink energy spikes with petals, 3) and `toad_tongue` (42×12 for 40×10: the
-long pink tongue with a pink lantern-ball tip leading on the left, 2). Hazards lead with their left edge
+cut from the projectile rows of its painted sheet at 3x (`characters/boss_kitsune_painted.py`), `bloom_shot` and
+`bloom_shot_high` (12×12 for a 10×10 hitbox: the glowing pink blossom of BLOOM SHOT / BLOOM SHOT HIGH turning
+through a spin, centred on its middle, sparkles cut at the frame edge, 8) and `claw_slash` (28×14 for 26×12: the magenta crescent of CLAW SLASH, convex edge first,
+petals behind, at one size, 6); for the Lantern Toad,
+cut from the projectile rows of its painted sheet at 3x (`characters/boss_toad_painted.py`), `lantern_shot` and
+`lantern_shot_high` (12×12 for 10×10: the red paper lantern of LANTERN SHOT / LANTERN SHOT HIGH turning through a spin,
+centred on its middle, 8), `slam_rock` (14×14 for 12×12: SLAM ROCK, a mossy rock with blossoms tumbling, 8),
+`slam_wave` (18×12 for 16×10: SLAM WAVE, a low pink energy wave with petals, 4) and `toad_tongue` (42×12 for 40×10: TONGUE PROJECTILE,
+the long pink tongue with a red lantern-ball tip leading on the left, at one size, 4); for the Sakura Guardian Cat, `guardian_petal` and `guardian_petal_high` (18×12, about 10×10 on the blossom at the left: a glowing pink blossom bolt with a pink trail behind, 4; the high one sparkles), `petal_ring` (22×12 for about 20×10: a low spinning ring of pink light round a blossom with a streak and petals behind, rolling along the ground, 4), `guardian_paw` (24×26 for about 20×20: a giant glowing pink paw print falling, streaks above, 4), `paw_burst` (22×30 for about 16×28: a pillar of pink energy with a white core and flames at its foot, 4), `torii_beam` (42×12 for 40×10: a horizontal pink laser with a white core and a blossom head leading on the left, 3) and `spirit_kitten` (22×16 for about 14×12: a small glowing pink spirit kitten running left, 4). Hazards lead with their left edge
 (they travel toward the kitten) and their frame bottom is the hitbox bottom.
 
 Per theme (`forest`, `frost`, `haunted`, `citadel`): `bg_<theme>_sky` (16×200, stretched across the screen) and
@@ -331,7 +342,119 @@ contracts as the other themes.
     cord snapped, then a small flame patch on its bottom row once it lands.
 - **Glows:** every lantern glow is a separate unoutlined layer composited under the outlined lantern.
 
+Sakura's route level 3 (theme `sakura_night`) is drawn in `characters/sakura_night.py`, after
+`docs/concept/Sakura World Level 3 Asset Sheet.png`. It is a night among the cliffside shrines with the same names,
+sizes and contracts as the other themes.
+- **Parallax:** a deep navy → blue → violet sky with stars, and a big pink moon with a pink halo behind dark violet
+  clouds in `bg_sakura_night_clouds`. `far` has dark blue mountains, pine silhouettes and distant pagodas with lit
+  windows on hills above a violet mist. `near` has slate cliffs with teal moss and blossom, blue waterfalls between
+  them, a temple and a house glowing warm, cherry trees, bamboo, a torii, stone lanterns and strings of paper
+  lanterns. `bushes` are the sakura bushes in teal moss under the night.
+- **Night grade:** the scenery is drawn in daylight colours and pushed toward the night colour (`night()`), except the
+  light sources (lantern paper, windows, water, gold), which keep their colour; glows are unoutlined layers under them.
+- **Recoloured from `sakura`:** the ground, terrain, island and pit stonework are sakura's generated pieces with dark
+  slate stone and teal moss; the falls' foam is a moonlit pale blue.
+- **Platforms:** `bridge_sakura_night` (48×12, still + crumble 4) and `platform_sakura_night_moving` (48×12, still 1)
+  are the dusk ones on the night stone, each with two glowing lanterns. The walk surface is the top row of both.
+
 `island` is placed like `bridge` (frame top = platform y) and is drawn once, not tiled.
+
+### Heroes from painted sheets
+
+`sheet_hero.py` cuts hero frames from a user's painted sheet; `characters/hero_painted.py` holds one `HeroSheet`
+table per cat (rows as boxes in the sheet, cats expected per row) and maps the rows to the hero's animations. Each
+entry of `PAINTED` replaces the code-drawn skin of the same id. A painted skin keeps the hero's animation names, loop
+flags, frame size, anchor and `faces_left`, but plays every painted frame of its row: frame counts and fps may differ
+from `hero`'s as long as each animation lasts within about 25% of the hero's, the throw no longer than the 0.25 s
+throw window and the hurt about the 0.3 s hurt window (`test_hero_skins_match_the_hero`).
+
+Sakura's sheet (v3) has real transparency: the pink haze and the ground shadows are semi-transparent, her fur and
+dark outline nearly opaque. The alpha is thresholded at 200 (`HeroSheet.alpha`), which keeps the soft white fur edge
+and drops the haze; the cats are found at 220 (`core`), where neighbours whose soft edges touch are still apart, and
+grown back out over the pixels at 200. `splits` cut a row where cats still touch (a clear column, or a rectangle that
+the cats grow back over: the last two RUN cats); `cleared` rectangles remove by hand an effect that touches the cat;
+with `thin`, strands thinner than about 5 px are cut off (the DOUBLE JUMP swirl rings). Loose petals, sparkles and
+swirls are dropped as shapes smaller than `min_area` (1500 sheet pixels). The cutter scales every frame by one factor:
+the largest at which every frame fits, but never above `max_scale` (1.24 for Sakura: she is painted about 68 sheet
+pixels tall standing, so 1:1 into the 3x texture would leave her at 23 pt; 1.24 gives about 28 pt with mild softness). With `size_to` (Sakura: `"idle"`), each row is then scaled on top of
+that so its cats cover as much as that row's (the square root of the median painted area): the painter drew her RUN
+about a fifth smaller and MENU and HURT bigger, which made her change size between poses; rows in `size_skip`
+(Sakura: DEATH and KO, lying down) keep the one scale, rows in `own_scale` fitted on their own (none
+for Sakura). A row with `even` (Sakura's RUN, whose cats shrink from 58 to 52 px along the painted row) scales each cat
+to the row's median height, so the loop does not pop in size. It lines a row's cats up by the front of the head (rows
+with `align=False`, Sakura's POUNCE and DEATH, centre each cat on its own instead), stands grounded cats on the
+frame's bottom row (airborne rows keep their painted height above the row's ground, the painted shadow, clamped to
+`max_lift` points: 3), centres each row on the anchor, and puts alpha back to hard 0/255 (the spirit is then set to
+70%). Sakura stands about 23 points tall in idle (the code-drawn heroes 33-34). Frames are `Sprite.scale` = 3:
+132×108 PNGs tagged `"scale": "3x"` in the atlas, 44×36 points in game (`Sprites.json` keeps the point size and adds
+`"scale": 3`).
+
+### Bosses from painted sheets
+
+`sheet_boss.py` cuts boss and projectile frames from a user's painted sheet (the boss counterpart of
+`sheet_hero.py`; it shares no code with it). `characters/boss_kitsune_painted.py` (the Blossom Kitsune) and
+`characters/boss_toad_painted.py` (the Lantern Toad) are the tables; both v2 sheets have real transparency
+(`BossSheet(alpha=200, core=240)`): a pixel belongs to the figure when its painted alpha is at least 200 (the haze
+drops); the figure is the largest shape at alpha 240, grown back out over the pixels at 200 at the same time as the
+other large shapes in the cell (its neighbours), so frames whose soft edges touch stay apart. One `Cut` (a box in
+the sheet) per painted frame, the label pills wiped (`LABELS`); `cells(pad=...)` lets a cell reach into its
+neighbours for a tail or glow that crosses the edge. Where the frames truly overlap (the toad's lanterns and hat
+brims), `cells(seeds=...)` grows every toad near a cell at once from its own middle as a watershed over the
+painting's darkness, so the border between two toads follows their outlines; `points` hands a spat lantern to the
+toad spitting it. `cleared` areas wipe by hand what is not part of the frame: boxes, ellipses, and everything left
+or right of a polyline (`("l" | "r", ((x, y), ...))`: the kitsune's crescent against the frame before it, the
+toad's tongue across the next toad). DEATH rows keep every other shape of 30+ (60+ for the toad) pixels that the
+cell's border does not cut and that lies nearer this frame than a neighbour (the pile of petals, the rocks).
+Projectiles use a lower alpha (150) and no core. Boss frames are scaled by one factor `K` per boss (times
+`ROW_SIZE` for rows the painter drew smaller, so the boss keeps one size between animations), LANCZOS to 3× the
+frame, hard 0/255 alpha. The kitsune lines each frame up with the one before by its lower body (`best_shift`, the
+shift with the largest overlap), IDLE 0 on the anchor; the toad stands every frame on the middle of its mossy rock.
+Every painted frame plays once at one fps per animation, chosen so the strike frame lands when the projectile
+leaves (GameScene plays an attack once from the start of its wind-up and holds the last frame).
+
+Texture scale: the v2 foxes and toads are painted about 100 px wide, so keeping their in-game size means about
+0.85 points per sheet pixel. At `Sprite.scale` = 1 or 2 the engine's nearest filtering turns each texture pixel into
+a visible block (scale 1 is blocky, scale 2 stair-steps the outline); at 3 the LANCZOS-enlarged painting is
+smooth and keeps the painted detail without looking softer than the painting itself, so both bosses and their
+projectiles stay at 3x. `boss_hazards.py`, `boss_kitsune.py`, `boss_toad.py` and `sakura_critters.py` skip the
+sprites in the tables' `NAMES` (and `sakura_critters.py` and `sakura_dusk_critters.py` the painted enemies', below).
+
+### Enemies from painted sheets
+
+The Sakura route's level 1 and 2 enemies `sakura_bunny`, `rolling_onigiri` and `sakura_bat` are cut from the user's
+sheets (`docs/concept/<Name> Enemy Sheet.png`, copied to `Tools/sprites/<id>_source.png`, painted roughly to
+`docs/enemy-sheet-brief-sakura.md`) by `characters/sakura_bunny_painted.py`, `rolling_onigiri_painted.py` and
+`sakura_bat_painted.py`; `sakura_critters.py` and `sakura_dusk_critters.py` skip the sprites in their `NAMES`. Each
+keeps the code-drawn sprite's name, animation names, loop flags, frame size, anchor and `faces_left` (painted facing
+right); frame counts are the painted ones. All three use `sheet_hero.HeroSheet` to find the figures (real
+transparency: alpha 200, found at 220, loose petals and sparkles dropped as shapes under 1500 sheet pixels), 3x PNGs,
+hard alpha, one scale per enemy picked so its in-game size stays close to the code-drawn one:
+- **Bunny** (0.25 points per sheet pixel, rows brought to IDLE's size): a `HeroSheet` cut into a frame one point
+  short and padded, so the lowest pixel lands on row 34 (`ground` 33). Its ground (the grey-purple contact shadows,
+  and the mossy rocks under DEATH 2-3) is cut away in the bottom band of each figure as unsaturated dark or green
+  pixels, with the dark outline put back where the body met it. `run` is the sheet's JUMP then FALL rows (two bounds,
+  crouch to crouch), the airborne height from the painted shadows, at most 4 points.
+- **Onigiri** (0.21 points per sheet pixel): the same short frame (lowest pixel row 26). The swoosh arcs behind the
+  turning ball (ROLL 3-9) are cleared by a fill from the trailing edge through the effect's pink and pinkish-white,
+  walled off by the cream rice and dark nori; the charge's speed streaks are painted over the nori, so they are cut at
+  the nori's back instead (`trim_left`), and ATTACK 4 keeps its blossom burst whole.
+- **Bat** (0.21 points per sheet pixel, the largest at which the side-on wing fits with the body over the hitbox): a
+  flyer has no ground line, so every frame is placed by the centroid of its cream fur; the death's burst and petals,
+  which have no bat, are centred across at the height they are painted under the last bat.
+
+How to paint a hero sheet so it cuts cleanly:
+- Real transparency (no checkerboard) if possible, the cat fully opaque with a dark outline; glow may be soft alpha
+  but should stay below about 85% opacity, and must not join two cats. A baked-in checkerboard can be cut (see
+  above), but every gap in the outline costs a hand fix.
+- One row per animation, cats facing right, left to right in playing order, at least ~20 px of clear space
+  between cats; labels outside the row's box (above it or at its left).
+- Every cat at the same scale. Petals, swirls, trails and sparkles separate from the cat (not touching it), or they
+  are cut away; a trail that does touch the cat should go in a separate effects row.
+- Grounded rows: paws on one baseline. Airborne rows: draw the ground shadow so the ground line is known.
+- The widest pose sets the scale for every frame (keep run/dash no more than ~1.6× the idle width, or the cat gets
+  small); about 90 px tall per idle cat on a 1536×1024 sheet is plenty.
+- Rows, frame counts and poses: `docs/hero-sheet-brief.md`. Keep lying poses (KO, DEATH) within ~1.5× the
+  standing width too, or they are shrunk on their own.
 
 The jump buttons (`characters/buttons.py`) follow `docs/concept/Pixel Art Jump Button UI Sheet.png` (top row); the paw is pixel-identical in every button (the pressed ones shift it down 1 px), so swapping states never jumps. The start screen's backdrop is `menu_scene_portrait` / `menu_scene_landscape` (`characters/menu_scene.py`) with
 `menu_sky`, `menu_clouds` and `menu_waterfall`. The older scrolling strips `bg_menu_sky`, `bg_menu_clouds`,
@@ -354,7 +477,7 @@ tail angle and curl, eyes and ears; `running(phase)` gives the run cycle. The gh
 `cat(canvas, CatPose, cx, ground, coat)`: leg angles (0° = straight down, positive = forward), body
 stretch and tilt, tail angle and curl, eyes and ears; `gallop(phase)` gives the run cycle. Humanoids can
 still use `draw.humanoid(canvas, Body, Pose, cx, ground)`. `Canvas.outline()` adds the dark 1px outline
-afterwards. The forest critters (`forest_critters.py`), the sakura critters (`sakura_critters.py`, level 2 in `sakura_dusk_critters.py`; hurt instead of hit,
+afterwards. The forest critters (`forest_critters.py`), the sakura critters (`sakura_critters.py`, level 2 in `sakura_dusk_critters.py`, level 3 in `sakura_night_critters.py` with a magenta moon-rim and magenta effects for the night; hurt instead of hit,
 petals and glowing blossoms for effects), the void critters (`void_critters.py`; the bat, hound, wisp and mini
 void cat recolour the citadel and museum builds colour-for-colour), the citadel critters (`citadel_critters.py`; black stone with an ember
 rim from `critters.rim`, lava ramping to a white-hot core), the haunted critters (`haunted_critters.py`; spirits are see-through
