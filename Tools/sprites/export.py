@@ -74,10 +74,13 @@ def export(sprites: list[Sprite], only: set[str] | None = None) -> dict:
     for sprite in sprites:
         if only and sprite.name not in only:
             continue
-        for stale in ATLAS.glob(f"{sprite.name}_*.imageset"):
-            # Guard against prefixes: "hero" must not delete "hero_x" sprites of another name.
-            if stale.stem.rsplit("_", 2)[0] == sprite.name:
-                shutil.rmtree(stale)
+        # The frames of every animation it has or had (the old manifest's), whatever their number: "hero" must not
+        # delete "hero_x" sprites of another name, and "sit_happy" has an underscore of its own.
+        for anim in set(sprite.anims) | set(manifest.get(sprite.name, {}).get("animations", {})):
+            prefix = f"{sprite.name}_{anim}_"
+            for stale in ATLAS.glob(f"{prefix}*.imageset"):
+                if stale.stem[len(prefix):].isdigit():
+                    shutil.rmtree(stale)
         w, h = sprite.size
         anchor_x = 0.5 if sprite.cx is None else (sprite.cx + 0.5) / w
         entry = {"width": w, "height": h,
@@ -231,7 +234,7 @@ def blank_plank() -> None:
 
 # The Sakura route's boss health bar, from the user's painting (real transparency with a pink haze):
 # (box in the sheet, asset name). The boxes are fixed (not trimmed), because the HUD places the name and
-# the fill by where the plaque and the track sit in them (`SakuraBossHealth` in App/UI/HUDPanels.swift).
+# the fill by where the plaque and the track sit in them (`PaintedBossHealth.Style.sakura` in App/UI/PaintedBossHealth.swift).
 SAKURA_BAR_SOURCE = "sakura_boss_bar_source.png"
 SAKURA_BAR_CUTS = [
     ((95, 25, 1435, 232), "boss_plate_sakura"),            # name plaque; text area x 305-1035, y 73-175
@@ -242,10 +245,81 @@ SAKURA_BAR_CUTS = [
 ]
 
 
-def cut_alpha_piece(source: str, box: tuple, name: str, alpha: int = 200) -> None:
-    """One piece of a painting with real transparency: pixels under `alpha` (the soft haze) cleared, the rest
-    made fully opaque, and loose specks smaller than 40 pixels dropped. A regular image, outside the atlas."""
-    im = Image.open(Path(__file__).parent / source).convert("RGBA").crop(box)
+# The boss health bar of Fluffy's route (the five base worlds), from the user's floral sheet (real transparency;
+# the colours under the clear pixels are a blurred backdrop, which the alpha threshold drops). Like the Sakura
+# bar: the boxes are fixed, because `PaintedBossHealth.Style.floral` (App/UI/PaintedBossHealth.swift) places the
+# name and the fill by where the field and the track sit in them.
+FLORAL_BAR_SOURCE = "floral_boss_bar_source.png"
+# (box in the sheet, asset name, smallest shape kept: the plate's box catches the tips of row 2's curls).
+FLORAL_BAR_CUTS = [
+    ((60, 26, 1476, 252), "boss_plate_floral", 1000),  # row 1, the flowered frame: its dark field (x 240-1175, y 83-159) takes the name
+    ((136, 641, 1400, 722), "boss_bar_frame_floral", 40),  # row 6, the empty rounded bar: track x 20-1244, y 16-64
+    # Loose pieces the hit effect throws out of the lost piece of fill.
+    ((914, 766, 985, 831), "boss_bar_paw_floral", 40),
+    ((998, 752, 1083, 850), "boss_bar_leaf_floral", 40),
+    ((1187, 757, 1260, 831), "boss_bar_flower_floral", 40),
+    ((1412, 794, 1453, 844), "boss_bar_petal_floral", 40),
+]
+# The orange fill, from the full bar of row 3: its rounded left end, a middle slice and the right end with the paw
+# print. Its box (x 156-1380, y 406-454) lines up with the empty bar's track (row 6 sits 251 px lower). The frame
+# ring around the fill is cleared by `cut_fill_piece`.
+FLORAL_FILL_CUTS = [
+    ((156, 406, 186, 454), "boss_bar_fill_floral_left"),
+    ((700, 406, 708, 454), "boss_bar_fill_floral_mid"),
+    ((1316, 406, 1380, 454), "boss_bar_fill_floral_right"),
+]
+FLORAL_FILL_ROW = (156, 406, 1380, 454)
+
+
+def cut_fill_piece(source: str, row: tuple, box: tuple, name: str) -> None:
+    """One piece of a painted bar's fill, where the sheet only shows the fill inside its frame: the fill is what
+    the middle of the bar reaches through bright pixels (red over 200), because a dark line walls it in from the
+    frame's bright rim. Everything else in `box` (the dark line, the rim at the rounded ends) is cleared."""
+    sheet = Image.open(Path(__file__).parent / source).convert("RGBA")
+    im = sheet.crop(row)
+    w, h = im.size
+    px = im.load()
+
+    def bright(p: tuple) -> bool:
+        return p[3] >= 200 and p[0] > 200
+
+    fill, todo = set(), [(w // 2, h // 2)]
+    while todo:
+        x, y = todo.pop()
+        if (x, y) in fill or not (0 <= x < w and 0 <= y < h) or not bright(px[x, y]):
+            continue
+        fill.add((x, y))
+        todo += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    piece = Image.new("RGBA", (box[2] - box[0], box[3] - box[1]), (0, 0, 0, 0))
+    out = piece.load()
+    for y in range(box[1], box[3]):
+        for x in range(box[0], box[2]):
+            local = (x - row[0], y - row[1])
+            if local in fill:
+                r, g, b, _ = px[local]
+                out[x - box[0], y - box[1]] = (r, g, b, 255)
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(piece, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}],
+                "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+# The Sakura start logo (Sakura peeking over the lettering, blossoms, the fish), from the start screen's asset sheet
+# (real transparency; `characters/menu_sakura_painted.py` cuts the backdrop from the same sheet). The box is the
+# logo's opaque bounds, so the image is trimmed like `title_start`.
+SAKURA_MENU_SOURCE = "sakura_menu_source.png"
+SAKURA_TITLE_BOX = (28, 13, 513, 262)
+
+
+def cut_alpha_piece(source: str | Image.Image, box: tuple, name: str, alpha: int = 200, min_shape: int = 40) -> None:
+    """One piece of a painting with real transparency (a file next to this one, or the painting already open):
+    pixels under `alpha` (the soft haze) cleared, the rest made fully opaque, and loose specks smaller than
+    `min_shape` pixels dropped (raise it to drop a neighbour's tips poking into the box). A regular image,
+    outside the atlas."""
+    sheet = source if isinstance(source, Image.Image) else Image.open(Path(__file__).parent / source)
+    im = sheet.convert("RGBA").crop(box)
     w, h = im.size
     px = im.load()
     for y in range(h):
@@ -265,7 +339,7 @@ def cut_alpha_piece(source: str, box: tuple, name: str, alpha: int = 200) -> Non
                     seen.add(n)
                     stack.append(n)
                     shape.append(n)
-        if len(shape) < 40:
+        if len(shape) < min_shape:
             for p in shape:
                 px[p] = (0, 0, 0, 0)
     folder = ATLAS.parent / f"{name}.imageset"
@@ -276,12 +350,47 @@ def cut_alpha_piece(source: str, box: tuple, name: str, alpha: int = 200) -> Non
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
 
 
+# The start screen's KITTIES button, from the user's UI painting (real transparency): the cream plank with
+# Fluffy peeking over it, and the orange one with sparkles for while it is held. Their painted lettering is
+# taken out, for the menu to letter them from Lore.json (`ui.cats`, `KittiesButton` in App/UI/MenuStyle.swift):
+# (plank box, lettering box, fill colour test, asset name).
+KITTIES_SOURCE = "kitties_ui_source.png"
+KITTIES_CUTS = [
+    ((46, 14, 623, 329), (160, 204, 522, 284), lambda p: p[0] > 240 and p[1] > 200 and p[2] > 150, "kitties_button"),
+    ((665, 16, 1256, 330), (788, 204, 1147, 293), lambda p: p[0] > 240 and 140 < p[1] < 190 and p[2] < 40,
+     "kitties_button_pressed"),
+]
+
+
+def kitties_buttons() -> None:
+    sheet = Image.open(Path(__file__).parent / KITTIES_SOURCE).convert("RGBA")
+    px = sheet.load()
+    for plank, (x0, y0, x1, y1), fill, name in KITTIES_CUTS:
+        # Each row of the lettering's box gets the plank's fill at that height (it shades from top to bottom): the
+        # mean of the fill-coloured pixels beside the lettering, over the row and three either side, so one row's
+        # highlight does not show as a line.
+        beside = {y: [px[x, y][:3] for x in range(plank[0], plank[2]) if not x0 <= x < x1 and fill(px[x, y])]
+                  for y in range(y0 - 3, y1 + 3)}
+        for y in range(y0, y1):
+            near = [c for yy in range(y - 3, y + 4) for c in beside[yy]]
+            colour = tuple(round(sum(c[i] for c in near) / len(near)) for i in range(3)) + (255,)
+            for x in range(x0, x1):
+                px[x, y] = colour
+        cut_alpha_piece(sheet, plank, name)
+
+
 def titles() -> None:
     for title in TITLES:
         cut_title(*title)
     blank_plank()
+    kitties_buttons()
     for box, name in SAKURA_BAR_CUTS:
         cut_alpha_piece(SAKURA_BAR_SOURCE, box, name)
+    for box, name, min_shape in FLORAL_BAR_CUTS:
+        cut_alpha_piece(FLORAL_BAR_SOURCE, box, name, min_shape=min_shape)
+    for box, name in FLORAL_FILL_CUTS:
+        cut_fill_piece(FLORAL_BAR_SOURCE, FLORAL_FILL_ROW, box, name)
+    cut_alpha_piece(SAKURA_MENU_SOURCE, SAKURA_TITLE_BOX, "title_start_sakura")
     for cut in SHEET_CUTS:
         cut_from_sheet(*cut)
     cat_portraits()

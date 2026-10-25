@@ -12,8 +12,8 @@ Each enemy below has a reference picture (`docs/enemy-refs/<id>.png`): on top, i
 concept enemy sheet (the look and the poses to match); under it, the frames the game draws today, one row
 per animation, for size and proportion.
 
-**Done from painted sheets** (their pictures show the cut frames): Sakura Bunny, Rolling Onigiri and
-Sakura Bat. The other thirteen are still drawn in code.
+**Done from painted sheets** (their pictures show the cut frames): Sakura Bunny, Rolling Onigiri, Bird Crow,
+Sakura Bat and Samurai Ronin. The other eleven are still drawn in code.
 
 ## What to deliver
 
@@ -119,7 +119,9 @@ A paper-lantern spirit with a face and a soft glow. **Game frame 34×38, hit are
 
 ### Bird Crow (`bird_crow`)
 
-![Bird Crow: concept and current frames](enemy-refs/bird_crow.png)
+![Bird Crow: concept and the frames cut from the painted sheet](enemy-refs/bird_crow.png)
+
+**Done:** cut from `docs/concept/Bird Crow Enemy Sheet.png` (`Tools/sprites/characters/bird_crow_painted.py`).
 
 Flying enemy; hovers high, tracks the hero, then dives all the way to the ground as it nears.
 A dark crow with pink accents. **Game frame 48×34, hit area 18×14, flying 50 up.** One hit.
@@ -268,7 +270,9 @@ Possessed slime; lurches in quick bursts and, once close, leaps aggressively, le
 
 ### Samurai Ronin (`samurai_ronin`)
 
-![Samurai Ronin: concept and current frames](enemy-refs/samurai_ronin.png)
+![Samurai Ronin: concept and the frames cut from the painted sheet](enemy-refs/samurai_ronin.png)
+
+**Done:** cut from `docs/concept/Samurai Ronin Enemy Sheet.png` (`Tools/sprites/characters/samurai_ronin_painted.py`).
 
 Melee swordsman; walks in, holds its stance when close, then lunges with a wide sakura slash.
 A cat in a straw hat and red scarf with a katana. **Game frame 52×40, hit area 18×22.** Two hits; a stomp defeats it.

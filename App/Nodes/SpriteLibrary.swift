@@ -1,4 +1,5 @@
 import SpriteKit
+import UIKit
 
 /// Reads Sprites.json (written by Tools/sprites/build.py) and hands out the matching textures.
 final class SpriteLibrary {
@@ -23,11 +24,13 @@ final class SpriteLibrary {
     private let sheets: [String: Sheet]
     private var cache: [String: [SKTexture]] = [:]
     private var imageCache: [String: [CGImage]] = [:]
+    private let bundle: Bundle
 
     init(bundle: Bundle) throws {
         guard let url = bundle.url(forResource: "Sprites", withExtension: "json") else {
             throw LibraryError.missingManifest
         }
+        self.bundle = bundle
         sheets = try JSONDecoder().decode([String: Sheet].self, from: Data(contentsOf: url))
     }
 
@@ -50,10 +53,19 @@ final class SpriteLibrary {
 
     /// The frames of an animation as images for SwiftUI, cached. Each frame is a whole sprite image
     /// from the asset catalog; nothing is cut out of a texture.
+    ///
+    /// Read straight from the catalog (`UIImage(named:)`), not through `SKTexture.cgImage()`: that
+    /// copies each frame back out of SpriteKit's atlas, about 13 ms a frame, which froze the game for
+    /// a moment whenever a HUD sprite was first shown mid-level (the yarn and double-pounce buttons,
+    /// the award icon and the level-up arrows at an ability unlock).
     func images(_ sprite: String, _ name: String) -> [CGImage] {
         let key = "\(sprite)/\(name)"
         if let cached = imageCache[key] { return cached }
-        let images = textures(sprite, name).map { $0.cgImage() }
+        guard let animation = animation(sprite, name) else { return [] }
+        let images = (0..<animation.frames).compactMap { index -> CGImage? in
+            let frame = "\(sprite)_\(name)_\(index)"
+            return UIImage(named: frame, in: bundle, with: nil)?.cgImage ?? SKTexture(imageNamed: frame).cgImage()
+        }
         imageCache[key] = images
         return images
     }

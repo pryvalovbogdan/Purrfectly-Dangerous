@@ -80,7 +80,8 @@
     "fps": 16,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "bamboo_spikes": {
   "width": 22,
@@ -973,27 +974,33 @@
   "anchorX": 0.5312,
   "anchorY": 0.1765,
   "animations": {
+   "idle": {
+    "frames": 7,
+    "fps": 8,
+    "loop": true
+   },
    "fly": {
-    "frames": 4,
-    "fps": 10,
+    "frames": 9,
+    "fps": 14,
     "loop": true
    },
    "attack": {
-    "frames": 3,
-    "fps": 10,
+    "frames": 6,
+    "fps": 12,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 12,
     "loop": false
    },
    "death": {
-    "frames": 4,
-    "fps": 8,
+    "frames": 8,
+    "fps": 12,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "blossom_shot": {
   "width": 12,
@@ -1143,36 +1150,37 @@
   "anchorY": 0.0224,
   "animations": {
    "idle": {
-    "frames": 6,
-    "fps": 6,
+    "frames": 9,
+    "fps": 9,
     "loop": true
    },
    "shards": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 10,
+    "fps": 4,
     "loop": false
    },
    "breath": {
-    "frames": 8,
-    "fps": 10,
+    "frames": 7,
+    "fps": 2.2,
     "loop": false
    },
    "dive": {
-    "frames": 6,
-    "fps": 8,
+    "frames": 13,
+    "fps": 5,
     "loop": false
    },
    "hurt": {
     "frames": 2,
-    "fps": 10,
+    "fps": 8,
     "loop": true
    },
    "death": {
-    "frames": 8,
-    "fps": 8,
+    "frames": 6,
+    "fps": 6,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "boss_kitsune": {
   "width": 150,
@@ -1214,118 +1222,121 @@
   "scale": 3
  },
  "boss_mecha": {
-  "width": 168,
-  "height": 124,
-  "anchorX": 0.497,
-  "anchorY": 0.0242,
+  "width": 192,
+  "height": 140,
+  "anchorX": 0.4974,
+  "anchorY": 0.0214,
   "animations": {
    "idle": {
-    "frames": 4,
-    "fps": 5,
+    "frames": 16,
+    "fps": 12,
     "loop": true
    },
    "rockets": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 15,
+    "fps": 7,
     "loop": false
    },
    "tail": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 10,
+    "fps": 4.67,
     "loop": false
    },
    "core": {
-    "frames": 4,
-    "fps": 8,
-    "loop": true
-   },
-   "hurt": {
-    "frames": 2,
-    "fps": 10,
-    "loop": true
-   },
-   "death": {
-    "frames": 8,
-    "fps": 10,
-    "loop": false
-   }
-  }
- },
- "boss_phantom": {
-  "width": 84,
-  "height": 126,
-  "anchorX": 0.5179,
-  "anchorY": 0.0238,
-  "animations": {
-   "idle": {
-    "frames": 4,
-    "fps": 5,
-    "loop": true
-   },
-   "summon": {
     "frames": 6,
-    "fps": 8,
-    "loop": false
-   },
-   "teleport": {
-    "frames": 6,
-    "fps": 10,
-    "loop": false
-   },
-   "split": {
-    "frames": 4,
     "fps": 6,
     "loop": true
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 3,
+    "fps": 12,
     "loop": true
    },
    "death": {
-    "frames": 8,
-    "fps": 8,
+    "frames": 6,
+    "fps": 6,
     "loop": false
    }
-  }
+  },
+  "scale": 3
+ },
+ "boss_phantom": {
+  "width": 156,
+  "height": 126,
+  "anchorX": 0.4071,
+  "anchorY": 0.0238,
+  "animations": {
+   "idle": {
+    "frames": 7,
+    "fps": 7,
+    "loop": true
+   },
+   "summon": {
+    "frames": 12,
+    "fps": 4.7,
+    "loop": false
+   },
+   "teleport": {
+    "frames": 25,
+    "fps": 10,
+    "loop": false
+   },
+   "split": {
+    "frames": 7,
+    "fps": 7,
+    "loop": true
+   },
+   "hurt": {
+    "frames": 5,
+    "fps": 12,
+    "loop": true
+   },
+   "death": {
+    "frames": 7,
+    "fps": 7,
+    "loop": false
+   }
+  },
+  "scale": 3
  },
  "boss_squirrel": {
-  "width": 112,
+  "width": 164,
   "height": 132,
-  "anchorX": 0.5312,
+  "anchorX": 0.4177,
   "anchorY": 0.0227,
   "animations": {
    "idle": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 9,
+    "fps": 9,
     "loop": true
    },
    "throw": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 10,
+    "fps": 3.34,
     "loop": false
    },
    "roll": {
-    "frames": 6,
-    "fps": 14,
-    "loop": true
+    "frames": 28,
+    "fps": 10,
+    "loop": false
    },
    "climb": {
-    "frames": 6,
-    "fps": 8,
+    "frames": 32,
+    "fps": 10,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 1,
+    "fps": 12,
     "loop": true
    },
    "death": {
-    "frames": 8,
-    "fps": 8,
+    "frames": 10,
+    "fps": 10,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "boss_toad": {
   "width": 160,
@@ -1428,11 +1439,11 @@
   "width": 40,
   "height": 40,
   "anchorX": 0.4875,
-  "anchorY": 0.175,
+  "anchorY": 0.25,
   "animations": {
    "idle": {
-    "frames": 2,
-    "fps": 3,
+    "frames": 4,
+    "fps": 6,
     "loop": true
    },
    "throw": {
@@ -1442,10 +1453,11 @@
    },
    "death": {
     "frames": 4,
-    "fps": 10,
+    "fps": 8,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "bridge": {
   "width": 48,
@@ -2667,7 +2679,8 @@
     "fps": 14,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_acorn_high": {
   "width": 18,
@@ -2680,7 +2693,8 @@
     "fps": 14,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_bloom_shot": {
   "width": 12,
@@ -2734,7 +2748,8 @@
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_claw": {
   "width": 72,
@@ -2783,11 +2798,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 2,
+    "frames": 4,
     "fps": 8,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_guardian_paw": {
   "width": 24,
@@ -2835,11 +2851,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 2,
-    "fps": 6,
+    "frames": 5,
+    "fps": 8,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_lantern_shot": {
   "width": 12,
@@ -2915,11 +2932,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 3,
+    "frames": 7,
     "fps": 14,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_shadow_paw": {
   "width": 40,
@@ -2935,17 +2953,18 @@
   }
  },
  "hazard_shard": {
-  "width": 62,
+  "width": 42,
   "height": 12,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 6,
+    "fps": 10,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_shockwave": {
   "width": 24,
@@ -2954,11 +2973,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 3,
+    "frames": 4,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_slam_rock": {
   "width": 14,
@@ -3074,11 +3094,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 3,
+    "frames": 5,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_wisp": {
   "width": 18,
@@ -3087,11 +3108,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 3,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "heart_empty": {
   "width": 16,
@@ -3170,21 +3192,22 @@
     "loop": true
    },
    "curl": {
-    "frames": 3,
-    "fps": 12,
+    "frames": 2,
+    "fps": 8,
     "loop": false
    },
    "rolled": {
-    "frames": 4,
-    "fps": 14,
+    "frames": 3,
+    "fps": 6,
     "loop": true
    },
    "death": {
-    "frames": 4,
-    "fps": 10,
+    "frames": 5,
+    "fps": 12,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "hell_hound": {
   "width": 58,
@@ -3236,33 +3259,33 @@
     "loop": false
    },
    "idle": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "jump": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 3,
+    "fps": 12,
     "loop": true
    },
    "fall": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "double": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "throw": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": false
    },
    "dash": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "pounce": {
@@ -3271,13 +3294,13 @@
     "loop": true
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 13,
     "loop": true
    },
    "death": {
-    "frames": 6,
-    "fps": 8,
+    "frames": 4,
+    "fps": 5,
     "loop": false
    },
    "peek": {
@@ -3301,16 +3324,17 @@
     "loop": true
    },
    "ko": {
-    "frames": 2,
-    "fps": 3,
+    "frames": 4,
+    "fps": 6,
     "loop": true
    },
    "ghost": {
-    "frames": 4,
-    "fps": 5,
+    "frames": 5,
+    "fps": 6,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hero_cabage": {
   "width": 44,
@@ -3877,8 +3901,8 @@
   "anchorY": 0.0278,
   "animations": {
    "run": {
-    "frames": 16,
-    "fps": 27,
+    "frames": 9,
+    "fps": 16,
     "loop": true
    },
    "stop": {
@@ -3887,8 +3911,8 @@
     "loop": false
    },
    "idle": {
-    "frames": 8,
-    "fps": 8,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "jump": {
@@ -3947,8 +3971,8 @@
     "loop": true
    },
    "menu": {
-    "frames": 9,
-    "fps": 9,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "ko": {
@@ -5131,6 +5155,34 @@
     "loop": true
    }
   }
+ },
+ "menu_scene_sakura_landscape": {
+  "width": 440,
+  "height": 150,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  },
+  "scale": 3
+ },
+ "menu_scene_sakura_portrait": {
+  "width": 210,
+  "height": 230,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "still": {
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+   }
+  },
+  "scale": 3
  },
  "menu_sky": {
   "width": 16,
@@ -7227,31 +7279,32 @@
   "anchorY": 0.05,
   "animations": {
    "idle": {
-    "frames": 2,
-    "fps": 3,
+    "frames": 6,
+    "fps": 8,
     "loop": true
    },
    "walk": {
-    "frames": 4,
-    "fps": 8,
+    "frames": 9,
+    "fps": 12,
     "loop": true
    },
    "attack": {
-    "frames": 4,
-    "fps": 10,
+    "frames": 6,
+    "fps": 12,
     "loop": false
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 4,
+    "fps": 12,
     "loop": false
    },
    "death": {
-    "frames": 4,
-    "fps": 8,
+    "frames": 8,
+    "fps": 12,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "shadow_cat": {
   "width": 56,
@@ -7841,16 +7894,17 @@
   "anchorY": 0.0278,
   "animations": {
    "walk": {
-    "frames": 6,
-    "fps": 10,
+    "frames": 4,
+    "fps": 8,
     "loop": true
    },
    "death": {
     "frames": 4,
-    "fps": 10,
+    "fps": 8,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "stars_dizzy": {
   "width": 16,

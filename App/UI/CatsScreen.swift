@@ -289,7 +289,7 @@ struct CatsScreenModel {
         let owned: Bool
         /// The cut-out portrait image asset (`cat_<id>`).
         let portrait: String
-        /// The recoloured hero sprite (`hero_<id>`), when drawn.
+        /// The hero sprite it wears (`hero_<id>`, or `hero` for Fluffy), when drawn.
         let sprite: String?
     }
 
@@ -422,12 +422,23 @@ extension AppModel {
         return sprites.sheet(skinned) != nil ? skinned : "hero"
     }
 
+    /// The hero sprite a cat wears: its recoloured `hero_<id>` once drawn; the free cat (Fluffy) is `hero` itself.
+    func heroSprite(for skin: String) -> String? {
+        let skinned = "hero_\(skin)"
+        if sprites.sheet(skinned) != nil { return skinned }
+        return skin == SaveGame.defaultSkin && sprites.sheet("hero") != nil ? "hero" : nil
+    }
+
+    /// TEMPORARY (shown-cats): only the cats whose art is painted are listed on the CATS screen; the others
+    /// stay in the catalog and in saves, just hidden. Remove to list every cat again; Tools/release-check.sh warns.
+    static let shownCats: Set<String> = ["fluffy", "sakura", "cabage", "sharky"]
+
     /// The CATS screen's view of the shop (rules and saving are GameCore's `Skin` and `SaveGame`).
     var catsScreenModel: CatsScreenModel {
-        let cats = Skin.catalog.map { skin in
+        let cats = Skin.catalog.filter { Self.shownCats.contains($0.id) }.map { skin in
             CatsScreenModel.Cat(id: skin.id, name: text(skin.nameKey), description: text(skin.descriptionKey),
                                 price: skin.price, goldenPrice: skin.goldenPrice, owned: ownedSkins.contains(skin.id), portrait: "cat_\(skin.id)",
-                                sprite: sprites.sheet("hero_\(skin.id)") != nil ? "hero_\(skin.id)" : nil)
+                                sprite: heroSprite(for: skin.id))
         }
         return CatsScreenModel(cats: cats, wallet: fishWallet, golden: goldenFish, selected: selectedSkin,
                                unlock: { [weak self] id, currency in self?.unlockSkin(id, with: currency) == .unlocked },

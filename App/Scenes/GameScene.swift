@@ -198,9 +198,21 @@ final class GameScene: SKScene {
         hero.zPosition = 5
         hero.play("run")
         actors.addChild(hero)
+        preloadTextures()
         syncHUD()
         if let openingBanner { showBanner(openingBanner) }
         render()
+    }
+
+    /// Hands SpriteKit every frame the kitten and its yarn can show, so the first throw, double
+    /// pounce or dash of a run does not stall a frame while its textures are uploaded.
+    private func preloadTextures() {
+        var textures: [SKTexture] = []
+        for sprite in Set([hero.spriteName, hero.fallbackSprite ?? hero.spriteName, "yarn"]) {
+            guard let animations = library.sheet(sprite)?.animations else { continue }
+            for name in animations.keys { textures += library.textures(sprite, name) }
+        }
+        SKTexture.preload(textures) {}
     }
 
     private func buildScenery() {

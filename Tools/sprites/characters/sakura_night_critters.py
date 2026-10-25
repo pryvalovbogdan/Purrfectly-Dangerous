@@ -665,4 +665,6 @@ def wisp_shot() -> Sprite:
 
 
 def build() -> list[Sprite]:
-    return [shadow_slime(), samurai_ronin(), oni_cat(), oni_rock(), tengu_crow(), spirit_wisp(), wisp_shot()]
+    from characters.samurai_ronin_painted import NAMES as painted  # cut from the user's painted sheet instead
+    sprites = [shadow_slime(), samurai_ronin(), oni_cat(), oni_rock(), tengu_crow(), spirit_wisp(), wisp_shot()]
+    return [s for s in sprites if s.name not in painted]

@@ -501,6 +501,10 @@ def guardian() -> list[Sprite]:
 def build() -> list[Sprite]:
     from characters.boss_kitsune_painted import NAMES as kitsune   # cut from the user's painted sheets instead
     from characters.boss_toad_painted import NAMES as toad_names
-    painted = set(kitsune) | set(toad_names)
+    from characters.boss_icedragon_painted import NAMES as icedragon
+    from characters.boss_phantom_painted import NAMES as phantom
+    from characters.boss_mecha_painted import NAMES as mecha
+    from characters.boss_squirrel_painted import NAMES as squirrel
+    painted = set(kitsune) | set(toad_names) | set(icedragon) | set(phantom) | set(mecha) | set(squirrel)
     sprites = [*acorns(), *frost(), *haunted(), *citadel(), *void(), *sakura(), *toad(), *guardian()]
     return [s for s in sprites if s.name not in painted]

@@ -8,31 +8,32 @@ game has to fake that animation from other frames.
 
 ## What to deliver
 
-- **Two sheets per cat**, because there are about 100 frames:
-  - `<Cat name> Hero Sheet A.png`: movement and actions: IDLE, RUN, STOP, JUMP, FALL, DOUBLE JUMP, THROW,
-    DASH, POUNCE.
-  - `<Cat name> Hero Sheet B.png`: reactions and menus: HURT, DEATH, KO, GHOST, MENU, SIT HAPPY, CHEER,
-    PEEK, and the effects row.
-- **PNG, about 2560×1600 each (larger is fine)**, with a **real transparent background** (see Sheet
-  rules).
-- **Cat size:** about **90–110 px tall standing**, the same on every sheet. All cats appear at the same
+- **One sheet per cat**: `<Cat name> Hero Sheet.png`, every animation in the table plus the effects row
+  (about 60 frames).
+- **PNG, about 2560×1600 (larger is fine)**, with a **real transparent background** (see Sheet rules).
+- **Cat size:** about **90–110 px tall standing**, the same in every row. All cats appear at the same
   size in the game, so a cat painted smaller ends up smaller on screen.
 
-## Smooth motion
+## Few frames, all the same cat
 
-Each animation lasts the same time in the game as before, but it now has more frames, so the motion
-is smooth instead of jumping between a few poses. That means:
+The game plays only a few frames per animation (the counts below). Earlier sheets had 16–17 frames per
+row and the cats drifted from frame to frame: the tail was whole in one frame and hidden in the next, and
+an eye winked now and then. In the game that looks like flicker. Fewer, steadier frames look better. That
+means:
 
-- **Paint in-betweens.** Each frame is a small step from the one before it: a paw moves a little, the
-  tail swings a little further. No two neighbouring frames should look like different poses.
+- **The same cat in every frame.** The same size, the same face, the same markings, the same scarf. Only
+  the pose changes.
+- **The whole tail in every frame**, at the same size: never hidden behind another cat, never cut off.
+- **No eye blinking.** Both eyes fully open in every frame of every row. No blinks, no winks, no
+  half-closed or squinting eyes, not even one frame of a blink in IDLE or MENU: the game plays so few
+  frames that any blink flashes as a flicker. The eyes look the same in every frame: same size, same
+  shape, same shine. The only exceptions are the expressions the table names: "> <" in HURT, "x x" in
+  DEATH, swirls in KO, "^ ^" in SIT HAPPY and CHEER.
+- **Clear poses.** With 2–8 frames each frame must read on its own: a run frame shows a clearly
+  different leg position from its neighbours.
 - **Looping rows must close the loop.** The last frame leads straight back into the first (RUN, IDLE,
   MENU, SIT HAPPY, GHOST, KO, DASH, JUMP, FALL, DOUBLE JUMP).
-- **Follow-through:** the ears, scarf and tail lag a frame or two behind the body and keep swinging when
-  it stops. This sells the motion more than anything else.
-- **Steady spacing:** in a cycle (run, flip), move by about the same amount every frame. Bunch frames
-  close together only where the motion eases in or out (the start of a wind-up, a landing).
-- **Keep the volume:** the cat must not grow or shrink between frames. Squash on a landing and stretch
-  on a leap are welcome, but they come back to the same size.
+- **Follow-through:** the ears, scarf and tail lag a little behind the body.
 
 ## Sheet rules
 
@@ -43,22 +44,20 @@ is smooth instead of jumping between a few poses. That means:
   (pure green `#00FF00` or dark navy), never a checkerboard or gradient.
 - **The cat is fully opaque with a dark outline all round**, including the ghost. Glow may be soft, but
   it must not touch or join two frames.
+- **Cats never touch or overlap.** Leave **at least ~30 px of empty space** between frames, measured
+  from the tip of the tail and the end of the scarf, so the cutter can't hand one cat's tail to its
+  neighbour.
 - **One row per animation**, frames left to right in playing order, the label above or beside the row
   (never touching a cat). Several short rows may share a line if there is a clear gap between them.
-  A long row (RUN, DEATH) may wrap onto a second line directly below it; label the second line
-  "RUN (cont.)" and keep the same order.
 - **The number of cats in a row must equal the frame count in the table.** No extra or missing frames.
 - **The cat faces right** in every frame.
-- **At least ~20 px of empty space** between frames.
 - **Same scale in every frame of every row.** The widest frame sets the size of all of them, so keep
   run, dash and pounce no wider than about 1.6× the standing width.
 - **Grounded rows:** all paws on one baseline. **Airborne rows:** paint a soft ground shadow under the
   cat so the ground line is known; the cutter removes it.
-- **Both eyes open** in every frame unless the table says otherwise. The only blinks are in IDLE and
-  MENU (the eyes closing over two frames and opening over two).
-- **Effects** (petals, sparkles, swirls, speed lines, trails) go in their own row at the bottom, never
-  touching the cat. Small loose specks near the cat are dropped by the cutter.
-- **Don't paint the yarn ball** — the game draws the shot itself.
+- **Effects** (petals, sparkles, swirls, speed lines, trails, dust) go in their own row at the bottom,
+  never touching the cat. Small loose specks near the cat are dropped by the cutter.
+- **Don't paint the yarn ball**: the game draws the shot itself.
 
 ## The cat
 
@@ -86,50 +85,53 @@ every cat, so the whole cast reads as one family. Use the cat's portrait on the 
 
 | # | Row | Frames | Speed | Loops | Lasts | When the game plays it | What the frames show |
 |---|---|---|---|---|---|---|---|
-| 1 | IDLE | 8 | 8 fps | yes | 1 s | Standing still after a win; fallback in menus | Standing on all fours, breathing: chest and back rise over frames 1–3 and settle over 4–5, the tail sways through all 8. **Blink:** eyes half-closed in 6, closed in 7, half-open in 8 |
-| 2 | RUN | 12 | 20 fps | yes | 0.6 s per cycle | Running on the ground — most of the game | One full gallop: front paws land (1), body compresses (2–3), back paws pass under (4–5), push off (6), all paws off the ground (7); then the same with the other paw leading (8–12). Frame 12 leads back into 1. Ears, scarf and tail bounce a beat behind the body. Eyes open |
-| 3 | STOP | 6 | 15 fps | no | 0.4 s | Level won: skids to a halt, then idle | Front paws braking, leaning back (1–2), sliding (3–4), settling (5), standing (6, the same as IDLE 1) |
-| 4 | JUMP | 4 | 12 fps | yes | 0.33 s per loop | Rising after a jump | Leaping up: front paws tucked, back legs stretched behind, scarf trailing down; the 4 frames flutter the scarf, ears and tail |
-| 5 | FALL | 4 | 12 fps | yes | 0.33 s per loop | Coming down | Front paws reaching down for the landing, back legs forward, scarf and ears blown up; the 4 frames flutter them |
-| 6 | DOUBLE JUMP | 8 | 24 fps | yes | 0.33 s per flip | Rising after the second jump (Double Pounce) | **A full forward flip**, curled up, turning 45° per frame: 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°. Frame 8 leads back into 1 |
-| 7 | THROW (yarn shot) | 6 | 24 fps | no | 0.25 s | Every yarn shot, on the ground or in the air | Front paw pulled back (1–2), swinging forward (3), paw fully forward, mouth open — the release (4), follow-through (5), back to running (6). No yarn ball. Keep the back legs in a running pose |
-| 8 | DASH (Ghost Dash) | 6 | 18 fps | yes | 0.33 s | Ghost Dash | Low, stretched, very fast pose, ears flat, scarf streaming straight back; the legs make one quick stride over the 6 frames. Paint it solid; a speed trail can go in the effects row |
-| 9 | POUNCE (Super Pounce) | 6 | 16 fps | yes | 0.38 s per loop | Super Pounce: a long forward leap that defeats walkers | Crouched take-off (1), body stretching out (2–3), fully stretched with front paws reaching ahead, claws out, back legs straight behind (4–5), starting to land (6) |
-| 10 | HURT | 4 | 12 fps | yes | 0.33 s | Just after taking a hit | Recoil backwards with eyes squeezed shut "> <" and ears back (1–2), recoil peak (3), easing back (4) |
-| 11 | DEATH | 10 | 12 fps | no | 0.83 s | Losing the last heart (the last frame stays) | Hit flinch (1–2), thrown up (3–4), tumbling (5–6), landing on its side (7), bounce (8), lying flat (9), lying flat with eyes "x x" (10) |
-| 12 | KO | 4 | 4 fps | yes | 1 s | Game-over screen | Lying flat on its side, dizzy swirl eyes, breathing slowly over the 4 frames (the swirls may turn). The game adds the stars itself |
-| 13 | GHOST | 8 | 8 fps | yes | 1 s | Game-over screen, floating above the KO cat | A pale, softly glowing spirit version of the cat, **still with a clear outline**, bobbing smoothly up and down once over the 8 frames, tail waving. The game makes it see-through |
-| 14 | MENU | 8 | 8 fps | yes | 1 s | Start screen and the CATS screen | Standing proud, three-quarter view, breathing and tail sway like IDLE, with the same blink in frames 6–8 |
-| 15 | SIT HAPPY | 8 | 10 fps | yes | 0.8 s | Start screen while happy | Sitting, happy "^ ^" closed-eye smile (allowed here), tail wagging one full swing and back, a small head bob |
+| 1 | IDLE | 4 | 4 fps | yes | 1 s | Standing still after a win; fallback in menus | Standing on all fours, breathing: chest up (1–2), down (3–4); the tail sways a little. Eyes open |
+| 2 | RUN | 8 | 14 fps | yes | 0.57 s per cycle | Running on the ground — most of the game | One full gallop: front paws land (1), body compresses (2), back paws pass under (3), push off (4), all paws off the ground (5), front paws reaching (6–7), about to land (8). Frame 8 leads back into 1. The body bobs up and down; ears, scarf and tail bounce a beat behind. Tail whole and eyes open in every frame |
+| 3 | STOP | 4 | 10 fps | no | 0.4 s | Level won: skids to a halt, then idle | Front paws braking, leaning back (1), sliding (2), settling (3), standing (4, the same as IDLE 1). No dust (it goes in the effects row) |
+| 4 | JUMP | 2 | 8 fps | yes | 0.25 s per loop | Rising after a jump | Leaping up: front paws tucked, back legs stretched behind, scarf trailing down; the 2 frames flutter the scarf and tail |
+| 5 | FALL | 2 | 8 fps | yes | 0.25 s per loop | Coming down | Front paws reaching down for the landing, back legs forward, scarf and ears blown up; the 2 frames flutter them |
+| 6 | DOUBLE JUMP | 4 | 16 fps | yes | 0.25 s per flip | Rising after the second jump (Double Pounce) | **A full forward flip**, curled up, turning 90° per frame: 0°, 90°, 180°, 270°. Frame 4 leads back into 1 |
+| 7 | THROW (yarn shot) | 4 | 16 fps | no | 0.25 s | Every yarn shot, on the ground or in the air | Front paw pulled back (1), paw fully forward, mouth open — the release (2), follow-through (3), back to running (4). No yarn ball. Keep the back legs in a running pose |
+| 8 | DASH (Ghost Dash) | 4 | 16 fps | yes | 0.25 s | Ghost Dash | Low, stretched, very fast pose, ears flat, scarf streaming straight back; the legs make one quick stride over the 4 frames. Paint it solid; a speed trail can go in the effects row |
+| 9 | POUNCE (Super Pounce) | 4 | 12 fps | yes | 0.33 s per loop | Super Pounce: a long forward leap that defeats walkers | Crouched take-off (1), body stretching out (2), fully stretched with front paws reaching ahead, claws out, back legs straight behind (3), starting to land (4) |
+| 10 | HURT | 2 | 10 fps | yes | 0.2 s | Just after taking a hit | Recoil backwards with eyes squeezed shut "> <" and ears back (1), easing back (2) |
+| 11 | DEATH | 6 | 8 fps | no | 0.75 s | Losing the last heart (the last frame stays) | Hit flinch (1), thrown up (2), tumbling (3), landing on its side (4), lying flat (5), lying flat with eyes "x x" (6) |
+| 12 | KO | 2 | 3 fps | yes | 0.67 s | Game-over screen | Lying flat on its side, dizzy swirl eyes, breathing in (1) and out (2). The game adds the stars itself |
+| 13 | GHOST | 4 | 5 fps | yes | 0.8 s | Game-over screen, floating above the KO cat | A pale, softly glowing spirit version of the cat, **still with a clear outline**, bobbing up (1–2) and down (3–4), tail waving. The game makes it see-through |
+| 14 | MENU | 4 | 4 fps | yes | 1 s | Start screen and the CATS screen | Standing proud, three-quarter view, breathing and tail sway like IDLE. Eyes open |
+| 15 | SIT HAPPY | 4 | 6 fps | yes | 0.67 s | Start screen while happy | Sitting, happy "^ ^" closed-eye smile (allowed here), tail wagging one full swing and back, a small head bob |
 
-Also wanted: **CHEER** 6 frames (10 fps, loops: paws up, hopping; Fluffy's is used on the title screen)
-and **PEEK** 6 frames (6 fps, loops: lying on a ledge, looking down, tail swaying). Optional for the
-other cats.
+Also wanted: **CHEER** 4 frames (8 fps, loops: paws up, hopping, "^ ^" eyes allowed; Fluffy's is used on
+the title screen) and **PEEK** 4 frames (4 fps, loops: lying on a ledge, looking down, tail swaying).
+Optional for the other cats.
 
-**Total: 102 frames per cat** (114 with CHEER and PEEK), plus the effects row.
+**Total: 58 frames per cat** (66 with CHEER and PEEK), plus the effects row.
 
 ## Before sending, check
 
 - [ ] The background is transparent: the squares disappear on a dark background.
 - [ ] Every row has exactly the frame count in the table, and looping rows close the loop.
-- [ ] Neighbouring frames are small steps (in-betweens), not different poses.
-- [ ] The cat faces right everywhere, at the same size in every frame.
+- [ ] No two cats touch; at least ~30 px between them, tails and scarves included.
+- [ ] The whole tail shows in every frame, at the same size.
+- [ ] No eye blinking: both eyes fully open and identical in every frame, except HURT, DEATH, KO,
+      SIT HAPPY and CHEER. No blinks, winks or half-closed eyes, in IDLE and MENU too.
+- [ ] The cat faces right everywhere, at the same size and with the same face in every frame.
 - [ ] Paws on one line in grounded rows; a shadow under airborne frames.
-- [ ] Both eyes open, except the IDLE/MENU blink, HURT, DEATH, KO and SIT HAPPY.
-- [ ] Two sheets: A (movement and actions) and B (reactions, menus, effects).
 - [ ] DOUBLE JUMP is a flip, THROW is a paw throw, POUNCE is a stretched leap (not a ball).
-- [ ] No yarn ball, no effects touching the cat, at least ~20 px between frames.
+- [ ] No yarn ball, no effects touching the cat.
 - [ ] Standing height about 90–110 px.
 
-Mistakes seen on earlier sheets: a checkerboard painted in instead of transparency, a row with one
-frame more than its label, a cat that winks in idle and run, a ball roll instead of the pounce leap, and
+Mistakes seen on earlier sheets: a checkerboard painted in instead of transparency, a row with more frames
+than its label, cats packed so tight that each one's tail hid behind the next (the tail then flickers on and
+off in the game), a cat that winks in idle, menu, jump and throw, a ball roll instead of the pounce leap, and
 a ghost without an outline.
 
 ## For the developer cutting the sheet
 
-These counts are higher than the code-drawn heroes' (e.g. RUN 8 at 14 fps). The game reads frame counts
-and fps from `Sprites.json`, so it plays them as they are, as long as each animation keeps its duration:
-THROW must fit the 0.25 s throw window, and HURT the 0.3 s hurt window. Use every painted frame and set
-fps = frames / duration; `test_hero_skins_match_the_hero` in `Tools/sprites/tests/test_sprites.py` allows a
-painted skin its own counts and fps if each animation lasts within about 25% of the code-drawn hero's. One
-thing must still change for two-sheet cats: `sheet_hero.py` reads one sheet per cat, not two.
+These counts and speeds are the code-drawn hero's (`hero.drawn_hero`), so a sheet painted to them plays
+at the same fps. The game reads frame counts and fps from `Sprites.json`. A painted skin may still have
+its own counts if each animation keeps its duration: THROW must fit the 0.25 s throw window, and HURT the
+0.3 s hurt window; `test_hero_skins_match_the_hero` in `Tools/sprites/tests/test_sprites.py` allows each
+animation within about 25% of the code-drawn hero's. For an older sheet with too many or uneven frames, a
+row in `characters/hero_painted.py` can play only some of its painted cats (the fourth item in the plan:
+their indices), as Fluffy's does.

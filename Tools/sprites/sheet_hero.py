@@ -69,6 +69,15 @@ class Row:
     # Scale each cat to the row's median height: for a row whose painter let the cats drift in size
     # along it (the same pose a little smaller every frame), so a loop does not pop at its seam.
     even: bool = False
+    # For cats painted overlapping (each one's tail and hind leg behind or over its neighbour), where no
+    # straight cut separates them: (seed, grow), brightness thresholds (the brightest channel) below which a
+    # pixel counts as the dark outline. The cats are found in the fur inside their outlines at `seed` (a
+    # strict line, so neighbours fall apart), grown first over the fur at `grow` (a looser one, so a scarf
+    # knot shaded off from the body still reaches its own cat before its neighbour's), then over the outline
+    # and whatever is left. On `core` sheets only.
+    walls: tuple | None = None
+    # The sheet's `drop` for this row (e.g. a looser one for effects painted against the cat in fur colours).
+    drop: Callable[[tuple], bool] | None = None
 
 
 @dataclass
@@ -116,6 +125,12 @@ class HeroSheet:
     # one size from pose to pose. Rows in `size_skip` (lying down, curled up) keep the one scale. None: off.
     size_to: str | None = None
     size_skip: tuple = ()
+    # On sheets with real transparency: which opaque RGB pixels are not the cat (a ground shadow painted
+    # nearly opaque); they are cleared before the cats are found. None: keep everything.
+    drop: Callable[[tuple], bool] | None = None
+    # The one scale set from outside instead of fitted (e.g. so a second sheet of the same cat matches the
+    # first one's size); the build fails if a used cat would then not fit the frame. None: fitted.
+    fixed_scale: float | None = None
 
     @cached_property
     def sheet(self) -> Image.Image:
@@ -148,6 +163,12 @@ class HeroSheet:
         # back out over the solid pixels they touch, so cats joined only by their soft edges stay apart.
         grow = self.core is not None and self.background is None
         seed = [[solid[x][y] and painted[x, y] >= self.core for y in range(h)] for x in range(w)] if grow else solid
+        fur = None
+        if grow and row.walls is not None:
+            rgb = crop.load()
+            bright = [[max(rgb[x, y][:3]) if solid[x][y] else -1 for y in range(h)] for x in range(w)]
+            seed = [[seed[x][y] and bright[x][y] >= row.walls[0] for y in range(h)] for x in range(w)]
+            fur = [[bright[x][y] >= row.walls[1] for y in range(h)] for x in range(w)]
         for cut in row.splits:
             if isinstance(cut, int):
                 seed[cut - x0] = [False] * h
@@ -172,28 +193,33 @@ class HeroSheet:
                             stack.append((nx, ny))
                 if len(shape) >= (row.min_area or self.min_area):
                     shapes.append(shape)
+        # Where each shape starts before it grows: growing back over a split column may carry its left edge
+        # into the cell before it.
+        starts = [min(x for x, _ in shape) for shape in shapes]
         if grow:
             # Grow every cat at once, one ring of pixels per step, over the solid pixels nobody has yet.
             owner = [[-1] * h for _ in range(w)]
             for i, shape in enumerate(shapes):
                 for x, y in shape:
                     owner[x][y] = i
-            ring = [(x, y, i) for i, shape in enumerate(shapes) for x, y in shape]
-            while ring:
-                grown = []
-                for x, y, i in ring:
-                    for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-                        if 0 <= nx < w and 0 <= ny < h and owner[nx][ny] < 0 and solid[nx][ny]:
-                            owner[nx][ny] = i
-                            shapes[i].append((nx, ny))
-                            grown.append((nx, ny, i))
-                ring = grown
+            # With `walls`, first over the fur only, then over everything solid left (outlines, bells, eyes).
+            for allowed in ([fur, solid] if fur is not None else [solid]):
+                ring = [(x, y, i) for i, shape in enumerate(shapes) for x, y in shape]
+                while ring:
+                    grown = []
+                    for x, y, i in ring:
+                        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                            if 0 <= nx < w and 0 <= ny < h and owner[nx][ny] < 0 and allowed[nx][ny]:
+                                owner[nx][ny] = i
+                                shapes[i].append((nx, ny))
+                                grown.append((nx, ny, i))
+                    ring = grown
         columns = [cut for cut in row.splits if isinstance(cut, int)]
         if columns and len(columns) + 1 == row.count:
             edges = [x0, *columns, x1]
             cells = {}
-            for shape in shapes:
-                cell = sum(min(x for x, _ in shape) + x0 >= e for e in edges[1:-1])
+            for shape, start in zip(shapes, starts):
+                cell = sum(start + x0 >= e for e in edges[1:-1])
                 if len(shape) > len(cells.get(cell, ())):
                     cells[cell] = shape
             shapes = list(cells.values())
@@ -228,6 +254,18 @@ class HeroSheet:
         (swirl rings, speed lines) cut off where they leave the body, as in `_unchecker`."""
         w, h = crop.size
         mask = crop.getchannel("A").point(lambda a: 255 if a >= self.alpha else 0)
+        drop = row.drop or self.drop
+        if drop is not None:
+            # Only where it can be reached from outside the cat through such pixels (not an eye's grey glint).
+            rgb = crop.convert("RGB").load()
+            px = mask.load()
+            todo = [(x, y) for x in range(w) for y in range(h) if not px[x, y]]
+            while todo:
+                x, y = todo.pop()
+                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= nx < w and 0 <= ny < h and px[nx, ny] and drop(rgb[nx, ny]):
+                        px[nx, ny] = 0
+                        todo.append((nx, ny))
         x0, y0 = row.box[:2]
         for cx0, cy0, cx1, cy1 in row.cleared:
             mask.paste(0, (cx0 - x0, cy0 - y0, cx1 - x0, cy1 - y0))
@@ -368,6 +406,14 @@ class HeroSheet:
                     for row in sizes if row not in self.own_scale]
             self.max_scale = cap
             k_all = min(fits) if cap is None else min(min(fits), cap)
+        if self.fixed_scale is not None:
+            cap, self.max_scale = self.max_scale, None
+            fit = self.factor([f for f in used if f[0] not in self.own_scale])
+            self.max_scale = cap
+            if self.fixed_scale > fit + 1e-9:
+                raise ValueError(f"{self.source}: fixed_scale {self.fixed_scale:.3f} does not fit the frame "
+                                 f"(at most {fit:.3f})")
+            k_all = self.fixed_scale
         fw, fh = self.frame[0] * self.scale, self.frame[1] * self.scale
         centre = (self.cx + 0.5) * self.scale
         out = {}

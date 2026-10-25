@@ -284,9 +284,10 @@ extension Color {
 
 // MARK: - Boss
 
-/// The boss's health during the fight. A boss with its own banner art (only the Great Squirrel King
-/// so far: `boss_banner_squirrel`, with its name painted in) shows that banner, centred, with the
-/// sprite bar tucked under it as on docs/concept/The Great Squirrel King UI Sprite Sheet.png. Every
+/// The boss's health during the fight. Each route's bosses get their route's painted plate and bar
+/// (`PaintedBossHealth`, chosen in `paintedStyle(for:)`). Without that art, a boss with its own banner
+/// (only the Great Squirrel King: `boss_banner_squirrel`, its name painted in) shows that banner with
+/// the sprite bar tucked under it, as on docs/concept/The Great Squirrel King UI Sprite Sheet.png; any
 /// other boss, or a missing bar sprite, gets the plain name and bar.
 struct BossHealth: View {
     @Environment(AppModel.self) private var model
@@ -301,22 +302,38 @@ struct BossHealth: View {
     static let banners: [String: String] = ["boss_squirrel": "boss_banner_squirrel"]
     static let barSprites = ["boss_bar_frame", "boss_bar_fill", "boss_bar_fill_low", "boss_bar_flash"]
 
-    /// Bosses of Sakura's route: the painted blossom plaque and bar (`SakuraBossHealth`).
-    static let sakuraBosses: Set<String> = ["boss_kitsune", "boss_toad", "boss_guardian_cat"]
+    /// The painted plate and bar each boss gets, by route: Sakura's bosses the blossom plaque, Fluffy's
+    /// five (the base worlds) the floral frame. Nil for any other boss, or when the style's art is not in
+    /// the bundle (then the banner or plain bar below is used).
+    static func paintedStyle(for id: String) -> PaintedBossHealth.Style? {
+        let style: PaintedBossHealth.Style? = switch id {
+        case "boss_kitsune", "boss_toad", "boss_guardian_cat": .sakura
+        case "boss_squirrel", "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat": .floral
+        default: nil
+        }
+        guard let style else { return nil }
+        return drawnPlates.contains(style.plate) ? style : nil
+    }
+
+    /// The painted styles whose pieces are all in the bundle (looked up once).
+    private static let drawnPlates = Set([PaintedBossHealth.Style.sakura, .floral].filter(\.isDrawn).map(\.plate))
+
+    /// A boss's crest on the painted plate: the Great Squirrel King keeps the crown of his banner.
+    static let crests: [String: String] = ["boss_squirrel": "boss_crown_squirrel"]
 
     /// Bosses whose health plate opens the fight with its own entrance and shows the name, so the
     /// scene leaves out the plain name banner (it would only repeat the name under the plate).
     static func introducesItself(_ id: String) -> Bool {
-        sakuraBosses.contains(id)
+        paintedStyle(for: id) != nil
     }
 
     var body: some View {
         let banner = id.flatMap { Self.banners[$0] }
         let barsDrawn = Self.barSprites.allSatisfy { model.sprites.sheet($0) != nil }
-        if let id, Self.sakuraBosses.contains(id) {
+        if let id, let style = Self.paintedStyle(for: id) {
             // Upright about the HUD row's width; on its side half the width, its height capped
-            // (SakuraBossHealth.maxPlateHeight) so it stays a slim strip over the play area.
-            SakuraBossHealth(name: name, fraction: fraction, hits: hits)
+            // (Style.maxPlateHeight) so it stays a slim strip over the play area.
+            PaintedBossHealth(style: style, name: name, fraction: fraction, hits: hits, crest: Self.crests[id])
                 .containerRelativeFrame(.horizontal) { width, _ in
                     (width * (verticalSizeClass == .compact ? 0.5 : 0.9)).rounded()
                 }

@@ -250,6 +250,12 @@ def burst(c: Canvas, x: float, step: int) -> None:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_icedragon_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_icedragon" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Glacipurr (kept for reference; `boss_icedragon_painted.py` replaces it)."""
     boss = Sprite("boss_icedragon", SIZE, faces_left=True, cx=CX, ground=GROUND)
     boss.add("idle", [dragon(DragonPose(wing=w, tail=t, head_dy=dy, eye=e)) for w, t, dy, e in (
         (0.5, 0.0, 0, "open"), (0.65, 0.6, -1, "open"), (0.75, 1.2, -1, "open"), (0.65, 1.8, 0, "open"),

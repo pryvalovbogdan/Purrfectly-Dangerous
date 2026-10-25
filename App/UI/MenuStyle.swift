@@ -34,6 +34,8 @@ struct MenuBackground: View {
     var celebrate = false
     var groundShare = MenuScene.narrowGroundShare
     var wideHeroPlace: CGFloat?
+    /// Show the chosen cat's own start screen (`StartLook`) when it has one (the start screen only).
+    var followsCat = false
 
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
@@ -55,6 +57,7 @@ struct MenuBackground: View {
             .onChange(of: proxy.size) { _, newSize in scene = makeScene(newSize) }
             // A cat picked on the CATS screen shows here as soon as the player comes back.
             .onChange(of: model.heroSprite) { _, _ in scene = makeScene(proxy.size) }
+            .onChange(of: startLook) { _, _ in scene = makeScene(proxy.size) }
         }
         .ignoresSafeArea()
     }
@@ -62,7 +65,11 @@ struct MenuBackground: View {
     private func makeScene(_ size: CGSize) -> MenuScene {
         MenuScene(viewSize: size, displayScale: displayScale, library: model.sprites, pose: pose, theme: theme,
                   celebrate: celebrate, groundShare: groundShare, wideHeroPlace: wideHeroPlace,
-                  heroSprite: model.heroSprite)
+                  heroSprite: model.heroSprite, startLook: startLook)
+    }
+
+    private var startLook: String? {
+        followsCat ? StartLook.theme(forSkin: model.selectedSkin) : nil
     }
 }
 
@@ -363,8 +370,9 @@ struct TitleFigure {
     /// Head height as a share of the title's height.
     var headOfTitle: CGFloat = 0.5
 
-    static let cheer = TitleFigure(sprite: "hero", animation: "cheer", headShare: 0.94, headOfTitle: 0.5)
-    static let idle = TitleFigure(sprite: "hero", animation: "idle", headShare: 0.94, headOfTitle: 0.5)
+    // The painted heroes stand on all fours with the tail up, so the head is about 60% of what is drawn.
+    static let cheer = TitleFigure(sprite: "hero", animation: "cheer", headShare: 0.6, headOfTitle: 0.5)
+    static let idle = TitleFigure(sprite: "hero", animation: "idle", headShare: 0.6, headOfTitle: 0.5)
 
     /// The same figure drawn from another sprite (the recoloured hero of the cat in use).
     func drawn(from sprite: String) -> TitleFigure {
@@ -611,6 +619,49 @@ struct SecondaryButton: View {
 
     private var label: some View {
         Text(title).font(.pixel(fontSize)).lineLimit(1).minimumScaleFactor(0.6)
+    }
+}
+
+/// The start screen's KITTIES button, painted: a cream plank with Fluffy peeking over it, orange with sparkles
+/// while held (`kitties_button`, `kitties_button_pressed`, cut by Tools/sprites/export.py). The painted
+/// lettering is taken out, so the title comes from Lore.json and is set on the plank here.
+struct KittiesButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { EmptyView() }
+            .buttonStyle(KittiesButtonStyle(title: title))
+            .accessibilityLabel(title)
+    }
+}
+
+private struct KittiesButtonStyle: ButtonStyle {
+    let title: String
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        Image(pressed ? "kitties_button_pressed" : "kitties_button")
+            .resizable().interpolation(.high).scaledToFit()
+            .overlay {
+                GeometryReader { box in
+                    // Where the painted lettering was: the plank's middle, below the cat's paws.
+                    let size = box.size.height * 0.19
+                    Group {
+                        if pressed {
+                            OutlinedText(text: title, size: size)
+                        } else {
+                            Text(title).font(.pixel(size)).foregroundStyle(Color.menuInk)
+                        }
+                    }
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .frame(width: box.size.width * 0.66)
+                    .position(x: box.size.width * 0.51, y: box.size.height * 0.73)
+                }
+            }
+            .offset(y: pressed ? 2 : 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
     }
 }
 
