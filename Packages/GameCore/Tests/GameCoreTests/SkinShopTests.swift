@@ -6,7 +6,7 @@ import Testing
 @Suite struct SkinShopTests {
     @Test func theCatalogHasEveryCatAtItsPrice() {
         let prices = Dictionary(uniqueKeysWithValues: Skin.catalog.map { ($0.id, $0.price) })
-        #expect(prices == ["fluffy": 0, "shadow": 150, "misty": 200, "sakura": 250, "honey": 300, "pixie": 400,
+        #expect(prices == ["fluffy": 0, "shadow": 150, "misty": 200, "sakura": 3500, "honey": 300, "pixie": 400,
                            "clover": 500, "snowball": 600, "napster": 750, "toffee": 900, "cabage": 2000,
                            "sharky": 2000])
         #expect(Skin.catalog.map(\.id).first == Skin.free)
@@ -54,15 +54,35 @@ import Testing
         #expect(game.fishWallet == 0)
     }
 
+    @Test func catsNotForSaleCannotBeBoughtAtAnyPrice() throws {
+        #expect(Skin.catalog.filter { !$0.available }.map(\.id) == ["cabage", "sharky"])
+        var game = SaveGame()
+        game.addFish(10_000)
+        game.creditGolden(transaction: "t1", amount: 800)
+        let before = game
+        for id in ["cabage", "sharky"] {
+            for currency in Currency.allCases {
+                let result = game.unlock(skin: id, with: currency)
+                #expect(result == .unavailable, "\(id) \(currency)")
+            }
+        }
+        #expect(game == before)
+        // One already owned (bought before, or restored from a backup) stays owned and selectable.
+        let old = #"{"fishWallet":0,"ownedSkins":["fluffy","sharky"],"selectedSkin":"sharky"}"#
+        var owner = try JSONDecoder().decode(SaveGame.self, from: Data(old.utf8))
+        #expect(owner.owns("sharky") && owner.selectedSkin == "sharky")
+        do { let result = owner.unlock(skin: "sharky"); #expect(result == .alreadyOwned) }
+    }
+
     @Test func onlyAnOwnedSkinCanBeSelected() {
         var game = SaveGame()
-        do { let result = game.select(skin: "sharky"); #expect(!result) }
+        do { let result = game.select(skin: "toffee"); #expect(!result) }
         #expect(game.selectedSkin == "fluffy")
         do { let result = game.select(skin: "no_such_cat"); #expect(!result) }
-        game.addFish(2000)
-        do { let result = game.unlock(skin: "sharky"); #expect(result == .unlocked) }
-        do { let result = game.select(skin: "sharky"); #expect(result) }
-        #expect(game.selectedSkin == "sharky")
+        game.addFish(900)
+        do { let result = game.unlock(skin: "toffee"); #expect(result == .unlocked) }
+        do { let result = game.select(skin: "toffee"); #expect(result) }
+        #expect(game.selectedSkin == "toffee")
         do { let result = game.select(skin: "fluffy"); #expect(result) }
         #expect(game.selectedSkin == "fluffy")
     }

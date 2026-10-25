@@ -255,19 +255,21 @@ the kitten looks and nothing else (the simulation never sees it).
 | `fluffy` | 0 (everyone's from the start) |
 | `shadow` | 150 |
 | `misty` | 200 |
-| `sakura` | 250 |
+| `sakura` | 3500 |
 | `honey` | 300 |
 | `pixie` | 400 |
 | `clover` | 500 |
 | `snowball` | 600 |
 | `napster` | 750 |
 | `toffee` | 900 |
-| `cabage` | 2000 |
-| `sharky` | 2000 |
+| `cabage` | 2000 (not for sale yet) |
+| `sharky` | 2000 (not for sale yet) |
 
 - Unlocking needs the full price in the wallet; it takes the fish and owns the cat for good. With too
   few fish, nothing changes and the shop says how many are missing. A cat already owned can't be
-  bought again.
+  bought again. A cat marked not for sale (`Skin.available == false`: Cabage and Sharky for now)
+  can't be bought at any price; the CATS screen shows COMING SOON instead of the prices, and one
+  already owned stays owned.
 - Only an owned cat can be selected. The cat in use is saved; saves from before the shop (whose one
   cat was "orange") load with Fluffy owned and selected.
 - The catalog and rules are `Skin` and `SaveGame.unlock(skin:)` / `select(skin:)` in GameCore. Names
@@ -281,14 +283,15 @@ earnable for free by playing. Ordinary fish are never bought or converted, and n
 (no unlock-all, no ads, nothing that changes the game).
 
 Golden prices are set per cat in `Skin.catalog` (`goldenPrice`, so they can be tuned); they were
-first set as fish price / 20, rounded up to a multiple of 5, at least 10:
+first set as fish price / 20, rounded up to a multiple of 5, at least 10 (Sakura's were later raised by
+hand):
 
 | Id | Fish | Golden |
 | --- | --- | --- |
 | `fluffy` | 0 | — |
 | `shadow` | 150 | 10 |
 | `misty` | 200 | 10 |
-| `sakura` | 250 | 15 |
+| `sakura` | 3500 | 50 |
 | `honey` | 300 | 15 |
 | `pixie` | 400 | 20 |
 | `clover` | 500 | 25 |
@@ -371,6 +374,17 @@ a **lantern pendulum** swings across the way; a **falling lantern** drops and bu
 | `spike_kappa` | spike kappa | a shell on a rhythm: shut and harmless, opening, then open as a lotus (hurts) throwing a fan of three spike balls that land ahead and roll on; 2 HP | hop the spike balls; pass while shut; 2 yarn |
 | `lantern_pendulum` | lantern pendulum | a lantern on a rope swinging across the way on the world clock: low in the middle of its swing, high at the ends | pass under when it is up at an end, or jump it |
 | `falling_lantern` | falling lantern | hangs; blinks (a warning shake), drops, and burns as a hot patch for a second | pass before it falls, or wait, or hop it |
+
+Sakura level 3 (theme `sakura_night`, a night world; level and boss `boss_guardian_cat` to come) — creatures
+from `docs/concept/Sakura World Level 3 Enemy Sprites.png`:
+
+| Id | Role | Behaviour | Beat it by |
+| --- | --- | --- | --- |
+| `shadow_slime` | shadow slime | lurches in, in quick bursts (its leap is drawn); a stomp kills | stomp, yarn, or hop |
+| `samurai_ronin` | samurai ronin | walks in; close up (~90) it stands in its stance, then lunges with a crescent slash out in front; 2 HP, a stomp kills | jump it as it lunges, stomp, or 2 yarn |
+| `oni_cat` | oni cat | slow, big bruiser; its club reaches out in front and it lobs rocks that land ahead and roll on; can't be stomped, 4 HP. Needs kitten level 3 | hop the rocks; Double Pounce over it, or 4 yarn |
+| `tengu_crow` | tengu crow | flies high, then dives as it nears, all the way to the ground (like the bird crow) | jump it late, or yarn it |
+| `spirit_wisp` | spirit wisp | floats at 36 and shoots homing wisp fireballs (like the shadow spirit); 2 HP | jump late or Ghost Dash; 2 yarn from hops |
 
 ## Names
 

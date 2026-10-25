@@ -22,7 +22,8 @@ SIZES = [(5244, 2950), (3840, 1646)]
 
 
 def frame(sprite: str, anim: str, index: int = 0) -> Image.Image:
-    name = f"{sprite}_{anim}_{index}"
+    sequence = MANIFEST[sprite]["animations"][anim].get("sequence")
+    name = f"{sprite}_{anim}_{sequence[index] if sequence else index}"
     return Image.open(ATLAS / f"{name}.imageset" / f"{name}.png").convert("RGBA")
 
 

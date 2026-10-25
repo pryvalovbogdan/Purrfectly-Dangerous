@@ -381,6 +381,12 @@ def flash(image: Image.Image, amount: float) -> Image.Image:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_toad_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_toad" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Lantern Toad Guardian (kept for reference; `boss_toad_painted.py` replaces it)."""
     boss = Sprite("boss_toad", SIZE, faces_left=True, cx=CX, ground=GROUND)
     boss.add("idle", [toad(ToadPose(step=k, breathe=(0, 1, 2, 1)[k], eye="shut" if k == 3 else "half"))
                       for k in range(4)], fps=5)

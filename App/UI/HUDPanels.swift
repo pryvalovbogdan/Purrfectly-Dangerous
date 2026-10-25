@@ -69,11 +69,27 @@ struct LivesPanel: View {
     let hearts: Int
     let maxHearts: Int
     let fish: Int
+    /// The selected cat; cats without their own head show Fluffy's.
+    var skin: String = "fluffy"
 
     /// The head is about 1.4 times the panel's height, as on the sheet.
     private static let headShare: CGFloat = 1.4
-    /// hud_cat.png is 214×203.
-    private static let headAspect: CGFloat = 214 / 203
+
+    /// A cat's head picture: its width over its height, and how far across it (from the left) its
+    /// cheek reaches, where the hearts may start.
+    private struct Head {
+        let image: String
+        let aspect: CGFloat
+        let cheek: CGFloat
+    }
+
+    /// hud_cat.png is 214×203; hud_cat_sakura.png is 142×97, her scarf streaming out to the left.
+    private static let heads: [String: Head] = [
+        "fluffy": Head(image: "hud_cat", aspect: 214 / 203, cheek: 0.78),
+        "sakura": Head(image: "hud_cat_sakura", aspect: 142 / 97, cheek: 0.9),
+    ]
+
+    private var head: Head { Self.heads[skin] ?? Self.heads["fluffy"]! }
 
     var body: some View {
         let k = HUDMetrics.pixelScale(displayScale)
@@ -84,9 +100,9 @@ struct LivesPanel: View {
         let contentHeight: CGFloat = 14 + 2 + 12
         let panelHeight = contentHeight + 2 * inset
         let headHeight = (panelHeight * unit * Self.headShare).rounded()
-        let headWidth = (headHeight * Self.headAspect).rounded()
+        let headWidth = (headHeight * head.aspect).rounded()
         // The head covers the panel's left part; the hearts start just past its cheek.
-        let leftRoom = (headWidth * 0.78 / unit).rounded()
+        let leftRoom = (headWidth * head.cheek / unit).rounded()
         let panelWidth = leftRoom + heartsWidth + inset
 
         ZStack(alignment: .bottomLeading) {
@@ -107,7 +123,7 @@ struct LivesPanel: View {
                 }
                 .padding(.leading, headWidth * 0.1)
             // The cat: bottom on the panel's bottom, its left edge just past the panel's.
-            Image("hud_cat")
+            Image(head.image)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
@@ -284,9 +300,10 @@ extension Color {
 
 // MARK: - Boss
 
-/// The boss's health during the fight. A boss with its own banner art (only the Great Squirrel King
-/// so far: `boss_banner_squirrel`, with its name painted in) shows that banner, centred, with the
-/// sprite bar tucked under it as on docs/concept/The Great Squirrel King UI Sprite Sheet.png. Every
+/// The boss's health during the fight. Each route's bosses get their route's painted plate and bar
+/// (`PaintedBossHealth`, chosen in `paintedStyle(for:)`). Without that art, a boss with its own banner
+/// (only the Great Squirrel King: `boss_banner_squirrel`, its name painted in) shows that banner with
+/// the sprite bar tucked under it, as on docs/concept/The Great Squirrel King UI Sprite Sheet.png; any
 /// other boss, or a missing bar sprite, gets the plain name and bar.
 struct BossHealth: View {
     @Environment(AppModel.self) private var model
@@ -301,10 +318,42 @@ struct BossHealth: View {
     static let banners: [String: String] = ["boss_squirrel": "boss_banner_squirrel"]
     static let barSprites = ["boss_bar_frame", "boss_bar_fill", "boss_bar_fill_low", "boss_bar_flash"]
 
+    /// The painted plate and bar each boss gets, by route: Sakura's bosses the blossom plaque, Fluffy's
+    /// five (the base worlds) the floral frame. Nil for any other boss, or when the style's art is not in
+    /// the bundle (then the banner or plain bar below is used).
+    static func paintedStyle(for id: String) -> PaintedBossHealth.Style? {
+        let style: PaintedBossHealth.Style? = switch id {
+        case "boss_kitsune", "boss_toad", "boss_guardian_cat": .sakura
+        case "boss_squirrel", "boss_icedragon", "boss_phantom", "boss_mecha", "boss_voidcat": .floral
+        default: nil
+        }
+        guard let style else { return nil }
+        return drawnPlates.contains(style.plate) ? style : nil
+    }
+
+    /// The painted styles whose pieces are all in the bundle (looked up once).
+    private static let drawnPlates = Set([PaintedBossHealth.Style.sakura, .floral].filter(\.isDrawn).map(\.plate))
+
+    /// A boss's crest on the painted plate: the Great Squirrel King keeps the crown of his banner.
+    static let crests: [String: String] = ["boss_squirrel": "boss_crown_squirrel"]
+
+    /// Bosses whose health plate opens the fight with its own entrance and shows the name, so the
+    /// scene leaves out the plain name banner (it would only repeat the name under the plate).
+    static func introducesItself(_ id: String) -> Bool {
+        paintedStyle(for: id) != nil
+    }
+
     var body: some View {
         let banner = id.flatMap { Self.banners[$0] }
         let barsDrawn = Self.barSprites.allSatisfy { model.sprites.sheet($0) != nil }
-        if let banner, barsDrawn {
+        if let id, let style = Self.paintedStyle(for: id) {
+            // Upright about the HUD row's width; on its side half the width, its height capped
+            // (Style.maxPlateHeight) so it stays a slim strip over the play area.
+            PaintedBossHealth(style: style, name: name, fraction: fraction, hits: hits, crest: Self.crests[id])
+                .containerRelativeFrame(.horizontal) { width, _ in
+                    (width * (verticalSizeClass == .compact ? 0.5 : 0.9)).rounded()
+                }
+        } else if let banner, barsDrawn {
             // About 70% of an upright screen wide; on its side 30%, which keeps the banner and bar to
             // about a fifth of the screen's height.
             let share: CGFloat = verticalSizeClass == .compact ? 0.3 : 0.7

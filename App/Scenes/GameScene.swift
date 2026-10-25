@@ -198,9 +198,21 @@ final class GameScene: SKScene {
         hero.zPosition = 5
         hero.play("run")
         actors.addChild(hero)
+        preloadTextures()
         syncHUD()
         if let openingBanner { showBanner(openingBanner) }
         render()
+    }
+
+    /// Hands SpriteKit every frame the kitten and its yarn can show, so the first throw, double
+    /// pounce or dash of a run does not stall a frame while its textures are uploaded.
+    private func preloadTextures() {
+        var textures: [SKTexture] = []
+        for sprite in Set([hero.spriteName, hero.fallbackSprite ?? hero.spriteName, "yarn"]) {
+            guard let animations = library.sheet(sprite)?.animations else { continue }
+            for name in animations.keys { textures += library.textures(sprite, name) }
+        }
+        SKTexture.preload(textures) {}
     }
 
     private func buildScenery() {
@@ -712,6 +724,7 @@ final class GameScene: SKScene {
         .riftTurret: "crystal_shot", .voidWisp: "homing_orb",
         .lanternSpirit: "blossom_shot", .spikePlant: "blossom_shot",
         .lanternSlime: "lantern_flame", .shadowSpirit: "spirit_flame", .spikeKappa: "spike_ball",
+        .oniCat: "oni_rock", .spiritWisp: "wisp_shot",
     ]
     /// Sprites for thrown hazard kinds whose `hazard_<kind>` sprite does not exist.
     private static let projectileSprite = ["bone": "bone", "cannonball": "cannonball", "soundwave": "hazard_wave",
@@ -727,7 +740,8 @@ final class GameScene: SKScene {
                                            "crystal_shot": "crystal_shot", "homing_orb": "homing_orb",
                                            "blossom_shot": "blossom_shot", "lantern_ember": "lantern_flame",
                                            "lantern_flame": "lantern_flame", "spirit_flame": "spirit_flame",
-                                           "spike_ball": "spike_ball"]
+                                           "spike_ball": "spike_ball", "oni_rock": "oni_rock",
+                                           "wisp_shot": "wisp_shot"]
     /// Hiding animation and the poses held afterwards (first one the sprite has), for things that
     /// curl up or hide in a shell.
     private static let curlAnimation: [ItemKind: (start: String, hold: [String])] = [
@@ -910,7 +924,7 @@ final class GameScene: SKScene {
             case .fuseLit:
                 break
             case .lunged(let id):
-                // The sakura bunny turns and lunges with its crescent swipe.
+                // The sakura bunny, ninja tanuki or samurai ronin lunges with its crescent slash.
                 play(.dash)
                 Self.playAny(entityNodes[id], ["attack", "run"], restart: true)
             case .summoned(let id):
@@ -951,7 +965,7 @@ final class GameScene: SKScene {
                 }
             case .bossAppeared(let id):
                 play(.bossRoar)
-                showBanner(text("\(id).name").uppercased())
+                if !BossHealth.introducesItself(id) { showBanner(text("\(id).name").uppercased()) }
             case .bossTelegraph, .bossAttack:
                 break
             case .bossHit:
@@ -1229,6 +1243,8 @@ final class GameScene: SKScene {
         .lanternSlime: ["walk", "idle"], .ninjaTanuki: ["walk", "idle"], .sakuraBat: ["fly", "idle"],
         .shadowSpirit: ["float", "idle"], .spikeKappa: ["closed", "idle"], .lanternPendulum: ["swing", "idle", "still"],
         .fallingLantern: ["hang", "idle", "still"],
+        .shadowSlime: ["walk", "idle"], .samuraiRonin: ["walk", "idle"], .oniCat: ["walk", "idle"],
+        .tenguCrow: ["fly", "idle"], .spiritWisp: ["float", "idle"],
     ]
 
     /// The resting animation of a kind, best first.
@@ -1282,7 +1298,8 @@ final class GameScene: SKScene {
             case .active: if !node.isBusy { Self.playAny(node, ["attack", "open"]) }
             default: Self.playAny(node, ["closed", "idle"])
             }
-        case .ninjaTanuki:
+        case .ninjaTanuki, .samuraiRonin:
+            // Winding up (the ronin's stance), then the slash.
             if entity.state == .warning, !node.isBusy {
                 Self.playAny(node, ["idle", "walk"])
             } else if entity.state == .active, !node.isBusy {
@@ -1396,20 +1413,20 @@ final class GameScene: SKScene {
             } else if entity.state == .active, !node.isBusy {
                 Self.playAny(node, ["attack", "run"])
             }
-        case .sakuraSlime:
-            // Shuffles in bursts; a little bounce lunge once close (drawn only).
+        case .sakuraSlime, .shadowSlime:
+            // Shuffles in bursts; a little bounce lunge (the shadow slime's leap) once close (drawn only).
             let moving = entity.kind.spec.burst?.isMoving(at: world.time + entity.cycleOffset) ?? true
             if abs(entity.x - world.distance) < 40, node.has("attack") {
                 node.play("attack")
             } else if !node.isBusy {
                 Self.playAny(node, moving ? ["walk", "idle"] : ["idle"])
             }
-        case .birdCrow:
+        case .birdCrow, .tenguCrow:
             // Its dive, once it drops toward the ground.
             if entity.y - world.groundHeight(at: entity.x) < 36, !node.isBusy {
                 Self.playAny(node, ["attack", "fly"])
             } else if !node.isBusy {
-                Self.playAny(node, Self.restAnimation(.birdCrow))
+                Self.playAny(node, Self.restAnimation(entity.kind))
             }
         case .iciclePlant:
             switch entity.state {
@@ -1446,7 +1463,7 @@ final class GameScene: SKScene {
             if Int(world.time * 60) % 8 == 0 {
                 burst("spark_ember", count: 1, radius: 6, at: CGPoint(x: node.position.x + 6, y: node.position.y + 6))
             }
-        case .snowCat, .iceGolem, .miniYeti, .chainsawCat, .hellHound, .riftHound:
+        case .snowCat, .iceGolem, .miniYeti, .chainsawCat, .hellHound, .riftHound, .oniCat:
             // Melee: swing once in reach (looks only; the hitbox decides the hit).
             let reach = entity.kind.spec.width / 2 + world.tuning.heroWidth / 2 + 14
             if abs(entity.x - world.distance) < reach, node.has("attack") {
@@ -1626,8 +1643,10 @@ final class GameScene: SKScene {
         "boss_mecha": ["rockets": "rockets", "tail_sweep": "tail", "core_barrage": "core", "*": "rockets"],
         "boss_kitsune": ["claw_slash": "claw", "double_claw": "claw", "bloom_shots": "bloom", "bloom_volley": "bloom", "spirit_summon": "summon", "*": "attack"],
         "boss_toad": ["tongue_strike": "tongue", "lantern_arc": "lanterns", "area_slam": "slam", "*": "attack"],
+        "boss_guardian_cat": ["petal_volley": "volley", "petal_storm": "spin", "paw_slam": "slam", "torii_beam": "beam",
+                              "spirit_summon": "summon", "*": "volley"],
         "boss_voidcat": ["shadow_paws": "paws", "star_fall": "stars", "portal_paws": "portal",
-                         "portal_shards": "portal", "phase_rush": "phase", "phase_storm": "phase", "*": "attack"],
+                         "portal_shards": "rift", "phase_rush": "phase", "phase_storm": "storm", "*": "paws"],
     ]
 
     private func attackAnimation(boss: String, attack: String) -> String {

@@ -3,7 +3,7 @@
  "nameKey": "level.sakura_2.name",
  "background": "sakura_dusk",
  "speed": 120,
- "length": 3800,
+ "length": 7000,
  "entryHeroLevel": 3,
  "boss": "boss_toad",
  "bossRewardLevel": 4,
@@ -15,6 +15,22 @@
   {
    "at": 2300,
    "width": 110
+  },
+  {
+   "at": 3640,
+   "width": 60
+  },
+  {
+   "at": 4400,
+   "width": 100
+  },
+  {
+   "at": 5220,
+   "width": 96
+  },
+  {
+   "at": 6080,
+   "width": 70
   }
  ],
  "platforms": [
@@ -34,6 +50,36 @@
    "y": 12,
    "mode": "crumbles",
    "kind": "bridge"
+  },
+  {
+   "at": 4420,
+   "width": 56,
+   "y": 14,
+   "mode": "crumbles",
+   "kind": "bridge",
+   "crumbleAfter": 0.6
+  },
+  {
+   "at": 5240,
+   "width": 52,
+   "y": 16,
+   "mode": "moves",
+   "kind": "bridge",
+   "axis": "x",
+   "travel": 10,
+   "period": 3.0
+  }
+ ],
+ "terrain": [
+  {
+   "at": 3960,
+   "width": 140,
+   "height": 20
+  },
+  {
+   "at": 5640,
+   "width": 120,
+   "height": 28
   }
  ],
  "items": [
@@ -106,6 +152,36 @@
    "kind": "falling_lantern"
   },
   {
+   "at": 2074,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2090,
+   "kind": "fish",
+   "y": 40
+  },
+  {
+   "at": 2106,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 2339,
+   "kind": "fish",
+   "y": 32
+  },
+  {
+   "at": 2355,
+   "kind": "fish",
+   "y": 44
+  },
+  {
+   "at": 2371,
+   "kind": "fish",
+   "y": 32
+  },
+  {
    "at": 2500,
    "kind": "shadow_spirit"
   },
@@ -140,6 +216,246 @@
   {
    "at": 3350,
    "kind": "lantern_pendulum"
+  },
+  {
+   "at": 3420,
+   "kind": "fish"
+  },
+  {
+   "at": 3445,
+   "kind": "fish"
+  },
+  {
+   "at": 3470,
+   "kind": "fish"
+  },
+  {
+   "at": 3654,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 3670,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 3686,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 3760,
+   "kind": "fish"
+  },
+  {
+   "at": 3785,
+   "kind": "fish"
+  },
+  {
+   "at": 3810,
+   "kind": "fish"
+  },
+  {
+   "at": 3880,
+   "kind": "lantern_slime",
+   "cycleOffset": 0.3
+  },
+  {
+   "at": 3990,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 4030,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 4070,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 4220,
+   "kind": "sakura_bat"
+  },
+  {
+   "at": 4434,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 4450,
+   "kind": "fish",
+   "y": 40
+  },
+  {
+   "at": 4466,
+   "kind": "fish",
+   "y": 30
+  },
+  {
+   "at": 4580,
+   "kind": "fish"
+  },
+  {
+   "at": 4605,
+   "kind": "fish"
+  },
+  {
+   "at": 4630,
+   "kind": "fish"
+  },
+  {
+   "at": 4700,
+   "kind": "ninja_tanuki"
+  },
+  {
+   "at": 4820,
+   "kind": "fish"
+  },
+  {
+   "at": 4845,
+   "kind": "fish"
+  },
+  {
+   "at": 5000,
+   "kind": "spike_kappa",
+   "cycleOffset": 1.5
+  },
+  {
+   "at": 5252,
+   "kind": "fish",
+   "y": 32
+  },
+  {
+   "at": 5268,
+   "kind": "fish",
+   "y": 42
+  },
+  {
+   "at": 5284,
+   "kind": "fish",
+   "y": 32
+  },
+  {
+   "at": 5360,
+   "kind": "fish"
+  },
+  {
+   "at": 5385,
+   "kind": "fish"
+  },
+  {
+   "at": 5410,
+   "kind": "fish"
+  },
+  {
+   "at": 5480,
+   "kind": "falling_lantern"
+  },
+  {
+   "at": 5560,
+   "kind": "shadow_spirit"
+  },
+  {
+   "at": 5660,
+   "kind": "fish",
+   "y": 36
+  },
+  {
+   "at": 5700,
+   "kind": "fish",
+   "y": 36
+  },
+  {
+   "at": 5740,
+   "kind": "fish",
+   "y": 36
+  },
+  {
+   "at": 5900,
+   "kind": "lantern_pendulum",
+   "cycleOffset": 1.6
+  },
+  {
+   "at": 6000,
+   "kind": "fish"
+  },
+  {
+   "at": 6025,
+   "kind": "fish"
+  },
+  {
+   "at": 6099,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 6115,
+   "kind": "fish",
+   "y": 38
+  },
+  {
+   "at": 6131,
+   "kind": "fish",
+   "y": 28
+  },
+  {
+   "at": 6260,
+   "kind": "sakura_bat"
+  },
+  {
+   "at": 6340,
+   "kind": "fish"
+  },
+  {
+   "at": 6365,
+   "kind": "fish"
+  },
+  {
+   "at": 6390,
+   "kind": "fish"
+  },
+  {
+   "at": 6460,
+   "kind": "ninja_tanuki"
+  },
+  {
+   "at": 6600,
+   "kind": "fish"
+  },
+  {
+   "at": 6630,
+   "kind": "fish"
+  },
+  {
+   "at": 6660,
+   "kind": "fish"
+  },
+  {
+   "at": 6744,
+   "kind": "fish",
+   "y": 26
+  },
+  {
+   "at": 6760,
+   "kind": "fish",
+   "y": 34
+  },
+  {
+   "at": 6776,
+   "kind": "fish",
+   "y": 26
+  },
+  {
+   "at": 6860,
+   "kind": "fish"
+  },
+  {
+   "at": 6885,
+   "kind": "fish"
   }
  ]
 }

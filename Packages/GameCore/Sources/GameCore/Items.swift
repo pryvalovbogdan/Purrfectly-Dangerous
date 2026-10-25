@@ -30,6 +30,9 @@ public enum ItemKind: String, Codable, Sendable, CaseIterable {
     case lanternSlime = "lantern_slime", ninjaTanuki = "ninja_tanuki", sakuraBat = "sakura_bat"
     case shadowSpirit = "shadow_spirit", spikeKappa = "spike_kappa", lanternPendulum = "lantern_pendulum"
     case fallingLantern = "falling_lantern"
+    // Sakura route — night (slot 3, theme sakura_night)
+    case shadowSlime = "shadow_slime", samuraiRonin = "samurai_ronin", oniCat = "oni_cat"
+    case tenguCrow = "tengu_crow", spiritWisp = "spirit_wisp"
     // Pickups
     case fish, yarnBasket = "yarn_basket"
 }
@@ -569,6 +572,32 @@ extension ItemKind {
         case .fallingLantern:
             ItemSpec(width: 12, height: 14, baseY: 70,
                      fall: FallSpec(trigger: 130, warning: 0.4, shardWidth: 16, shardHeight: 8, lingers: 1.0))
+        // MARK: sakura route, night
+        // Lurches in, in quick bursts (its leap is drawn; the hitbox stays on the ground). A stomp kills.
+        case .shadowSlime:
+            ItemSpec(width: 20, height: 16, xp: 15, velocity: -30, stompable: true, stompKills: true, yarnable: true,
+                     burst: BurstSpec(walk: 0.4, pause: 0.4))
+        // Walks in; close up it stands in its stance, then lunges with a crescent slash out in front.
+        case .samuraiRonin:
+            ItemSpec(width: 18, height: 22, hp: 2, xp: 30, velocity: -32, stompable: true, stompKills: true,
+                     yarnable: true, reach: ReachSpec(width: 16, height: 18, whileLunging: true),
+                     feint: FeintSpec(trigger: 90, backFor: 0.3, lungeSpeed: -130, backsOff: false))
+        // A slow, tough bruiser: its club reaches out in front of it, it lobs rocks that land ahead and
+        // roll on, and it can't be stomped. Four yarn, or a Double Pounce over club and all.
+        case .oniCat:
+            ItemSpec(width: 24, height: 28, hp: 4, xp: 60, velocity: -8, yarnable: true, minHeroLevel: 3,
+                     throwing: ThrowSpec(projectile: "oni_rock", interval: 3.0, range: 300, speed: 60, y: 24,
+                                         width: 8, height: 8, arc: true),
+                     reach: ReachSpec(width: 10, height: 20))
+        // Flies high, then dives as it nears, all the way to the ground (like the bird crow): jump it late.
+        case .tenguCrow:
+            ItemSpec(width: 18, height: 14, baseY: 52, xp: 20, velocity: -55, yarnable: true,
+                     flight: FlightSpec(high: 52, low: 0, diveStart: 170, diveEnd: 60))
+        // Floats over a standing kitten, drifting in, and shoots homing wisp fireballs (like the shadow spirit).
+        case .spiritWisp:
+            ItemSpec(width: 16, height: 20, baseY: 36, hp: 2, xp: 30, velocity: -12, yarnable: true,
+                     throwing: ThrowSpec(projectile: "wisp_shot", interval: 2.4, range: 300, speed: 110, y: nil,
+                                         width: 8, height: 8, homing: 40))
         // MARK: void
         // Lurches in short bursts and spits void orbs along the ground; its body burns, so no stomp.
         case .voidSlime:

@@ -453,4 +453,9 @@ def bridge() -> Sprite:
 
 
 def build() -> list[Sprite]:
-    return [*squirrels(), hedgehog(), rose_bush(), stump(), milk(), bridge()]
+    from characters.hedgehog_painted import NAMES as painted     # cut from the user's painted sheet instead
+    from characters.squirrel_painted import NAMES as squirrel_painted
+    from characters.branch_squirrel_painted import NAMES as branch_painted
+    painted = painted | squirrel_painted | branch_painted
+    sprites = [*squirrels(), hedgehog(), rose_bush(), stump(), milk(), bridge()]
+    return [s for s in sprites if s.name not in painted]

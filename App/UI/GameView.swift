@@ -203,7 +203,7 @@ private struct HUDView: View {
             VStack(spacing: 6) {
                 HStack(alignment: .bottom, spacing: 12) {
                     // The lives panel (cat head, hearts, fish) and the LV panel with the XP bar.
-                    LivesPanel(hearts: hud.hearts, maxHearts: hud.maxHearts, fish: hud.fish)
+                    LivesPanel(hearts: hud.hearts, maxHearts: hud.maxHearts, fish: hud.fish, skin: model.selectedSkin)
                     LevelPanel(level: hud.heroLevel, fraction: hud.xpFraction)
                     Spacer(minLength: 0)
                     Button {

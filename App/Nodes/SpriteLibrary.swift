@@ -1,11 +1,18 @@
 import SpriteKit
+import UIKit
 
 /// Reads Sprites.json (written by Tools/sprites/build.py) and hands out the matching textures.
 final class SpriteLibrary {
     struct Animation: Decodable {
+        /// Frames played, repeats included.
         let frames: Int
         let fps: Double
         let loop: Bool
+        /// For each played frame, which stored frame (`<sprite>_<anim>_<i>`) it shows. The atlas keeps an
+        /// animation's repeated frames once; absent when every played frame is its own (0..<frames).
+        let sequence: [Int]?
+
+        var storedIndices: [Int] { sequence ?? Array(0..<frames) }
     }
 
     struct Sheet: Decodable {
@@ -23,11 +30,13 @@ final class SpriteLibrary {
     private let sheets: [String: Sheet]
     private var cache: [String: [SKTexture]] = [:]
     private var imageCache: [String: [CGImage]] = [:]
+    private let bundle: Bundle
 
     init(bundle: Bundle) throws {
         guard let url = bundle.url(forResource: "Sprites", withExtension: "json") else {
             throw LibraryError.missingManifest
         }
+        self.bundle = bundle
         sheets = try JSONDecoder().decode([String: Sheet].self, from: Data(contentsOf: url))
     }
 
@@ -50,10 +59,23 @@ final class SpriteLibrary {
 
     /// The frames of an animation as images for SwiftUI, cached. Each frame is a whole sprite image
     /// from the asset catalog; nothing is cut out of a texture.
+    ///
+    /// Read straight from the catalog (`UIImage(named:)`), not through `SKTexture.cgImage()`: that
+    /// copies each frame back out of SpriteKit's atlas, about 13 ms a frame, which froze the game for
+    /// a moment whenever a HUD sprite was first shown mid-level (the yarn and double-pounce buttons,
+    /// the award icon and the level-up arrows at an ability unlock).
     func images(_ sprite: String, _ name: String) -> [CGImage] {
         let key = "\(sprite)/\(name)"
         if let cached = imageCache[key] { return cached }
-        let images = textures(sprite, name).map { $0.cgImage() }
+        guard let animation = animation(sprite, name) else { return [] }
+        var stored: [Int: CGImage] = [:]
+        let images = animation.storedIndices.compactMap { index -> CGImage? in
+            if let image = stored[index] { return image }
+            let frame = "\(sprite)_\(name)_\(index)"
+            let image = UIImage(named: frame, in: bundle, with: nil)?.cgImage ?? SKTexture(imageNamed: frame).cgImage()
+            stored[index] = image
+            return image
+        }
         imageCache[key] = images
         return images
     }
@@ -62,9 +84,12 @@ final class SpriteLibrary {
         let key = "\(sprite)/\(name)"
         if let cached = cache[key] { return cached }
         guard let animation = animation(sprite, name) else { return [] }
-        let textures = (0..<animation.frames).map { index -> SKTexture in
+        var stored: [Int: SKTexture] = [:]
+        let textures = animation.storedIndices.map { index -> SKTexture in
+            if let texture = stored[index] { return texture }
             let texture = SKTexture(imageNamed: "\(sprite)_\(name)_\(index)")
             texture.filteringMode = .nearest
+            stored[index] = texture
             return texture
         }
         cache[key] = textures

@@ -36,6 +36,27 @@ import Testing
         #expect(!odd.hasRoute("napster"))
     }
 
+    @Test func aThirdSlotOnTheNightWorldSwapsInToo() {
+        let three = RouteBook(overrides: ["sakura": [0: level("sakura_01", background: "sakura"),
+                                                     1: level("sakura_02", background: "sakura_dusk"),
+                                                     2: level("sakura_03", background: "sakura_night")]])
+        let route = three.levels(for: "sakura", base: base)
+        #expect(route.map(\.id) == ["sakura_01", "sakura_02", "sakura_03", "level_04", "level_05"])
+        #expect(route[2].background == "sakura_night")
+        var run = EndlessRun(levelCount: route.count)
+        var played: [String] = []
+        for _ in 0..<3 {
+            played.append(route[run.levelIndex].id)
+            run.clear(stats: HeroStats(xp: Progression.xp(forLevel: 5)), score: 1)
+        }
+        #expect(played == ["sakura_01", "sakura_02", "sakura_03"])
+        // A level on the night theme loads like any other.
+        let json = #"{"id":"sakura_03","nameKey":"level.sakura_3.name","background":"sakura_night","speed":130,"length":900,"entryHeroLevel":4,"boss":"none","bossRewardLevel":5,"items":[{"at":400,"kind":"oni_cat"},{"at":600,"kind":"spirit_wisp"}]}"#
+        let loaded = try? ContentLoader.level(from: Data(json.utf8))
+        #expect(loaded?.background == "sakura_night")
+        #expect(loaded?.items.map(\.kind) == [.oniCat, .spiritWisp])
+    }
+
     @Test func routeFilesAreNamedByCatAndSlot() {
         #expect(RouteBook.slot(fromFileName: "route_sakura_01.json")?.skin == "sakura")
         #expect(RouteBook.slot(fromFileName: "route_sakura_01.json")?.slot == 0)
@@ -78,16 +99,16 @@ import Testing
         let lore = try Content.lore()
         #expect(lore.strings["level.sakura_1.name"] == "Blossom Path")
         #expect(lore.strings["boss_kitsune.name"] == "Blossom Kitsune Guardian")
-        // Only the Sakura route, slots 1 and 2 for now.
+        // Only the Sakura route, slots 1 to 3 for now.
         #expect(book.overrides.keys.sorted() == ["sakura"])
-        #expect(book.overrides["sakura"]?.keys.sorted() == [0, 1])
+        #expect(book.overrides["sakura"]?.keys.sorted() == [0, 1, 2])
     }
 
-    @Test func withSakuraSelectedSlotsOneAndTwoAreHersAndTheRestNormal() throws {
+    @Test func withSakuraSelectedSlotsOneToThreeAreHersAndTheRestNormal() throws {
         let book = try Content.routes()
         let base = try Content.levelIDs.map(Content.level)
         let route = book.levels(for: "sakura", base: base)
-        #expect(route.map(\.id) == ["sakura_01", "sakura_02"] + base.dropFirst(2).map(\.id))
+        #expect(route.map(\.id) == ["sakura_01", "sakura_02", "sakura_03"] + base.dropFirst(3).map(\.id))
         #expect(book.levels(for: "fluffy", base: base).map(\.id) == base.map(\.id))
     }
 
@@ -104,6 +125,31 @@ import Testing
         #expect(lore.strings["boss_toad.name"] == "Lantern Toad Guardian")
         let blossom = try #require(try Content.routes().overrides["sakura"]?[0])
         #expect(bridges.entryHeroLevel <= blossom.bossRewardLevel)
+    }
+
+    @Test func theSakuraRouteShipsMoonpetalShrineAsSlotThree() throws {
+        let shrine = try #require(try Content.routes().overrides["sakura"]?[2])
+        #expect(shrine.id == "sakura_03" && shrine.nameKey == "level.sakura_3.name")
+        #expect(shrine.background == "sakura_night" && shrine.speed == 130)
+        // The same guarantees as the level it replaces, so later levels keep theirs.
+        #expect(shrine.entryHeroLevel == 4 && shrine.bossRewardLevel == 5)
+        #expect(shrine.boss == "boss_guardian_cat")
+        #expect(try Content.bosses()["boss_guardian_cat"] != nil)
+        let lore = try Content.lore()
+        #expect(lore.strings["level.sakura_3.name"] == "Moonpetal Shrine")
+        #expect(lore.strings["boss_guardian_cat.name"] == "Sakura Guardian Cat")
+        let bridges = try #require(try Content.routes().overrides["sakura"]?[1])
+        #expect(shrine.entryHeroLevel <= bridges.bossRewardLevel)
+    }
+
+    @Test(arguments: [Tuning.wideBossOffset, Tuning.narrowBossOffset])
+    func moonpetalShrineIsBeatableWithoutAHit(bossOffset: Double) throws {
+        let shrine = try #require(try Content.routes().overrides["sakura"]?[2])
+        var tuning = Tuning()
+        tuning.bossOffset = bossOffset
+        let report = LevelValidator.validate(shrine, bosses: try Content.bosses(), tuning: tuning)
+        #expect(report.problems == [])
+        #expect(report.clearTime != nil)
     }
 
     @Test(arguments: [Tuning.wideBossOffset, Tuning.narrowBossOffset])

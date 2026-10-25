@@ -28,8 +28,16 @@ final class GoldenStore {
     /// Products by id, once loaded.
     private(set) var products: [String: Product] = [:]
     private(set) var status = Status.idle
+    /// A purchase made from the panel and credited: how many golden fish it gave. `id` goes up with each
+    /// one, so the screen can close the panel, show the banner and count the balance up.
+    struct Delivery: Equatable {
+        let id: Int
+        let amount: Int
+    }
+
     /// The product being bought right now, if any.
     private(set) var buying: String?
+    private(set) var delivery: Delivery?
     var notice: Notice?
     /// False in debug bot, silent and UI-test runs: nothing is loaded or bought there.
     private(set) var enabled = false
@@ -88,7 +96,13 @@ final class GoldenStore {
         do {
             switch try await product.purchase() {
             case .success(.verified(let transaction)):
-                notice = await deliver(transaction) ? .thanks : .failed
+                if await deliver(transaction) {
+                    let amount = (GoldenFish.amount(forProduct: transaction.productID) ?? 0)
+                        * max(1, transaction.purchasedQuantity)
+                    delivery = Delivery(id: (delivery?.id ?? 0) + 1, amount: amount)
+                } else {
+                    notice = .failed
+                }
             case .success(.unverified):
                 // Not signed by the App Store for this device: never credited, left unfinished.
                 notice = .failed

@@ -9,11 +9,12 @@ import Testing
         let golden = Dictionary(uniqueKeysWithValues: Skin.catalog.compactMap { skin in
             skin.goldenPrice.map { (skin.id, $0) }
         })
-        #expect(golden == ["shadow": 10, "misty": 10, "sakura": 15, "honey": 15, "pixie": 20, "clover": 25,
+        #expect(golden == ["shadow": 10, "misty": 10, "sakura": 50, "honey": 15, "pixie": 20, "clover": 25,
                            "snowball": 30, "napster": 40, "toffee": 45, "cabage": 100, "sharky": 100])
         #expect(Skin.named(Skin.free)?.goldenPrice == nil)
         // The rule they were first set by: fish price / 20, rounded up to a multiple of 5, at least 10.
-        for skin in Skin.catalog where skin.id != Skin.free {
+        // Sakura's prices were later raised by hand.
+        for skin in Skin.catalog where skin.id != Skin.free && skin.id != "sakura" {
             let derived = max(10, Int((Double(skin.price) / 20 / 5).rounded(.up)) * 5)
             #expect(skin.goldenPrice == derived, "\(skin.id)")
         }
@@ -68,15 +69,15 @@ import Testing
         do { let result = game.unlock(skin: "shadow", with: .fish); #expect(result == .unlocked) }
         #expect(game.fishWallet == 50 && game.goldenFish == 50)
 
-        do { let result = game.unlock(skin: "sakura", with: .golden); #expect(result == .unlocked) }
+        do { let result = game.unlock(skin: "honey", with: .golden); #expect(result == .unlocked) }
         #expect(game.fishWallet == 50)
         #expect(game.goldenFish == 35)
-        #expect(game.goldenSkins == ["sakura": 15])
-        #expect(game.owns("sakura") && game.owns("shadow"))
-        do { let changed = game.select(skin: "sakura"); #expect(changed) }
+        #expect(game.goldenSkins == ["honey": 15])
+        #expect(game.owns("honey") && game.owns("shadow"))
+        do { let changed = game.select(skin: "honey"); #expect(changed) }
 
         // Owned is owned, whatever it was bought with.
-        do { let result = game.unlock(skin: "sakura", with: .fish); #expect(result == .alreadyOwned) }
+        do { let result = game.unlock(skin: "honey", with: .fish); #expect(result == .alreadyOwned) }
         do { let result = game.unlock(skin: "shadow", with: .golden); #expect(result == .alreadyOwned) }
         do { let result = game.unlock(skin: "fluffy", with: .golden); #expect(result == .alreadyOwned) }
         do { let result = game.unlock(skin: "no_such_cat", with: .golden); #expect(result == .unknownSkin) }
@@ -84,23 +85,23 @@ import Testing
 
         // Exactly enough is enough.
         game.creditGolden(transaction: "t2", amount: 150)
-        do { let result = game.unlock(skin: "sharky", with: .golden); #expect(result == .unlocked) }
+        do { let result = game.unlock(skin: "toffee", with: .golden); #expect(result == .unlocked) }
         do { let result = game.unlock(skin: "pixie", with: .golden); #expect(result == .unlocked) }
         do { let result = game.unlock(skin: "pixie", with: .golden); #expect(result == .alreadyOwned) }
-        #expect(game.goldenFish == 65)
+        #expect(game.goldenFish == 120)
     }
 
     @Test func notEnoughGoldenFishChangesNothing() {
         var game = SaveGame()
         game.addFish(5000)
-        game.creditGolden(transaction: "t1", amount: 50)
+        game.creditGolden(transaction: "t1", amount: 30)
         let before = game
-        do { let result = game.unlock(skin: "cabage", with: .golden); #expect(result == .notEnoughGoldenFish(missing: 50)) }
+        do { let result = game.unlock(skin: "toffee", with: .golden); #expect(result == .notEnoughGoldenFish(missing: 15)) }
         #expect(game == before)
-        #expect(!game.owns("cabage"))
+        #expect(!game.owns("toffee"))
         // The fish price is still there to pay instead.
-        do { let result = game.unlock(skin: "cabage", with: .fish); #expect(result == .unlocked) }
-        #expect(game.goldenFish == 50 && game.fishWallet == 3000)
+        do { let result = game.unlock(skin: "toffee", with: .fish); #expect(result == .unlocked) }
+        #expect(game.goldenFish == 30 && game.fishWallet == 4100)
     }
 
     @Test func mergingTwoDivergedSavesGivesTheUnionAndTheRightBalance() {
@@ -117,7 +118,7 @@ import Testing
 
         var tablet = shared
         tablet.creditGolden(transaction: "c", amount: 350)        // 390
-        _ = tablet.unlock(skin: "cabage", with: .golden)          // 290
+        _ = tablet.unlock(skin: "snowball", with: .golden)        // 360
 
         var left = phone
         do { let changed = left.merge(tablet.cloudBackup); #expect(changed) }
@@ -126,16 +127,16 @@ import Testing
 
         for merged in [left, right] {
             #expect(merged.goldenPurchases == ["a": 50, "b": 150, "c": 350])
-            #expect(merged.goldenSkins == ["shadow": 10, "toffee": 45, "cabage": 100])
-            #expect(merged.ownedSkins == ["fluffy", "shadow", "toffee", "misty", "cabage"])
-            #expect(merged.goldenFish == 550 - 155)
+            #expect(merged.goldenSkins == ["shadow": 10, "toffee": 45, "snowball": 30])
+            #expect(merged.ownedSkins == ["fluffy", "shadow", "toffee", "misty", "snowball"])
+            #expect(merged.goldenFish == 550 - 85)
         }
         #expect(left.cloudBackup == right.cloudBackup)
         // Merging again, or merging an older copy, changes nothing and never takes anything away.
         do { let changed = left.merge(tablet.cloudBackup); #expect(!changed) }
         do { let changed = left.merge(shared); #expect(!changed) }
         do { let changed = left.merge(CloudBackup()); #expect(!changed) }
-        #expect(left.goldenFish == 395)
+        #expect(left.goldenFish == 465)
         // Only what syncs is merged: each phone keeps its own fish wallet and selected cat.
         #expect(left.fishWallet == phone.fishWallet && right.fishWallet == tablet.fishWallet)
     }
@@ -143,18 +144,18 @@ import Testing
     @Test func aNewPhoneGetsEverythingBackFromTheBackup() throws {
         var old = SaveGame()
         old.creditGolden(transaction: "a", amount: 800)
-        _ = old.unlock(skin: "sharky", with: .golden)
+        _ = old.unlock(skin: "toffee", with: .golden)
         old.addFish(150)
         _ = old.unlock(skin: "shadow")
         let data = try JSONEncoder().encode(old.cloudBackup)
 
         var fresh = SaveGame()
         do { let changed = fresh.merge(try JSONDecoder().decode(CloudBackup.self, from: data)); #expect(changed) }
-        #expect(fresh.goldenFish == 700)
-        #expect(fresh.ownedSkins == ["fluffy", "sharky", "shadow"])
+        #expect(fresh.goldenFish == 755)
+        #expect(fresh.ownedSkins == ["fluffy", "toffee", "shadow"])
         // A transaction replayed by the App Store after the restore is not credited again.
         do { let changed = fresh.creditGolden(transaction: "a", amount: 800); #expect(!changed) }
-        #expect(fresh.goldenFish == 700)
+        #expect(fresh.goldenFish == 755)
     }
 
     @Test func spendingTheSameGoldenFishOnTwoPhonesNeverGoesBelowZero() {

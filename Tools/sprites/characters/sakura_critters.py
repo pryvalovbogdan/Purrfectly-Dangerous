@@ -556,5 +556,11 @@ def sakura_spirit() -> Sprite:
 
 
 def build() -> list[Sprite]:
-    return [sakura_slime(), sakura_bunny(), lantern_spirit(), blossom_shot(), bird_crow(), spike_plant(), rolling_onigiri(),
-            sakura_spirit()]
+    from characters.bird_crow_painted import NAMES as crow
+    from characters.boss_kitsune_painted import NAMES as kitsune   # cut from the user's painted sheets instead
+    from characters.rolling_onigiri_painted import NAMES as onigiri
+    from characters.sakura_bunny_painted import NAMES as bunny
+    painted = kitsune | bunny | onigiri | crow
+    sprites = [sakura_slime(), sakura_bunny(), lantern_spirit(), blossom_shot(), bird_crow(), spike_plant(),
+               rolling_onigiri(), sakura_spirit()]
+    return [s for s in sprites if s.name not in painted]

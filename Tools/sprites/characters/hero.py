@@ -957,11 +957,22 @@ def speed_lines(i: int, colours=(P.WHITE, P.CREAM), reach: float = 6):
 
 
 def build() -> list[Sprite]:
-    sprites = [hero_sprite("hero"), yarn()]
+    # `hero` itself (Fluffy) and the skins in PAINTED are cut from the user's painted sheets instead
+    # (`hero_painted.py`); the code-drawn hero is still built in memory as the skins' model (`drawn_hero`).
+    from characters.hero_painted import PAINTED
+    sprites = [yarn()]
     for skin in SKINS:
+        if skin.id in PAINTED:
+            continue
         with wearing(skin):
             sprites.append(hero_sprite(f"hero_{skin.id}"))
     return sprites
+
+
+def drawn_hero() -> Sprite:
+    """The code-drawn orange hero, not exported (the painted Fluffy is `hero`): the one every code-drawn skin
+    matches frame for frame (`test_hero_skins_match_the_hero`) and whose timing the painted cats keep."""
+    return hero_sprite("hero")
 
 
 def hero_sprite(name: str) -> Sprite:

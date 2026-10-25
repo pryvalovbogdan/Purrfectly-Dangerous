@@ -18,7 +18,8 @@ struct MenuView: View {
 
     var body: some View {
         ZStack {
-            MenuBackground(pose: .standing, groundShare: Self.groundShare, wideHeroPlace: Self.wideHeroPlace)
+            MenuBackground(pose: .standing, groundShare: Self.groundShare, wideHeroPlace: Self.wideHeroPlace,
+                           followsCat: true)
             ScreenFrame { size, insets in
                 if size.width > size.height {
                     wide(size: size, insets: insets)
@@ -65,7 +66,7 @@ struct MenuView: View {
         let unit = MenuScene.pointsPerUnit(viewSize: size, displayScale: displayScale)
         let heroTop = size.height - ground - MenuScene.heroHeight(model.sprites) * unit
         let scenery = MenuScene.sceneryTop(viewSize: size, displayScale: displayScale, library: model.sprites,
-                                           groundShare: Self.groundShare) ?? heroTop
+                                           groundShare: Self.groundShare, startLook: startLook) ?? heroTop
         let bottomLimit = max(topLimit + 1, scenery - Self.sceneryGap)
         return ZStack(alignment: .top) {
             VStack(spacing: 0) {
@@ -74,7 +75,7 @@ struct MenuView: View {
                 // The tagline may run down over the tree tops by up to `sceneryOverlap`, as in the
                 // reference (the pill sits level with the big tree's crown), so the logo keeps its width.
                 titleBlock(width: (size.width * Self.tallTitleShare).rounded(),
-                           maxHeight: scenery + Self.sceneryOverlap - topLimit)
+                           maxHeight: scenery + Self.sceneryOverlap - topLimit, upright: true)
                     .fixedSize(horizontal: false, vertical: true)
             }
             // Bottom-aligned within the band while it fits; a taller block keeps its top and runs on.
@@ -97,7 +98,7 @@ struct MenuView: View {
         // Title and tagline share what the buttons and the column's spacing leave.
         let titleHeight = max(90, size.height - top - bottom - Self.actionsHeight - 16)
         return VStack(spacing: 8) {
-            titleBlock(width: titleWidth, maxHeight: titleHeight)
+            titleBlock(width: titleWidth, maxHeight: titleHeight, upright: false)
             Spacer(minLength: 0)
             actions(width: width)
         }
@@ -130,9 +131,9 @@ struct MenuView: View {
     /// "O" and the fish, as one image; not pixel-grid art, so scaled smoothly), then the tagline.
     /// The image is `width` wide unless the block would be taller than `maxHeight`, when it shrinks.
     /// The words still come from Lore.json for VoiceOver.
-    private func titleBlock(width: CGFloat, maxHeight: CGFloat) -> some View {
+    private func titleBlock(width: CGFloat, maxHeight: CGFloat, upright: Bool) -> some View {
         VStack(spacing: 4) {
-            Image("title_start")
+            Image(titleImage(upright: upright))
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
@@ -152,6 +153,16 @@ struct MenuView: View {
         }
     }
 
+    /// The chosen cat's own start-screen theme (`StartLook`), nil for the Purrwood.
+    private var startLook: String? { StartLook.theme(forSkin: model.selectedSkin) }
+
+    /// The theme's logo where its picture is shown in this orientation and the logo is in the catalog,
+    /// else the Purrwood's, so logo and scene always match.
+    private func titleImage(upright: Bool) -> String {
+        let name = StartLook.title(StartLook.resolved(startLook, upright: upright, library: model.sprites))
+        return UIImage(named: name) != nil ? name : StartLook.title(nil)
+    }
+
     private func actions(width: CGFloat) -> some View {
         VStack(spacing: 10) {
             // START begins an endless run: every level in order, round and round.
@@ -166,10 +177,10 @@ struct MenuView: View {
                     overlay = .levels
                 }
                 .frame(width: small)
-                SecondaryButton(title: model.ui("cats"), icon: "icon_cat", layout: .stacked, height: 66, fontSize: 14) {
+                KittiesButton(title: model.ui("cats")) {
                     overlay = .cats
                 }
-                .frame(width: small)
+                .frame(width: small, height: 66)
             }
             .frame(maxWidth: .infinity)
         }

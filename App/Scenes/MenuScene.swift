@@ -41,6 +41,8 @@ final class MenuScene: SKScene {
     private let wideHeroPlace: CGFloat?
     /// The hero's sprite: the recoloured `hero_<skin>` of the cat in use, or `hero`.
     private let heroSprite: String
+    /// The start screen's own look for the cat in use (`StartLook`), nil for the Purrwood morning.
+    private let startLook: String?
     private var parallax: [ParallaxNode] = []
     /// Cloud layers, which keep drifting when the rest of the scene stands still.
     private var clouds: [ParallaxNode] = []
@@ -55,7 +57,7 @@ final class MenuScene: SKScene {
     ///   - wideHeroPlace: where the hero stands across a wide screen (0…1); nil for the default.
     init(viewSize: CGSize, displayScale: CGFloat, library: SpriteLibrary, pose: Pose = .running, theme: String? = nil,
          celebrate: Bool = false, groundShare: CGFloat = MenuScene.narrowGroundShare, wideHeroPlace: CGFloat? = nil,
-         heroSprite: String = "hero") {
+         heroSprite: String = "hero", startLook: String? = nil) {
         self.library = library
         self.heroSprite = library.sheet(heroSprite) != nil ? heroSprite : "hero"
         self.pose = pose
@@ -64,6 +66,7 @@ final class MenuScene: SKScene {
         self.groundShare = groundShare
         self.wideHeroPlace = wideHeroPlace
         upright = viewSize.height > viewSize.width
+        self.startLook = StartLook.resolved(startLook, upright: upright, library: library)
         let sceneSize = Self.sceneSize(viewSize: viewSize, displayScale: max(displayScale, 1))
         pixelsPerUnit = sceneSize.width > 0 ? viewSize.width * max(displayScale, 1) / sceneSize.width : 1
         super.init(size: sceneSize)
@@ -95,17 +98,27 @@ final class MenuScene: SKScene {
 
     /// Where the top of the scenery (tree tops) of the start screen's picture is, in points from the
     /// top of a menu scene filling `viewSize`; nil without the picture. Matches `addMenuBackdrop`.
+    /// `startLook` is the cat's own start screen (`StartLook`), nil for the Purrwood.
+    @MainActor
     static func sceneryTop(viewSize: CGSize, displayScale: CGFloat, library: SpriteLibrary,
-                           groundShare: CGFloat = narrowGroundShare) -> CGFloat? {
+                           groundShare: CGFloat = narrowGroundShare, startLook: String? = nil) -> CGFloat? {
         let upright = viewSize.height > viewSize.width
-        let name = upright ? "menu_scene_portrait" : "menu_scene_landscape"
+        let look = StartLook.resolved(startLook, upright: upright, library: library)
+        let name = StartLook.picture(look, upright: upright)
         guard let sheet = library.sheet(name) else { return nil }
         let scene = sceneSize(viewSize: viewSize, displayScale: max(displayScale, 1))
         let unit = scene.width > 0 ? viewSize.width / scene.width : 1
         let groundY = upright ? (scene.height * groundShare).rounded() : 40
         let scale = max(1, (scene.width / sheet.width).rounded(.down))
         let pictureTop = scene.height - (groundY + sheet.height * scale)
-        return (pictureTop + (sceneryTopRows[name] ?? 0) * scale) * unit
+        return (pictureTop + sceneryTopRow(name, library: library) * scale) * unit
+    }
+
+    /// First row of a composed picture where its scenery starts: measured for the Purrwood pictures,
+    /// else the first row with anything drawn (the themed pictures leave the sky transparent).
+    @MainActor
+    static func sceneryTopRow(_ picture: String, library: SpriteLibrary) -> CGFloat {
+        sceneryTopRows[picture] ?? library.opaqueBounds(picture, "still")?.minY ?? 0
     }
 
     /// Height of the standing hero above the ground line, in world units.
@@ -166,7 +179,7 @@ final class MenuScene: SKScene {
     /// in for it, still.
     private func addMenuBackdrop(groundY: CGFloat) {
         addSky()
-        let pictureName = upright ? "menu_scene_portrait" : "menu_scene_landscape"
+        let pictureName = StartLook.picture(startLook, upright: upright)
         var pictureTop = groundY + (upright ? 120 : 70)
         if let picture = library.textures(pictureName, "still").first ?? firstFrame(pictureName),
            let sheet = library.sheet(pictureName) {
@@ -178,6 +191,11 @@ final class MenuScene: SKScene {
             node.zPosition = -8
             addChild(node)
             pictureTop = groundY + node.size.height
+            if startLook != nil {
+                // Transparent sky above the scenery: the clouds tuck behind what is drawn.
+                let row = MainActor.assumeIsolated { Self.sceneryTopRow(pictureName, library: library) }
+                pictureTop -= row * scale
+            }
             hasPicture = true
             addWaterfall(on: pictureName, origin: node.position, scale: scale)
             addClouds(above: pictureTop)
@@ -189,16 +207,17 @@ final class MenuScene: SKScene {
             addStrip("bg_menu_horizon", bottom: groundY, factor: 0.2, z: -8)
             addStrip("bg_menu_bushes", bottom: groundY, factor: 0.55, z: -7)
         }
-        if let fill = library.textures("ground_forest_fill", "still").first {
+        let ground = StartLook.ground(startLook, library: library)
+        if let fill = library.textures("\(ground)_fill", "still").first {
             let node = SKSpriteNode(texture: fill, size: CGSize(width: size.width, height: groundY))
             node.anchorPoint = .zero
             node.zPosition = -6
             addChild(node)
         }
-        if let sheet = library.sheet("ground_forest"), let earth = library.textures("ground_forest_earth", "still").first,
-           let earthSheet = library.sheet("ground_forest_earth") {
+        if let sheet = library.sheet(ground), let earth = library.textures("\(ground)_earth", "still").first,
+           let earthSheet = library.sheet("\(ground)_earth") {
             let top = groundY - sheet.height
-            addStrip("ground_forest", bottom: top, factor: 1, z: -5)
+            addStrip(ground, bottom: top, factor: 1, z: -5)
             for row in ParallaxNode.earth(below: top, tile: earth,
                                           tileSize: CGSize(width: earthSheet.width, height: earthSheet.height),
                                           viewWidth: size.width) {
@@ -428,5 +447,41 @@ final class MenuScene: SKScene {
             scroll += dt * Self.drift
             for layer in clouds { layer.scroll(to: scroll) }
         }
+    }
+}
+
+/// Which start screen a cat gets. A cat with its own theme here gets that theme's title logo
+/// (`title_start_<theme>`), composed picture (`menu_scene_<theme>_portrait` / `_landscape`, its sky
+/// left transparent over the menu's gradient and clouds) and ground (`ground_<theme>`); every other
+/// cat keeps the Purrwood. A theme whose picture is not drawn for an orientation falls back to the
+/// Purrwood there, as a whole.
+enum StartLook {
+    /// Skin id to start-screen theme (the role id used in its asset names).
+    static let themes: [String: String] = ["sakura": "sakura"]
+
+    /// The theme for a cat, whether drawn yet or not.
+    static func theme(forSkin skin: String) -> String? { themes[skin] }
+
+    /// The theme in use for an orientation: nil (the Purrwood) unless its picture is in the manifest.
+    static func resolved(_ theme: String?, upright: Bool, library: SpriteLibrary) -> String? {
+        guard let theme, library.sheet(picture(theme, upright: upright)) != nil else { return nil }
+        return theme
+    }
+
+    /// The composed picture of a theme (nil: the Purrwood's).
+    static func picture(_ theme: String?, upright: Bool) -> String {
+        let side = upright ? "portrait" : "landscape"
+        return theme.map { "menu_scene_\($0)_\(side)" } ?? "menu_scene_\(side)"
+    }
+
+    /// The ground pieces' base name (with `_earth` and `_fill`), the forest's while the theme's are missing.
+    static func ground(_ theme: String?, library: SpriteLibrary) -> String {
+        guard let theme, library.sheet("ground_\(theme)") != nil else { return "ground_forest" }
+        return "ground_\(theme)"
+    }
+
+    /// The title logo image of a theme (nil: the Purrwood's). The caller checks it is in the catalog.
+    static func title(_ theme: String?) -> String {
+        theme.map { "title_start_\($0)" } ?? "title_start"
     }
 }

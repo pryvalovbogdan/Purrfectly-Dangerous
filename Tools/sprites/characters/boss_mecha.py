@@ -257,6 +257,12 @@ def mecha(pose: MechaPose) -> Image.Image:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_mecha_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_mecha" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Mecha-Mouser (kept for reference; `boss_mecha_painted.py` replaces it)."""
     boss = Sprite("boss_mecha", SIZE, faces_left=True, cx=CX, ground=GROUND)
     boss.add("idle", [mecha(MechaPose(bob=b, core=g, tail=t, eye=e)) for b, g, t, e in
                       ((0, 0.3, 0, "on"), (-1, 0.45, 0.04, "on"), (-1, 0.6, 0.08, "hot"), (0, 0.45, 0.04, "on"))],

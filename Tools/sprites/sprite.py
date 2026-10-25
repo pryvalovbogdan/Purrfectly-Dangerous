@@ -24,12 +24,16 @@ class Sprite:
     # None means horizontally centred / sitting on the bottom edge.
     cx: float | None = None
     ground: int | None = None
+    # Pixels per point in the exported PNGs. 1 for drawn pixel art; painted sprites cut from a user's sheet
+    # (`sheet_hero.py`) keep 3× detail: their frames are `size` × `scale` pixels, still `size` points in game.
+    scale: int = 1
 
     def add(self, name: str, frames: list, fps: int = 10, loop: bool = True) -> None:
         images = [f.img if hasattr(f, "img") else f for f in frames]
+        expected = (self.size[0] * self.scale, self.size[1] * self.scale)
         for image in images:
-            if image.size != self.size:
-                raise ValueError(f"{self.name}/{name}: frame is {image.size}, expected {self.size}")
+            if image.size != expected:
+                raise ValueError(f"{self.name}/{name}: frame is {image.size}, expected {expected}")
         self.anims[name] = Anim(images, fps, loop)
 
 

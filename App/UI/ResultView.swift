@@ -234,11 +234,22 @@ struct LevelCompleteView: View {
 
     var body: some View {
         let summary = ResultSummary(model: model, levelIndex: levelIndex, result: result)
+        if let look = CompleteLook.forTheme(summary.level.background) {
+            PaintedCompleteView(look: look, summary: summary) { compact in
+                Self.cardContent(summary, compact: compact)
+            }
+        } else {
+            standard(summary)
+        }
+    }
+
+    /// The Purrwood look: the hero sitting in the menu's morning under the wreath title.
+    private func standard(_ summary: ResultSummary) -> some View {
         ZStack {
             MenuBackground(pose: .happy, celebrate: true, groundShare: MenuView.groundShare, wideHeroPlace: 0.12)
             ResultLayout(figureHeight: 0.85, cardHeight: (230, 200)) { width, maxHeight, _ in
                 WreathTitle(text: model.ui("level_complete"), wreath: "title_wreath_small", width: width,
-                            maxHeight: maxHeight, topper: [TitleFigure.cheer.drawn(from: model.heroSprite), .cheer, .idle], topperSink: 0.3,
+                            maxHeight: maxHeight, topper: [TitleFigure.cheer.drawn(from: model.heroSprite), .cheer, .idle],
                             sunburst: true, fish: true)
             } card: { compact in
                 card(summary, compact: compact)
@@ -249,6 +260,11 @@ struct LevelCompleteView: View {
     }
 
     private func card(_ summary: ResultSummary, compact: Bool) -> some View {
+        Self.cardContent(summary, compact: compact).parchmentCard()
+    }
+
+    /// What the card says: stars, score, best, the level and its fish, and any ability just learnt.
+    fileprivate static func cardContent(_ summary: ResultSummary, compact: Bool) -> some View {
         VStack(spacing: compact ? 7 : 10) {
             MedalStars(medal: summary.medal, size: compact ? 22 : 30)
                 .padding(.bottom, compact ? 0 : 4)
@@ -268,7 +284,327 @@ struct LevelCompleteView: View {
                     .minimumScaleFactor(0.6)
             }
         }
-        .parchmentCard()
+    }
+}
+
+// MARK: - A world's own level-complete screen
+
+/// A world's own level-complete look, from the user's painting of it (one sheet per level theme, cut by
+/// `complete_looks()` in Tools/sprites/export.py into `<piece>_complete_<theme>`): the title, the world's boss, the
+/// card's frame, the three buttons and a few loose decorations. Keyed by the level's background theme, so every
+/// level of that world gets it; other worlds keep the Purrwood look. Sizes, and where the card's text and the
+/// buttons' labels go (the painted sample text was taken out there), are in the cut pieces' pixels.
+struct CompleteLook {
+    let theme: String
+    let titleSize: CGSize
+    let bossSize: CGSize
+    /// The boss's bottom is a straight cut (it stands on a wall that goes on): it fades out.
+    var bossFades = false
+    let cardSize: CGSize
+    /// The card's empty parchment, where its text goes.
+    let parchment: CGRect
+    let next: PaintedButtonArt
+    let retry: PaintedButtonArt
+    let menu: PaintedButtonArt
+    /// Small loose pieces floating over the title's top corners.
+    var decorations: [(piece: String, size: CGSize)] = []
+
+    func image(_ piece: String) -> String { "\(piece)_complete_\(theme)" }
+
+    static func forTheme(_ theme: String) -> CompleteLook? { all[theme] }
+
+    static let all: [String: CompleteLook] = [
+        "frost": CompleteLook(
+            theme: "frost", titleSize: CGSize(width: 533, height: 455), bossSize: CGSize(width: 546, height: 548),
+            cardSize: CGSize(width: 732, height: 673), parchment: CGRect(x: 115, y: 161, width: 498, height: 366),
+            next: PaintedButtonArt(piece: "next", size: CGSize(width: 629, height: 176),
+                                   label: CGRect(x: 120, y: 44, width: 445, height: 78)),
+            retry: PaintedButtonArt(piece: "retry", size: CGSize(width: 422, height: 142),
+                                    label: CGRect(x: 108, y: 27, width: 236, height: 73)),
+            menu: PaintedButtonArt(piece: "menu", size: CGSize(width: 366, height: 134),
+                                   label: CGRect(x: 83, y: 26, width: 204, height: 73)),
+            decorations: [("flake", CGSize(width: 100, height: 112)), ("crystal", CGSize(width: 51, height: 103))]),
+        "haunted": CompleteLook(
+            theme: "haunted", titleSize: CGSize(width: 613, height: 405), bossSize: CGSize(width: 411, height: 594),
+            cardSize: CGSize(width: 622, height: 635), parchment: CGRect(x: 99, y: 172, width: 404, height: 354),
+            next: PaintedButtonArt(piece: "next", size: CGSize(width: 695, height: 166),
+                                   label: CGRect(x: 190, y: 60, width: 379, height: 60)),
+            retry: PaintedButtonArt(piece: "retry", size: CGSize(width: 351, height: 113),
+                                    label: CGRect(x: 98, y: 30, width: 192, height: 61)),
+            menu: PaintedButtonArt(piece: "menu", size: CGSize(width: 316, height: 113),
+                                   label: CGRect(x: 54, y: 30, width: 184, height: 61)),
+            decorations: [("ghost", CGSize(width: 124, height: 130)), ("flame", CGSize(width: 59, height: 109))]),
+        "citadel": CompleteLook(
+            theme: "citadel", titleSize: CGSize(width: 568, height: 375), bossSize: CGSize(width: 454, height: 642),
+            bossFades: true,
+            cardSize: CGSize(width: 589, height: 574), parchment: CGRect(x: 86, y: 142, width: 408, height: 340),
+            next: PaintedButtonArt(piece: "next", size: CGSize(width: 638, height: 175),
+                                   label: CGRect(x: 100, y: 51, width: 438, height: 87)),
+            retry: PaintedButtonArt(piece: "retry", size: CGSize(width: 348, height: 121),
+                                    label: CGRect(x: 87, y: 22, width: 188, height: 67)),
+            menu: PaintedButtonArt(piece: "menu", size: CGSize(width: 331, height: 121),
+                                   label: CGRect(x: 60, y: 22, width: 198, height: 67))),
+    ]
+}
+
+/// One painted button and where its label goes, in its pixels.
+struct PaintedButtonArt {
+    let piece: String
+    let size: CGSize
+    let label: CGRect
+
+    var aspect: CGFloat { size.height / size.width }
+}
+
+/// The level-complete screen in a world's own look (`CompleteLook`), over that world's scenery. Upright: the title
+/// with the boss beside it, the card, NEXT LEVEL, then RETRY and MENU, all shrunk together when the screen is short.
+/// On its side: the title and boss over the buttons on the left, the card on the right.
+private struct PaintedCompleteView<Card: View>: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let look: CompleteLook
+    let summary: ResultSummary
+    @ViewBuilder let card: (_ compact: Bool) -> Card
+    @State private var floating = false
+
+    private static var spacing: CGFloat { 8 }
+    /// The boss stands this much taller than the title, and this share of its width tucks behind the title.
+    private static var bossGrowth: CGFloat { 1.15 }
+    private static var bossTuck: CGFloat { 0.18 }
+
+    var body: some View {
+        ZStack {
+            MenuBackground(pose: .empty, theme: look.theme, celebrate: true)
+            Color.black.opacity(0.2).ignoresSafeArea()
+            ScreenFrame { size, insets in
+                if size.width > size.height { wide(size: size, insets: insets) } else { tall(size: size, insets: insets) }
+            }
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { floating = true }
+        }
+    }
+
+    // MARK: Layout
+
+    private func tall(size: CGSize, insets: EdgeInsets) -> some View {
+        let side = max(12, insets.leading)
+        let top = insets.top + 4
+        let available = size.height - top - max(insets.bottom, 10)
+        var width = min(size.width - 2 * side, 420)
+        let natural = headerHeight(width: width) + width * look.cardSize.height / look.cardSize.width
+            + buttonsHeight(width: width)
+        if natural + 3 * Self.spacing > available {
+            width *= (available - 3 * Self.spacing) / natural
+        }
+        return VStack(spacing: Self.spacing) {
+            header(width: width, maxHeight: .infinity)
+            cardView(width: width)
+            buttons(width: width)
+        }
+        .frame(width: width)
+        .padding(.top, top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private func wide(size: CGSize, insets: EdgeInsets) -> some View {
+        let leading = max(insets.leading, 16), trailing = max(insets.trailing, 16)
+        let top = max(insets.top, 8), bottom = max(insets.bottom, 8)
+        let availableWidth = size.width - leading - trailing
+        let availableHeight = size.height - top - bottom
+        let cardAspect = look.cardSize.height / look.cardSize.width
+        let cardWidth = min(availableHeight / cardAspect, availableWidth * 0.52)
+        let column = availableWidth - cardWidth - 16
+        let buttonsWidth = min(column, 360)
+        let headerRoom = availableHeight - buttonsHeight(width: buttonsWidth) - Self.spacing
+        return HStack(spacing: 16) {
+            VStack(spacing: Self.spacing) {
+                header(width: column, maxHeight: headerRoom)
+                    .frame(maxHeight: .infinity)
+                buttons(width: buttonsWidth)
+            }
+            .frame(width: column)
+            cardView(width: cardWidth)
+                .frame(maxHeight: .infinity)
+        }
+        .padding(.top, top)
+        .padding(.bottom, bottom)
+        .padding(.leading, leading)
+        .padding(.trailing, trailing)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// The title's height in a header `width` wide (the boss beside it, part of it tucked behind).
+    private func titleHeight(width: CGFloat) -> CGFloat {
+        let title = look.titleSize.width / look.titleSize.height
+        let boss = look.bossSize.width / look.bossSize.height
+        return width / (title + Self.bossGrowth * boss * (1 - Self.bossTuck))
+    }
+
+    private func headerHeight(width: CGFloat) -> CGFloat { titleHeight(width: width) * Self.bossGrowth }
+
+    private func buttonsHeight(width: CGFloat) -> CGFloat {
+        let half = (width - 10) / 2
+        return width * 0.92 * look.next.aspect + half * max(look.retry.aspect, look.menu.aspect) + Self.spacing
+    }
+
+    // MARK: Pieces
+
+    /// The title with the boss beside it, both standing on the header's bottom, and the loose decorations
+    /// floating over the title's top corners.
+    private func header(width: CGFloat, maxHeight: CGFloat) -> some View {
+        let height = min(titleHeight(width: width), maxHeight / Self.bossGrowth)
+        let titleWidth = height * look.titleSize.width / look.titleSize.height
+        let bossHeight = height * Self.bossGrowth
+        let bossWidth = bossHeight * look.bossSize.width / look.bossSize.height
+        return HStack(alignment: .bottom, spacing: -bossWidth * Self.bossTuck) {
+            Image(look.image("title"))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: titleWidth, height: height)
+                .accessibilityLabel(model.ui("level_complete"))
+                .accessibilityAddTraits(.isHeader)
+                .overlay(alignment: .topLeading) { decorations(titleWidth: titleWidth, height: height) }
+                .zIndex(1)
+            Image(look.image("boss"))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: bossWidth, height: bossHeight)
+                .mask {
+                    LinearGradient(stops: [.init(color: .black, location: look.bossFades ? 0.8 : 1),
+                                           .init(color: .clear, location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+                .accessibilityHidden(true)
+        }
+        .frame(width: width)
+    }
+
+    @ViewBuilder
+    private func decorations(titleWidth: CGFloat, height: CGFloat) -> some View {
+        let spots: [CGPoint] = [CGPoint(x: -0.02, y: 0.02), CGPoint(x: 0.9, y: -0.04)]
+        ForEach(Array(zip(look.decorations.indices, spots)), id: \.0) { index, spot in
+            let piece = look.decorations[index]
+            let pieceHeight = height * (index == 0 ? 0.24 : 0.2)
+            Image(look.image(piece.piece))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: pieceHeight * piece.size.width / piece.size.height, height: pieceHeight)
+                .offset(x: titleWidth * spot.x, y: height * spot.y + (floating == (index == 0) ? -4 : 4))
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func cardView(width: CGFloat) -> some View {
+        let scale = width / look.cardSize.width
+        let parchment = look.parchment
+        let inner = CGSize(width: parchment.width * scale, height: parchment.height * scale)
+        return Image(look.image("card"))
+            .resizable()
+            .interpolation(.high)
+            .frame(width: width, height: look.cardSize.height * scale)
+            .overlay(alignment: .topLeading) {
+                FitInside(size: inner) { card(inner.height < 230) }
+                    .offset(x: parchment.minX * scale, y: parchment.minY * scale)
+            }
+    }
+
+    private func buttons(width: CGFloat) -> some View {
+        let half = (width - 10) / 2
+        return VStack(spacing: Self.spacing) {
+            if summary.nextLevelOpen {
+                PaintedButton(art: look.next, theme: look.theme, title: model.ui("next_level"), icon: "icon_play",
+                              primary: true, width: width * 0.92) { model.start(level: summary.levelIndex + 1) }
+                HStack(spacing: 10) {
+                    PaintedButton(art: look.retry, theme: look.theme, title: model.ui("retry"), icon: "icon_retry",
+                                  width: half, action: summary.retry)
+                    PaintedButton(art: look.menu, theme: look.theme, title: model.ui("menu"), icon: "icon_home",
+                                  iconLeading: true, width: half) { model.quit() }
+                }
+            } else {
+                PaintedButton(art: look.next, theme: look.theme, title: model.ui("retry"), icon: "icon_retry",
+                              primary: true, width: width * 0.92, action: summary.retry)
+                PaintedButton(art: look.menu, theme: look.theme, title: model.ui("menu"), icon: "icon_home",
+                              iconLeading: true, width: half) { model.quit() }
+            }
+        }
+    }
+}
+
+/// Lays its content out in `size`'s width and shrinks it (never grows it) until it is no taller than `size`.
+private struct FitInside<Content: View>: View {
+    let size: CGSize
+    @ViewBuilder let content: Content
+    @State private var natural: CGFloat = 0
+
+    var body: some View {
+        let scale = natural > size.height ? size.height / natural : 1
+        content
+            .frame(width: size.width / scale)
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { natural = $0 }
+            .scaleEffect(scale)
+            .frame(width: size.width, height: size.height)
+    }
+}
+
+/// A painted button with its label set where the painted one was: outlined cream lettering on the orange one,
+/// dark on the cream ones, with the icon beside it. It sinks a little and darkens while held.
+private struct PaintedButton: View {
+    let art: PaintedButtonArt
+    let theme: String
+    let title: String
+    let icon: String
+    var iconLeading = false
+    var primary = false
+    let width: CGFloat
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { EmptyView() }
+            .buttonStyle(Style(button: self))
+            .frame(width: width, height: width * art.aspect)
+            .accessibilityLabel(title)
+    }
+
+    private struct Style: ButtonStyle {
+        let button: PaintedButton
+
+        func makeBody(configuration: Configuration) -> some View {
+            let art = button.art
+            let scale = button.width / art.size.width
+            let box = CGSize(width: art.label.width * scale, height: art.label.height * scale)
+            let pressed = configuration.isPressed
+            Image("\(art.piece)_complete_\(button.theme)")
+                .resizable()
+                .interpolation(.high)
+                .overlay(alignment: .topLeading) {
+                    label(box: box)
+                        .frame(width: box.width, height: box.height)
+                        .offset(x: art.label.minX * scale, y: art.label.minY * scale)
+                }
+                .brightness(pressed ? -0.12 : 0)
+                .offset(y: pressed ? 2 : 0)
+                .contentShape(Rectangle())
+        }
+
+        @ViewBuilder
+        private func label(box: CGSize) -> some View {
+            let iconSlot: CGFloat = 1.6
+            // The pixel font is monospaced, its letters about 0.62 of its size wide.
+            let fitted = box.width / (CGFloat(button.title.count) * 0.62 + iconSlot)
+            let size = min(box.height * (button.primary ? 0.5 : 0.46), fitted)
+            HStack(spacing: size * 0.4) {
+                if button.iconLeading { PixelIcon(sprite: button.icon, height: size * 1.2) }
+                if button.primary {
+                    OutlinedText(text: button.title, size: size)
+                } else {
+                    Text(button.title).font(.pixel(size)).foregroundStyle(Color.menuInk).lineLimit(1)
+                }
+                if !button.iconLeading { PixelIcon(sprite: button.icon, height: size * 1.1) }
+            }
+        }
     }
 }
 

@@ -256,6 +256,12 @@ def violet_burst(step: int, height: float, seed: int) -> Image.Image:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_phantom_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_phantom" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Phantom Cat Queen (kept for reference; `boss_phantom_painted.py` replaces it)."""
     boss = Sprite("boss_phantom", SIZE, faces_left=True, cx=CX, ground=GROUND)
     boss.add("idle", [draw(QueenPose(bob=b, wave=k * math.pi / 2, orb=(1, 2, 1, 0)[k],
                                      eye="shut" if k == 3 else "open"))

@@ -337,6 +337,12 @@ def rolling_ball(step: int, frames: int) -> Image.Image:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_squirrel_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_squirrel" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Great Squirrel King (kept for reference; `boss_squirrel_painted.py` replaces it)."""
     boss = Sprite("boss_squirrel", SIZE, faces_left=True, cx=CX, ground=GROUND)
 
     boss.add("idle", [finish(king(KingPose(tail=t, breathe=b, cape=w, eye=e, sceptre=s)))

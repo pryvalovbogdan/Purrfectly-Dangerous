@@ -1,0 +1,13 @@
+{
+  "images": [
+    {
+      "filename": "boss_voidcat_rift_1.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

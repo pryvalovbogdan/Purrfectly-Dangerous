@@ -396,5 +396,117 @@ def toad() -> list[Sprite]:
             hazard("slam_rock", rocks, fps=12), hazard("slam_wave", wave, fps=12), hazard("toad_tongue", tongue, fps=8)]
 
 
+def guardian() -> list[Sprite]:
+    """The Sakura Guardian Cat's attacks, after the EFFECTS row of docs/concept/Sakura Guardian Cat Boss Sprite
+    Sheet.png. Each leads with its left edge; the frame bottom is the hitbox bottom. Glowing pink blossom bolts with a
+    trail (18x12, hitbox about 10x10 on the blossom), a low petal whirl rolling along the ground (22x12), a giant paw
+    print falling (24x26), the energy pillar where it lands (22x30), the torii laser (42x12 for 40x10) and a spirit
+    kitten running at the kitten (22x16)."""
+    from characters.boss_guardian_cat import bolt, paw_print, spirit_kitten
+    from characters.boss_kitsune import blossom, glow, petal
+
+    def shot(i: int, high: bool) -> Image.Image:
+        c = Canvas(18, 12)
+        bolt(c, 6, 6, 1.0, i, trail=1)
+        if high:                                                 # sparkles round the high one
+            c.px(1 + i % 2, 1 + (i % 2) * 9, P.WHITE)
+            c.px(10 + (i + 1) % 2, 1 + ((i + 1) % 2) * 9, P.SK_PINK_L)
+        return c.img
+
+    low = [shot(i, False) for i in range(4)]
+    high = [shot(i, True) for i in range(4)]
+
+    ring = []                                                    # a low whirl of pink light and petals, rolling left
+    for i in range(4):
+        c = Canvas(22, 12)
+        swoosh = Canvas(22, 12)
+        for k in range(16):                                      # the streak along the ground behind it
+            t = k / 15
+            swoosh.ellipse(9 + t * 12, 10.5 - t * 1.5, 1.6 - t * 1.0, 1.0, P.SK_PINK if k % 3 else P.SK_PINK_L)
+        c.paste(swoosh)
+        for k in range(40):                                      # a spinning ring of light, near half brighter
+            t = k / 39
+            a = -i * math.pi / 2 + t * math.tau * 0.9
+            x, y = 8 + math.cos(a) * 6.5, 6 + math.sin(a) * 4
+            front = math.sin(a) > 0
+            thick = 0.4 + 0.9 * t
+            c.ellipse(x, y, thick, thick, P.SK_PINK if front else P.KT_MAGENTA)
+            if front and t > 0.4:
+                c.px(x, y - 0.5, P.SK_PINK_L)
+        c.px(2 + (i % 2), 6, P.WHITE)                             # the leading edge catching the light
+        blossom(c, 8, 6, 2.6, i * 0.5, (P.SK_PINK_L, P.WHITE, P.KT_MAGENTA))
+        petal(c, 16 + i % 2, 3 + i % 3, i)
+        petal(c, 19, 6 + (i + 1) % 3, i + 1)
+        ring.append(c.img)
+
+    paw = []                                                     # a giant glowing paw print dropping, streaks above
+    for i in range(4):
+        c = Canvas(24, 26)
+        for k, x in enumerate((5, 12, 19)):
+            c.line((x, 1 + (i + k) % 2), (x, 4 + (i + k) % 2 + (k == 1) * 2), P.SK_PINK_L if k == 1 else P.SK_PINK)
+        paw_print(c, 12, 15, 0.95, i)
+        paw.append(c.img)
+
+    burst = []                                                   # a pillar of pink energy bursting from the ground
+    for i in range(4):
+        c = Canvas(22, 30)
+        energy = Canvas(22, 30)
+        h = (28, 26, 28, 24)[i]
+        flame(energy, 11, 29, h, 6, i, 1720, colours=(P.KT_MAGENTA, P.SK_PINK, P.SK_PINK_L, P.WHITE))
+        for k, (dx, hh) in enumerate(((-6, 12), (6, 13), (-9, 6), (9, 7))):
+            flame(energy, 11 + dx, 29, hh - (i + k) % 2 * 2, 2.5, i + k, 1721 + k,
+                  colours=(P.KT_MAGENTA, P.SK_PINK, P.SK_PINK_L, P.WHITE))
+        c.paste(see_through(energy.img, 235))
+        c.rect(10, 29 - h * 0.75, 11, 29, P.WHITE)
+        c.rect(2, 28, 19, 29, P.SK_PINK)
+        c.rect(5, 29, 16, 29, P.SK_PINK_L)
+        rnd = noise(1730 + i)
+        for k in range(4):
+            petal(c, 2 + rnd() * 17, 3 + rnd() * 20, k + i)
+        burst.append(c.img)
+
+    beam = []                                                    # the torii laser, its blossom head leading left
+    for i in range(3):
+        c = Canvas(42, 12)
+        g = Canvas(42, 12)
+        g.rect(6, 1, 41, 10, P.KT_MAGENTA)
+        c.paste(see_through(g.img, 100))
+        c.rect(6, 2, 41, 9, P.KT_MAGENTA)
+        c.rect(6, 3, 41, 8, P.SK_PINK)
+        c.rect(6, 4, 41, 7, P.SK_PINK_L)
+        c.rect(6, 5, 41, 6, P.WHITE)
+        for k in range(6):                                       # ripples running back along it
+            x = 12 + k * 5 + i * 2 - (i * 2 + k * 5 >= 30) * 30
+            c.px(x, 2, P.SK_PINK_L)
+            c.px(x + 2, 9, P.SK_PINK_L)
+        head = Canvas(42, 12)
+        glow(head, 6, 5.5, 5.8, 150, P.SK_PINK)
+        c.paste(head)
+        bloom = Canvas(42, 12)
+        blossom(bloom, 6, 5.5, 5.2, i * 0.4, (P.KT_MAGENTA, P.SK_PINK_L, P.WHITE))
+        c.paste(bloom.outline(P.KT_MAGENTA_D))
+        beam.append(c.img)
+
+    kitten = []                                                  # a spirit kitten running left
+    for i in range(4):
+        c = Canvas(22, 16)
+        spirit_kitten(c, 11, 15, i, 1.0, 255)
+        kitten.append(c.img.transpose(Image.FLIP_LEFT_RIGHT))
+    return [hazard("guardian_petal", low, fps=12), hazard("guardian_petal_high", high, fps=12),
+            hazard("petal_ring", ring, fps=14), hazard("guardian_paw", paw, fps=10),
+            hazard("paw_burst", burst, fps=12), hazard("torii_beam", beam, fps=14),
+            hazard("spirit_kitten", kitten, fps=12)]
+
+
 def build() -> list[Sprite]:
-    return [*acorns(), *frost(), *haunted(), *citadel(), *void(), *sakura(), *toad()]
+    from characters.boss_kitsune_painted import NAMES as kitsune   # cut from the user's painted sheets instead
+    from characters.boss_toad_painted import NAMES as toad_names
+    from characters.boss_icedragon_painted import NAMES as icedragon
+    from characters.boss_phantom_painted import NAMES as phantom
+    from characters.boss_mecha_painted import NAMES as mecha
+    from characters.boss_squirrel_painted import NAMES as squirrel
+    from characters.boss_voidcat_painted import NAMES as voidcat
+    painted = (set(kitsune) | set(toad_names) | set(icedragon) | set(phantom) | set(mecha) | set(squirrel)
+               | set(voidcat))
+    sprites = [*acorns(), *frost(), *haunted(), *citadel(), *void(), *sakura(), *toad(), *guardian()]
+    return [s for s in sprites if s.name not in painted]

@@ -67,6 +67,7 @@ public struct SaveGame: Codable, Sendable, Equatable {
     public mutating func unlock(skin id: String, with currency: Currency = .fish) -> SkinUnlock {
         guard let skin = Skin.named(id) else { return .unknownSkin }
         guard !owns(id) else { return .alreadyOwned }
+        guard skin.available else { return .unavailable }
         switch currency {
         case .fish:
             guard fishWallet >= skin.price else { return .notEnoughFish(missing: skin.price - fishWallet) }
