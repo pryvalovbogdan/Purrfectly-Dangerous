@@ -349,10 +349,16 @@ SPEC = {
     # Cut from the user's painting (characters/boss_mecha_painted.py), 3x PNGs; IDLE and CORE ping-pong, ROCKETS plays
     # its aim and launch twice, HURT is IDLE 1 knocked back (no HURT row painted).
     "boss_mecha": ((192, 140), {"idle": 16, "rockets": 15, "tail": 10, "core": 6, "hurt": 3, "death": 6}),
-    # Final world
-    "boss_voidcat": ((170, 140), {"idle": 4, "paws": 8, "stars": 6, "portal": 6, "phase": 6, "swipe": 6, "hurt": 2,
-                                  "death": 10}),
+    # Final world. Cut from the user's painting (characters/boss_voidcat_painted.py), 3x PNGs; attacks replay painted
+    # frames so each strike lands on its hazard's time, HURT is IDLE 0 knocked back, DEATH IDLE 0 dissolving (no HURT or
+    # DEATH row painted). The frame is wide: PHASE RUSH's streak trails 213 points behind the head.
+    "boss_voidcat": ((400, 140), {"idle": 10, "paws": 24, "stars": 19, "portal": 28, "rift": 26, "phase": 24,
+                                  "storm": 20, "hurt": 3, "death": 10}),
     "portal": ((26, 36), {"open": 4, "close": 4}),
+    "hazard_shadow_paw": ((40, 14), {"fly": 6}),
+    "hazard_falling_star": ((12, 16), {"fly": 6}),
+    "hazard_void_wave": ((26, 12), {"fly": 3}),
+    "hazard_star_shard": ((22, 8), {"fly": 6}),
     # Sakura route boss
     # Cut from the user's painting (characters/boss_kitsune_painted.py), 3x PNGs; every painted frame once.
     "boss_kitsune": ((150, 120), {"idle": 12, "claw": 18, "bloom": 16, "summon": 16, "hurt": 3, "death": 12}),
@@ -532,10 +538,30 @@ def test_manifest_and_atlas_match_the_code(sprites):
         for anim, data in sprite.anims.items():
             assert manifest[name]["animations"][anim]["frames"] == len(data.frames)
             for index, frame in enumerate(export.frames_of(sprite, anim)):
-                frame_name = export.frame_name(name, anim, index)
+                stored = export.stored_frame_index(manifest[name]["animations"][anim], index)
+                frame_name = export.frame_name(name, anim, stored)
                 path = export.ATLAS / f"{frame_name}.imageset" / f"{frame_name}.png"
                 assert path.exists(), f"{path.name} missing: run Tools/sprites/build.py"
                 assert Image.open(path).convert("RGBA").tobytes() == frame.tobytes(), f"{frame_name} is stale"
+
+
+def test_atlas_stores_each_frame_of_an_animation_once():
+    """Repeats within an animation are written once and replayed through the manifest's `sequence`: every index
+    it names has an imageset, stored frames are numbered 0..k-1 with none left over, and no two are identical."""
+    manifest = json.loads(export.MANIFEST.read_text())
+    for name, entry in manifest.items():
+        for anim, info in entry["animations"].items():
+            sequence = info.get("sequence", list(range(info["frames"])))
+            assert len(sequence) == info["frames"], f"{name}/{anim}"
+            assert "sequence" not in info or sequence != list(range(info["frames"])), f"{name}/{anim}: needless sequence"
+            assert sorted(set(sequence)) == list(range(max(sequence) + 1)), f"{name}/{anim}: gaps in {sequence}"
+            prefix = f"{name}_{anim}_"
+            on_disk = {int(p.stem[len(prefix):]) for p in export.ATLAS.glob(f"{prefix}*.imageset")
+                       if p.stem[len(prefix):].isdigit()}
+            assert on_disk == set(sequence), f"{name}/{anim}: stored {sorted(on_disk)}, sequence {sequence}"
+            pixels = [Image.open(export.ATLAS / f"{prefix}{i}.imageset" / f"{prefix}{i}.png").tobytes()
+                      for i in sorted(on_disk)]
+            assert len(set(pixels)) == len(pixels), f"{name}/{anim}: identical stored frames"
 
 
 def test_every_thing_the_game_can_show_has_a_sprite(sprites):
@@ -636,11 +662,13 @@ def test_painted_bosses_are_cut_cleanly(sprites):
     """Bosses and their projectiles cut from a painted sheet (`sheet_boss.py`): 3x PNGs with hard alpha (no glow
     halo on dark backgrounds); the boss's grounded poses stand on its ground row and nothing reaches below it."""
     from characters import (boss_icedragon_painted, boss_kitsune_painted, boss_mecha_painted, boss_phantom_painted,
-                            boss_squirrel_painted, boss_toad_painted)
+                            boss_squirrel_painted, boss_toad_painted, boss_voidcat_painted)
     in_air = {("boss_icedragon", "dive", i) for i in boss_icedragon_painted.IN_AIR}     # the dive's airborne frames
+    in_air |= {("boss_voidcat", "death", i) for i in boss_voidcat_painted.DEATH_IN_AIR}  # only rising stars left
     for module, boss_name in ((boss_kitsune_painted, "boss_kitsune"), (boss_toad_painted, "boss_toad"),
                               (boss_icedragon_painted, "boss_icedragon"), (boss_mecha_painted, "boss_mecha"),
-                              (boss_phantom_painted, "boss_phantom"), (boss_squirrel_painted, "boss_squirrel")):
+                              (boss_phantom_painted, "boss_phantom"), (boss_squirrel_painted, "boss_squirrel"),
+                              (boss_voidcat_painted, "boss_voidcat")):
         for name in module.NAMES:
             sprite = sprites[name]
             assert sprite.scale == 3, name
@@ -675,6 +703,25 @@ def test_painted_squirrel_king_releases_on_time(sprites):
         assert len(anim.frames) / anim.fps <= attack["telegraph"] + attack["duration"] + attack["recover"], attack["name"]
 
 
+def test_painted_void_cat_strikes_on_time(sprites):
+    """The Void Cat's attack animations show a strike frame when Bosses.json lets each hazard go or opens the portals
+    (entry N shows at N / fps from the start of the wind-up), and end before the next wind-up."""
+    from characters import boss_voidcat_painted as painted
+    boss = next(b for b in json.loads((ROOT / "App" / "Resources" / "Bosses.json").read_text())
+                if b["id"] == "boss_voidcat")
+    sprite = sprites["boss_voidcat"]
+    for attack in boss["attacks"]:
+        name = painted.ATTACKS[attack["name"]]
+        anim = sprite.anims[name]
+        times = sorted({round(attack["telegraph"] + h["delay"], 3)
+                        for h in attack["hazards"] + attack.get("portals", [])})
+        shown = [entry / anim.fps for entry in painted.RELEASES[name]]
+        assert len(shown) == len(times), attack["name"]
+        assert all(abs(a - b) <= 0.05 for a, b in zip(shown, times)), (attack["name"], shown, times)
+        cycle = attack["telegraph"] + attack["duration"] + attack["recover"]
+        assert len(anim.frames) / anim.fps <= cycle, attack["name"]
+
+
 def test_floral_boss_bar_matches_the_hud():
     """The floral boss bar's pieces (`FLORAL_BAR_CUTS`, built by `titles()`) have the sizes, field and track that
     `PaintedBossHealth.Style.floral` (App/UI/PaintedBossHealth.swift) places the name and the fill by; the fill's
@@ -706,3 +753,43 @@ def test_floral_boss_bar_matches_the_hud():
         assert im.getpixel((im.width // 2, 24))[0] > 200          # bright orange in the middle
     assert left.getpixel((0, 0))[3] == 0 and left.getpixel((0, 47))[3] == 0     # rounded: corners clear
     assert right.getpixel((63, 0))[3] == 0 and right.getpixel((63, 47))[3] == 0
+
+
+def test_complete_looks_match_the_screen():
+    """Each world's level-complete pieces (`COMPLETE_CUTS`, built by `titles()`) have the sizes `CompleteLook`
+    (App/UI/ResultView.swift) lays out by, hard alpha, and an empty parchment and blank button labels where the
+    screen writes its own text: no painted letters, stars or icons left there."""
+    folder = export.ATLAS.parent
+
+    def piece(name):
+        return Image.open(folder / f"{name}.imageset" / f"{name}.png").convert("RGBA")
+
+    # piece: (size, the rectangles the screen writes in (where the painted text was), in the piece's pixels)
+    looks = {
+        "frost": {"title": ((533, 455), None), "boss": ((546, 548), None),
+                  "card": ((732, 673), [(115, 161, 498, 343), (177, 501, 325, 36)]),
+                  "next": ((629, 176), (120, 44, 445, 78)), "retry": ((422, 142), (108, 27, 236, 73)),
+                  "menu": ((366, 134), (83, 26, 204, 73)), "flake": ((100, 112), None), "crystal": ((51, 103), None)},
+        "haunted": {"title": ((613, 405), None), "boss": ((411, 594), None),
+                    "card": ((622, 635), [(99, 172, 404, 304), (139, 476, 308, 50)]),
+                    "next": ((695, 166), (190, 60, 379, 60)), "retry": ((351, 113), (98, 30, 192, 61)),
+                    "menu": ((316, 113), (54, 30, 184, 61)), "ghost": ((124, 130), None), "flame": ((59, 109), None)},
+        "citadel": {"title": ((568, 375), None), "boss": ((454, 642), None),
+                    "card": ((589, 574), [(112, 142, 362, 126), (86, 268, 408, 181), (142, 449, 296, 47)]),
+                    "next": ((638, 175), (100, 51, 438, 87)), "retry": ((348, 121), (87, 22, 188, 67)),
+                    "menu": ((331, 121), (60, 22, 198, 67))},
+    }
+    assert {(t, p) for t, _, p, _ in export.COMPLETE_CUTS} == {(t, p) for t, pieces in looks.items() for p in pieces}
+    for theme, pieces in looks.items():
+        for name, (size, text) in pieces.items():
+            im = piece(f"{name}_complete_{theme}")
+            assert im.size == size, f"{name}_complete_{theme}"
+            assert sum(im.getchannel("A").histogram()[1:255]) == 0, f"{name}_complete_{theme} has soft alpha"
+            for x, y, w, h in [text] if isinstance(text, tuple) else text or []:
+                inner = [im.getpixel((px, py)) for px in range(x + 4, x + w - 4, 3)
+                         for py in range(y + 4, y + h - 4, 3)]
+                if name == "next":      # all orange: no dark outlines, no white letters
+                    left = [p for p in inner if p[3] < 255 or max(p[:3]) < 170 or min(p[:3]) > 190]
+                else:                   # all cream: no ink, no yellow stars, no blue fish
+                    left = [p for p in inner if p[3] < 255 or min(p[:3]) < 120]
+                assert not left, f"{name}_complete_{theme} has something left where the screen writes: {left[:3]}"

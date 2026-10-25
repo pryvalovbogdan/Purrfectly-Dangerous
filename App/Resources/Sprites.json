@@ -171,7 +171,13 @@
    "ring": {
     "frames": 4,
     "fps": 10,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -1167,7 +1173,22 @@
    "dive": {
     "frames": 13,
     "fps": 5,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     0,
+     1,
+     2,
+     3,
+     4,
+     3,
+     4,
+     3,
+     4,
+     3,
+     1,
+     5
+    ]
    },
    "hurt": {
     "frames": 2,
@@ -1230,12 +1251,47 @@
    "idle": {
     "frames": 16,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1
+    ]
    },
    "rockets": {
     "frames": 15,
     "fps": 7,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
    },
    "tail": {
     "frames": 10,
@@ -1245,7 +1301,15 @@
    "core": {
     "frames": 6,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     2,
+     1
+    ]
    },
    "hurt": {
     "frames": 3,
@@ -1274,12 +1338,53 @@
    "summon": {
     "frames": 12,
     "fps": 4.7,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     4,
+     5,
+     6
+    ]
    },
    "teleport": {
     "frames": 25,
     "fps": 10,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     9,
+     10,
+     11,
+     11,
+     12,
+     9,
+     9,
+     10,
+     11,
+     11,
+     13,
+     14,
+     15,
+     16,
+     17
+    ]
    },
    "split": {
     "frames": 7,
@@ -1318,12 +1423,76 @@
    "roll": {
     "frames": 28,
     "fps": 10,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     0,
+     1,
+     1,
+     2,
+     2,
+     3,
+     3,
+     3,
+     4,
+     5,
+     6,
+     7,
+     4,
+     5,
+     6,
+     7,
+     4,
+     5,
+     6,
+     7,
+     4,
+     5,
+     6,
+     8,
+     8,
+     8,
+     9
+    ]
    },
    "climb": {
     "frames": 32,
     "fps": 10,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     0,
+     0,
+     0,
+     1,
+     2,
+     1,
+     2,
+     1,
+     2,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     4,
+     4,
+     5,
+     5,
+     6,
+     6,
+     7,
+     7,
+     7,
+     7,
+     8,
+     8,
+     8,
+     3,
+     3,
+     9
+    ]
    },
    "hurt": {
     "frames": 1,
@@ -1388,44 +1557,202 @@
   "scale": 3
  },
  "boss_voidcat": {
-  "width": 170,
+  "width": 400,
   "height": 140,
-  "anchorX": 0.4971,
+  "anchorX": 0.4487,
   "anchorY": 0.0214,
   "animations": {
    "idle": {
-    "frames": 4,
-    "fps": 5,
+    "frames": 10,
+    "fps": 8,
     "loop": true
    },
    "paws": {
-    "frames": 8,
+    "frames": 24,
     "fps": 10,
-    "loop": false
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     5,
+     6,
+     7,
+     4,
+     3,
+     5,
+     5,
+     8,
+     7,
+     4,
+     2,
+     5,
+     5,
+     6,
+     7,
+     2,
+     1,
+     0
+    ]
    },
    "stars": {
-    "frames": 6,
-    "fps": 8,
-    "loop": false
+    "frames": 19,
+    "fps": 10,
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     3,
+     5,
+     6,
+     7,
+     8,
+     2,
+     1,
+     9,
+     10,
+     0
+    ]
    },
    "portal": {
-    "frames": 6,
-    "fps": 8,
-    "loop": false
+    "frames": 28,
+    "fps": 10,
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     1,
+     2,
+     3,
+     4,
+     3,
+     5,
+     6,
+     5,
+     7,
+     8,
+     6,
+     5,
+     3,
+     9,
+     5,
+     10,
+     9,
+     5,
+     3,
+     6,
+     5,
+     8,
+     7,
+     2,
+     1
+    ]
+   },
+   "rift": {
+    "frames": 26,
+    "fps": 10,
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     4,
+     6,
+     7,
+     4,
+     8,
+     3,
+     5,
+     9,
+     10,
+     9,
+     5,
+     4,
+     6,
+     4,
+     11,
+     8,
+     3,
+     2,
+     1
+    ]
    },
    "phase": {
-    "frames": 6,
-    "fps": 8,
-    "loop": true
+    "frames": 24,
+    "fps": 10,
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     3,
+     4,
+     8,
+     6,
+     7,
+     3,
+     4,
+     5,
+     6,
+     7,
+     3,
+     4,
+     8,
+     2,
+     1,
+     0
+    ]
    },
-   "swipe": {
-    "frames": 6,
-    "fps": 12,
-    "loop": false
+   "storm": {
+    "frames": 20,
+    "fps": 10,
+    "loop": false,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     2,
+     1,
+     6,
+     7,
+     8,
+     4,
+     5,
+     1,
+     2,
+     3,
+     6,
+     9,
+     8,
+     0
+    ]
    },
    "hurt": {
-    "frames": 2,
-    "fps": 10,
+    "frames": 3,
+    "fps": 12,
     "loop": true
    },
    "death": {
@@ -1433,7 +1760,8 @@
     "fps": 10,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "branch_squirrel": {
   "width": 40,
@@ -1974,7 +2302,13 @@
    "walk": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "attack": {
     "frames": 4,
@@ -2194,7 +2528,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     2
+    ]
    },
    "attack": {
     "frames": 4,
@@ -2268,7 +2608,13 @@
    "walk": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "hit": {
     "frames": 2,
@@ -2746,7 +3092,13 @@
    "fly": {
     "frames": 4,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   },
   "scale": 3
@@ -2785,11 +3137,20 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 6,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     2,
+     1
+    ]
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_giant_acorn": {
   "width": 28,
@@ -2814,7 +3175,13 @@
    "fly": {
     "frames": 4,
     "fps": 10,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    }
   }
  },
@@ -2946,11 +3313,12 @@
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 4,
+    "frames": 6,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_shard": {
   "width": 42,
@@ -3022,17 +3390,18 @@
   }
  },
  "hazard_star_shard": {
-  "width": 12,
+  "width": 22,
   "height": 8,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
    "fly": {
-    "frames": 2,
+    "frames": 6,
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_tail": {
   "width": 36,
@@ -3075,8 +3444,8 @@
   }
  },
  "hazard_void_wave": {
-  "width": 20,
-  "height": 10,
+  "width": 26,
+  "height": 12,
   "anchorX": 0.5,
   "anchorY": 0,
   "animations": {
@@ -3085,7 +3454,8 @@
     "fps": 12,
     "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hazard_wave": {
   "width": 16,
@@ -3425,7 +3795,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -3518,7 +3894,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -3611,7 +3993,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -3704,7 +4092,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -3797,7 +4191,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -3890,7 +4290,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -4077,7 +4483,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -4160,7 +4572,13 @@
    "menu": {
     "frames": 4,
     "fps": 4,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     0,
+     1,
+     2
+    ]
    },
    "ko": {
     "frames": 2,
@@ -4170,7 +4588,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -4263,7 +4687,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -4356,7 +4786,13 @@
    "ghost": {
     "frames": 4,
     "fps": 5,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -4454,7 +4890,13 @@
    "walk": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "attack": {
     "frames": 4,
@@ -4482,7 +4924,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "curl": {
     "frames": 3,
@@ -4635,7 +5083,11 @@
    "fly": {
     "frames": 2,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     0
+    ]
    }
   }
  },
@@ -4843,7 +5295,13 @@
    "fly": {
     "frames": 4,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     2
+    ]
    }
   }
  },
@@ -4856,7 +5314,17 @@
    "swing": {
     "frames": 8,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     3,
+     0,
+     4,
+     5,
+     6
+    ]
    }
   }
  },
@@ -5007,7 +5475,13 @@
    "loop": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -5270,7 +5744,13 @@
    "walk": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "attack": {
     "frames": 4,
@@ -5413,7 +5893,13 @@
    "slide": {
     "frames": 4,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     2
+    ]
    },
    "death": {
     "frames": 4,
@@ -5436,7 +5922,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     2
+    ]
    },
    "attack": {
     "frames": 4,
@@ -5587,14 +6079,21 @@
    "open": {
     "frames": 4,
     "fps": 10,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    },
    "close": {
     "frames": 4,
     "fps": 12,
     "loop": false
    }
-  }
+  },
+  "scale": 3
  },
  "ravine_citadel": {
   "width": 8,
@@ -7450,7 +7949,13 @@
    "fly": {
     "frames": 4,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "death": {
     "frames": 3,
@@ -7468,7 +7973,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    },
    "death": {
     "frames": 4,
@@ -7486,7 +7997,13 @@
    "walk": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    },
    "hide": {
     "frames": 3,
@@ -7519,7 +8036,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "attack": {
     "frames": 4,
@@ -7596,7 +8119,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    },
    "attack": {
     "frames": 4,
@@ -7727,7 +8256,13 @@
    "walk": {
     "frames": 4,
     "fps": 10,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "death": {
     "frames": 4,
@@ -7745,7 +8280,13 @@
    "fly": {
     "frames": 4,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     2,
+     1
+    ]
    }
   }
  },
@@ -7758,7 +8299,11 @@
    "closed": {
     "frames": 2,
     "fps": 3,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     0
+    ]
    },
    "open": {
     "frames": 2,
@@ -7928,7 +8473,13 @@
    "fly": {
     "frames": 4,
     "fps": 12,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    }
   }
  },
@@ -7946,7 +8497,13 @@
    "walk": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     1
+    ]
    },
    "attack": {
     "frames": 4,
@@ -8472,7 +9029,13 @@
    "blink": {
     "frames": 4,
     "fps": 6,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     0,
+     1,
+     2
+    ]
    }
   }
  },
@@ -8637,7 +9200,13 @@
    "walk": {
     "frames": 4,
     "fps": 8,
-    "loop": true
+    "loop": true,
+    "sequence": [
+     0,
+     1,
+     0,
+     2
+    ]
    },
    "summon": {
     "frames": 4,

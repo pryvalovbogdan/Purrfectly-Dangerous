@@ -1646,7 +1646,7 @@ final class GameScene: SKScene {
         "boss_guardian_cat": ["petal_volley": "volley", "petal_storm": "spin", "paw_slam": "slam", "torii_beam": "beam",
                               "spirit_summon": "summon", "*": "volley"],
         "boss_voidcat": ["shadow_paws": "paws", "star_fall": "stars", "portal_paws": "portal",
-                         "portal_shards": "portal", "phase_rush": "phase", "phase_storm": "phase", "*": "attack"],
+                         "portal_shards": "rift", "phase_rush": "phase", "phase_storm": "storm", "*": "paws"],
     ]
 
     private func attackAnimation(boss: String, attack: String) -> String {

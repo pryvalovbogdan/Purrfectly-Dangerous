@@ -10,11 +10,15 @@ public struct Skin: Sendable, Equatable, Identifiable {
     /// Set by hand so it can be tuned; first set as `price` / 20 rounded up to a multiple of 5, at
     /// least 10. Every cat can still be bought with fish alone.
     public let goldenPrice: Int?
+    /// Whether it can be bought at all. A cat that is not for sale yet keeps its prices for later, and
+    /// one already owned (from a backup, or bought before) stays owned.
+    public let available: Bool
 
-    public init(id: String, price: Int, goldenPrice: Int? = nil) {
+    public init(id: String, price: Int, goldenPrice: Int? = nil, available: Bool = true) {
         self.id = id
         self.price = price
         self.goldenPrice = goldenPrice
+        self.available = available
     }
 
     public var nameKey: String { "skin.\(id).name" }
@@ -28,15 +32,15 @@ public struct Skin: Sendable, Equatable, Identifiable {
         Skin(id: "fluffy", price: 0),
         Skin(id: "shadow", price: 150, goldenPrice: 10),
         Skin(id: "misty", price: 200, goldenPrice: 10),
-        Skin(id: "sakura", price: 250, goldenPrice: 15),
+        Skin(id: "sakura", price: 3500, goldenPrice: 50),
         Skin(id: "honey", price: 300, goldenPrice: 15),
         Skin(id: "pixie", price: 400, goldenPrice: 20),
         Skin(id: "clover", price: 500, goldenPrice: 25),
         Skin(id: "snowball", price: 600, goldenPrice: 30),
         Skin(id: "napster", price: 750, goldenPrice: 40),
         Skin(id: "toffee", price: 900, goldenPrice: 45),
-        Skin(id: "cabage", price: 2000, goldenPrice: 100),
-        Skin(id: "sharky", price: 2000, goldenPrice: 100),
+        Skin(id: "cabage", price: 2000, goldenPrice: 100, available: false),
+        Skin(id: "sharky", price: 2000, goldenPrice: 100, available: false),
     ]
 
     public static func named(_ id: String) -> Skin? {
@@ -62,6 +66,8 @@ public enum SkinUnlock: Sendable, Equatable {
     case notEnoughGoldenFish(missing: Int)
     /// This cat has no golden price (the free one); nothing changed.
     case notForGoldenFish
+    /// This cat is not for sale yet, at any price; nothing changed.
+    case unavailable
     case alreadyOwned
     case unknownSkin
 }

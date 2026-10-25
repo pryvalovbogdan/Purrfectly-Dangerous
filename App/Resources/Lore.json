@@ -78,6 +78,7 @@
  "ui.select": "SELECT",
  "ui.unlock": "UNLOCK",
  "ui.need_more": "need {n} more",
+ "ui.coming_soon": "COMING SOON",
  "ui.previous_cat": "Previous cat",
  "ui.next_cat": "Next cat",
  "ui.fish": "fish",

@@ -261,6 +261,12 @@ def flash(image: Image.Image, amount: float) -> Image.Image:
 
 
 def build() -> list[Sprite]:
+    from characters.boss_voidcat_painted import NAMES as painted   # cut from the user's painted sheet instead
+    return [] if "boss_voidcat" in painted else drawn()
+
+
+def drawn() -> list[Sprite]:
+    """The code-drawn Void Cat (kept for reference; `boss_voidcat_painted.py` replaces it)."""
     boss = Sprite("boss_voidcat", SIZE, faces_left=True, cx=CX, ground=GROUND)
     boss.add("idle", [voidcat(VoidPose(step=k, bob=(0, -1, -2, -1)[k], eye="narrow" if k == 3 else "open",
                                        lpaw=(0, (0, -1, -2, -1)[k]), rpaw=(0, (0, -1, -2, -1)[(k + 2) % 4])))

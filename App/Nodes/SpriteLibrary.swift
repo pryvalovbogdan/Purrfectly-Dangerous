@@ -4,9 +4,15 @@ import UIKit
 /// Reads Sprites.json (written by Tools/sprites/build.py) and hands out the matching textures.
 final class SpriteLibrary {
     struct Animation: Decodable {
+        /// Frames played, repeats included.
         let frames: Int
         let fps: Double
         let loop: Bool
+        /// For each played frame, which stored frame (`<sprite>_<anim>_<i>`) it shows. The atlas keeps an
+        /// animation's repeated frames once; absent when every played frame is its own (0..<frames).
+        let sequence: [Int]?
+
+        var storedIndices: [Int] { sequence ?? Array(0..<frames) }
     }
 
     struct Sheet: Decodable {
@@ -62,9 +68,13 @@ final class SpriteLibrary {
         let key = "\(sprite)/\(name)"
         if let cached = imageCache[key] { return cached }
         guard let animation = animation(sprite, name) else { return [] }
-        let images = (0..<animation.frames).compactMap { index -> CGImage? in
+        var stored: [Int: CGImage] = [:]
+        let images = animation.storedIndices.compactMap { index -> CGImage? in
+            if let image = stored[index] { return image }
             let frame = "\(sprite)_\(name)_\(index)"
-            return UIImage(named: frame, in: bundle, with: nil)?.cgImage ?? SKTexture(imageNamed: frame).cgImage()
+            let image = UIImage(named: frame, in: bundle, with: nil)?.cgImage ?? SKTexture(imageNamed: frame).cgImage()
+            stored[index] = image
+            return image
         }
         imageCache[key] = images
         return images
@@ -74,9 +84,12 @@ final class SpriteLibrary {
         let key = "\(sprite)/\(name)"
         if let cached = cache[key] { return cached }
         guard let animation = animation(sprite, name) else { return [] }
-        let textures = (0..<animation.frames).map { index -> SKTexture in
+        var stored: [Int: SKTexture] = [:]
+        let textures = animation.storedIndices.map { index -> SKTexture in
+            if let texture = stored[index] { return texture }
             let texture = SKTexture(imageNamed: "\(sprite)_\(name)_\(index)")
             texture.filteringMode = .nearest
+            stored[index] = texture
             return texture
         }
         cache[key] = textures

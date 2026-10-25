@@ -24,6 +24,7 @@ Everything is plain arithmetic on the PNG, so the output is identical on every r
 from __future__ import annotations
 
 import heapq
+import math
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -114,21 +115,28 @@ class BossSheet:
             b = body.load()
             keep = [[keep[x][y] and b[x, y] > 0 for y in range(h)] for x in range(w)]
         for area in cut.cleared:
+            # `span`: the sheet box (x0, y0, x1, y1) outside which `inside` is never true, so only it is visited.
             if len(area) == 4:                                   # a box: x0, y0, x1, y1
                 cx0, cy0, cx1, cy1 = area
                 inside = lambda x, y: cx0 <= x < cx1 and cy0 <= y < cy1
+                span = area
             elif area[0] == "o":                                 # an ellipse: "o", centre x, y, radii x, y
                 _, ex, ey, rx, ry = area
                 inside = lambda x, y: ((x - ex) / rx) ** 2 + ((y - ey) / ry) ** 2 <= 1
+                span = (ex - abs(rx) - 1, ey - abs(ry) - 1, ex + abs(rx) + 2, ey + abs(ry) + 2)
             elif area[0] in ("l", "r"):  # left or right of a polyline ((x, y), ...) running down the sheet
                 side, points = area[0], area[1]
                 inside = lambda x, y, side=side, points=points: (x < _line_x(points, y)) == (side == "l")
+                span = cut.box
             else:                       # a box but an ellipse in it: "x", x0, y0, x1, y1, centre x, y, radii x, y
                 _, bx0, by0, bx1, by1, ex, ey, rx, ry = area
                 inside = lambda x, y: (bx0 <= x < bx1 and by0 <= y < by1
                                        and ((x - ex) / rx) ** 2 + ((y - ey) / ry) ** 2 > 1)
-            for x in range(w):
-                for y in range(h):
+                span = area[1:5]
+            xs = range(max(0, math.floor(span[0]) - cut.box[0]), min(w, math.ceil(span[2]) - cut.box[0]))
+            ys = range(max(0, math.floor(span[1]) - cut.box[1]), min(h, math.ceil(span[3]) - cut.box[1]))
+            for x in xs:
+                for y in ys:
                     if keep[x][y] and inside(x + cut.box[0], y + cut.box[1]):
                         keep[x][y] = False
                         if seed is not None:
@@ -139,12 +147,22 @@ class BossSheet:
 
             claimed = [pt for _, points in (own, *others) for pt in points]
 
+            def discs(points, r):
+                # The cell pixels within `r` of any of `points` (the same test, pixel by pixel, only near them).
+                out = set()
+                for px, py in points:
+                    for x in range(max(0, math.floor(px - x0 - r)), min(w, math.ceil(px - x0 + r) + 1)):
+                        for y in range(max(0, math.floor(py - y0 - r)), min(h, math.ceil(py - y0 + r) + 1)):
+                            if (x + x0 - px) ** 2 + (y + y0 - py) ** 2 <= r * r:
+                                out.add((x, y))
+                return out
+
             def start(c, points):
                 # The seed: the core pixels in a band round the figure's centre, but not round a point another
                 # figure claims (its spat lantern over this one's side); plus the figure's own points.
-                mine = lambda x, y, r: any((x + x0 - px) ** 2 + (y + y0 - py) ** 2 <= r * r for px, py in points)
-                near = lambda x, y: (mine(x, y, 6) or (abs(x + x0 - c) <= half and not any(
-                    (x + x0 - px) ** 2 + (y + y0 - py) ** 2 <= 400 for px, py in claimed if (px, py) not in points)))
+                mine = discs(points, 6)
+                taken = discs([pt for pt in claimed if pt not in points], 20)
+                near = lambda x, y: (x, y) in mine or (abs(x + x0 - c) <= half and (x, y) not in taken)
                 return [(x, y) for x in range(w) for y in range(h) if keep[x][y] and seed[x][y] and near(x, y)]
             starts = [start(c, points) for c, points in (own, *others)]
             # A watershed: the painting's darkness is the height (the dark outlines are ridges), and every figure
@@ -361,11 +379,8 @@ def shrink(image: Image.Image, k: float) -> Image.Image:
 
 def clean(image: Image.Image) -> Image.Image:
     """Fully clear pixels carry no colour, so the PNG bytes depend only on what shows."""
-    px = image.load()
-    for y in range(image.height):
-        for x in range(image.width):
-            if px[x, y][3] == 0:
-                px[x, y] = (0, 0, 0, 0)
+    clear = image.getchannel("A").point(lambda a: 255 if a == 0 else 0)
+    image.paste((0, 0, 0, 0), mask=clear)               # a 0/255 mask: exact, in place
     return image
 
 
@@ -410,7 +425,8 @@ def body_mask(image: Image.Image, height: int) -> Image.Image:
 
 
 def _count(mask: Image.Image) -> int:
-    return mask.convert("L").histogram()[255]
+    """The set pixels of a 1-bit mask (its packed rows are padded with clear bits)."""
+    return int.from_bytes(mask.tobytes(), "big").bit_count()
 
 
 def best_shift(a: Image.Image, b: Image.Image, reach: int) -> int:
@@ -420,11 +436,13 @@ def best_shift(a: Image.Image, b: Image.Image, reach: int) -> int:
     base = Image.new("1", (width, a.height), 0)
     base.paste(a, (b.width + reach, 0))
     best = (-1.0, 0)
+    base_count = _count(base)
     for dx in range(-reach, reach + 1):
         moved = Image.new("1", (width, a.height), 0)
         moved.paste(b, (b.width + reach + dx, 0))
-        union = _count(ImageChops.logical_or(base, moved))
-        score = _count(ImageChops.logical_and(base, moved)) / union if union else 0
+        both = _count(ImageChops.logical_and(base, moved))
+        union = base_count + _count(moved) - both
+        score = both / union if union else 0
         if score > best[0] + 1e-9 or (abs(score - best[0]) <= 1e-9 and abs(dx) < abs(best[1])):
             best = (score, dx)
     return best[1]

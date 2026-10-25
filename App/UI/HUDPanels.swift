@@ -69,11 +69,27 @@ struct LivesPanel: View {
     let hearts: Int
     let maxHearts: Int
     let fish: Int
+    /// The selected cat; cats without their own head show Fluffy's.
+    var skin: String = "fluffy"
 
     /// The head is about 1.4 times the panel's height, as on the sheet.
     private static let headShare: CGFloat = 1.4
-    /// hud_cat.png is 214×203.
-    private static let headAspect: CGFloat = 214 / 203
+
+    /// A cat's head picture: its width over its height, and how far across it (from the left) its
+    /// cheek reaches, where the hearts may start.
+    private struct Head {
+        let image: String
+        let aspect: CGFloat
+        let cheek: CGFloat
+    }
+
+    /// hud_cat.png is 214×203; hud_cat_sakura.png is 142×97, her scarf streaming out to the left.
+    private static let heads: [String: Head] = [
+        "fluffy": Head(image: "hud_cat", aspect: 214 / 203, cheek: 0.78),
+        "sakura": Head(image: "hud_cat_sakura", aspect: 142 / 97, cheek: 0.9),
+    ]
+
+    private var head: Head { Self.heads[skin] ?? Self.heads["fluffy"]! }
 
     var body: some View {
         let k = HUDMetrics.pixelScale(displayScale)
@@ -84,9 +100,9 @@ struct LivesPanel: View {
         let contentHeight: CGFloat = 14 + 2 + 12
         let panelHeight = contentHeight + 2 * inset
         let headHeight = (panelHeight * unit * Self.headShare).rounded()
-        let headWidth = (headHeight * Self.headAspect).rounded()
+        let headWidth = (headHeight * head.aspect).rounded()
         // The head covers the panel's left part; the hearts start just past its cheek.
-        let leftRoom = (headWidth * 0.78 / unit).rounded()
+        let leftRoom = (headWidth * head.cheek / unit).rounded()
         let panelWidth = leftRoom + heartsWidth + inset
 
         ZStack(alignment: .bottomLeading) {
@@ -107,7 +123,7 @@ struct LivesPanel: View {
                 }
                 .padding(.leading, headWidth * 0.1)
             // The cat: bottom on the panel's bottom, its left edge just past the panel's.
-            Image("hud_cat")
+            Image(head.image)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()

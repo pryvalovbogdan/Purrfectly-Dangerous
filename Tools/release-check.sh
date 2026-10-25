@@ -27,7 +27,6 @@ strings "$APP/PurrfectlyDangerous" | grep -q -E -- "-autoplay|-uitest-jump" && f
 [ -z "$(find "$APP" -name '*.storekit')" ] && pass "no local StoreKit test config in the bundle" || fail "a .storekit test config is bundled (keep it out of every build phase)"
 grep -q "com.apple.developer.ubiquity-kvstore-identifier" App/PurrfectlyDangerous.entitlements && pass "iCloud key-value store entitlement (golden fish backup)" || fail "iCloud key-value store entitlement missing"
 strings "$APP/PurrfectlyDangerous" | grep -q -F -- "held %.2fs" && fail "the debug jump readout is compiled into the Release binary" || pass "no debug jump readout in Release"
-grep -q "TEMPORARY (free-sakura)" App/AppModel.swift && echo "⚠ Sakura is free in this build (fine for TestFlight; remove it from AppModel.swift before the App Store)"
 grep -q "TEMPORARY (shown-cats)" App/UI/CatsScreen.swift && echo "⚠ The CATS screen lists only some cats in this build (shownCats in App/UI/CatsScreen.swift)"
 
 [ $FAILED = 0 ] && echo "Ready to archive." || echo "Not ready."

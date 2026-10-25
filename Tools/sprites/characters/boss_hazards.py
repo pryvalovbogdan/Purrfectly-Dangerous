@@ -505,6 +505,8 @@ def build() -> list[Sprite]:
     from characters.boss_phantom_painted import NAMES as phantom
     from characters.boss_mecha_painted import NAMES as mecha
     from characters.boss_squirrel_painted import NAMES as squirrel
-    painted = set(kitsune) | set(toad_names) | set(icedragon) | set(phantom) | set(mecha) | set(squirrel)
+    from characters.boss_voidcat_painted import NAMES as voidcat
+    painted = (set(kitsune) | set(toad_names) | set(icedragon) | set(phantom) | set(mecha) | set(squirrel)
+               | set(voidcat))
     sprites = [*acorns(), *frost(), *haunted(), *citadel(), *void(), *sakura(), *toad(), *guardian()]
     return [s for s in sprites if s.name not in painted]

@@ -255,19 +255,21 @@ the kitten looks and nothing else (the simulation never sees it).
 | `fluffy` | 0 (everyone's from the start) |
 | `shadow` | 150 |
 | `misty` | 200 |
-| `sakura` | 250 |
+| `sakura` | 3500 |
 | `honey` | 300 |
 | `pixie` | 400 |
 | `clover` | 500 |
 | `snowball` | 600 |
 | `napster` | 750 |
 | `toffee` | 900 |
-| `cabage` | 2000 |
-| `sharky` | 2000 |
+| `cabage` | 2000 (not for sale yet) |
+| `sharky` | 2000 (not for sale yet) |
 
 - Unlocking needs the full price in the wallet; it takes the fish and owns the cat for good. With too
   few fish, nothing changes and the shop says how many are missing. A cat already owned can't be
-  bought again.
+  bought again. A cat marked not for sale (`Skin.available == false`: Cabage and Sharky for now)
+  can't be bought at any price; the CATS screen shows COMING SOON instead of the prices, and one
+  already owned stays owned.
 - Only an owned cat can be selected. The cat in use is saved; saves from before the shop (whose one
   cat was "orange") load with Fluffy owned and selected.
 - The catalog and rules are `Skin` and `SaveGame.unlock(skin:)` / `select(skin:)` in GameCore. Names
@@ -281,14 +283,15 @@ earnable for free by playing. Ordinary fish are never bought or converted, and n
 (no unlock-all, no ads, nothing that changes the game).
 
 Golden prices are set per cat in `Skin.catalog` (`goldenPrice`, so they can be tuned); they were
-first set as fish price / 20, rounded up to a multiple of 5, at least 10:
+first set as fish price / 20, rounded up to a multiple of 5, at least 10 (Sakura's were later raised by
+hand):
 
 | Id | Fish | Golden |
 | --- | --- | --- |
 | `fluffy` | 0 | — |
 | `shadow` | 150 | 10 |
 | `misty` | 200 | 10 |
-| `sakura` | 250 | 15 |
+| `sakura` | 3500 | 50 |
 | `honey` | 300 | 15 |
 | `pixie` | 400 | 20 |
 | `clover` | 500 | 25 |

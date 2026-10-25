@@ -220,6 +220,12 @@ struct CatsScreen: View {
             }
             .disabled(current.id == data.selected)
             .opacity(current.id == data.selected ? 0.7 : 1)
+        } else if !current.available {
+            // Not for sale yet: one greyed plank instead of the prices.
+            PrimaryButton(title: model.ui("coming_soon"), height: 52, fontSize: 24) {}
+                .disabled(true)
+                .saturation(0)
+                .opacity(0.7)
         } else {
             // Two ways to pay, side by side; one that cannot be afforded is greyed with what is missing.
             HStack(spacing: 10) {
@@ -287,6 +293,8 @@ struct CatsScreenModel {
         /// Golden fish it costs instead; nil for the free cat.
         let goldenPrice: Int?
         let owned: Bool
+        /// Whether it can be bought yet (GameCore's `Skin.available`).
+        let available: Bool
         /// The cut-out portrait image asset (`cat_<id>`).
         let portrait: String
         /// The hero sprite it wears (`hero_<id>`, or `hero` for Fluffy), when drawn.
@@ -437,7 +445,7 @@ extension AppModel {
     var catsScreenModel: CatsScreenModel {
         let cats = Skin.catalog.filter { Self.shownCats.contains($0.id) }.map { skin in
             CatsScreenModel.Cat(id: skin.id, name: text(skin.nameKey), description: text(skin.descriptionKey),
-                                price: skin.price, goldenPrice: skin.goldenPrice, owned: ownedSkins.contains(skin.id), portrait: "cat_\(skin.id)",
+                                price: skin.price, goldenPrice: skin.goldenPrice, owned: ownedSkins.contains(skin.id), available: skin.available, portrait: "cat_\(skin.id)",
                                 sprite: heroSprite(for: skin.id))
         }
         return CatsScreenModel(cats: cats, wallet: fishWallet, golden: goldenFish, selected: selectedSkin,

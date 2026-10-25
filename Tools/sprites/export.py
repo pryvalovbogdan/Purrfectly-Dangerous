@@ -25,6 +25,27 @@ def frame_name(sprite: str, anim: str, index: int) -> str:
     return f"{sprite}_{anim}_{index}"
 
 
+def unique_frames(frames: list[Image.Image]) -> tuple[list[Image.Image], list[int]]:
+    """The distinct frames of one animation, in order of first appearance, and for each played frame the
+    index of its stored frame. A frame identical to an earlier one (a held pose, a replayed source frame)
+    is written to the atlas once; `Sprites.json` lists the `sequence` when it is not simply 0..n-1."""
+    stored: list[Image.Image] = []
+    seen: dict[tuple, int] = {}
+    sequence = []
+    for frame in frames:
+        key = (frame.mode, frame.size, frame.tobytes())
+        if key not in seen:
+            seen[key] = len(stored)
+            stored.append(frame)
+        sequence.append(seen[key])
+    return stored, sequence
+
+
+def stored_frame_index(manifest_animation: dict, index: int) -> int:
+    """Which stored atlas frame (`<sprite>_<anim>_<i>`) played frame `index` shows."""
+    return manifest_animation.get("sequence", range(manifest_animation["frames"]))[index]
+
+
 def sheet(frames: list[Image.Image]) -> Image.Image:
     w, h = frames[0].size
     out = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
@@ -92,12 +113,15 @@ def export(sprites: list[Sprite], only: set[str] | None = None) -> dict:
             entry["scale"] = sprite.scale
         for anim_name, anim in sprite.anims.items():
             frames = frames_of(sprite, anim_name)
-            for index, frame in enumerate(frames):
+            stored, sequence = unique_frames(frames)
+            for index, frame in enumerate(stored):
                 write_atlas_image(frame, frame_name(sprite.name, anim_name, index), sprite.scale)
             write_png(sheet(frames), OUT / "sheets" / f"{sprite.name}_{anim_name}.png")
             scale = max(1, min(8, 256 // max(sprite.size)) // sprite.scale)
             write_gif(frames, anim.fps, OUT / "preview" / f"{sprite.name}_{anim_name}.gif", scale)
             entry["animations"][anim_name] = {"frames": len(frames), "fps": anim.fps, "loop": anim.loop}
+            if sequence != list(range(len(frames))):
+                entry["animations"][anim_name]["sequence"] = sequence
         manifest[sprite.name] = entry
 
     MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=1) + "\n")
@@ -394,10 +418,12 @@ def titles() -> None:
     for cut in SHEET_CUTS:
         cut_from_sheet(*cut)
     cat_portraits()
+    cut_cat_card(*SAKURA_HUD_CUT)
     # Cats that later got their own sheets: their portrait is that sheet's IDLE FRONT pose instead
     # of the selection-sheet card (Cabage became a cabbage, not the frog hood the card shows).
     for cut in SKIN_SHEET_PORTRAITS:
         cut_from_sheet(*cut)
+    complete_looks()
 
 
 HUD_SOURCE = "hud_source.png"
@@ -513,6 +539,10 @@ def cat_portraits() -> None:
             cleared = ((x1 - x0 - 36, 0, x1 - x0, 40),)
         cut_cat_card((x0, y0, x1, y1), f"cat_{name}", cleared)
 
+# Sakura's head for the HUD lives panel (Fluffy's is `hud_cat`): her card on the selection sheet,
+# down to the bell, minus the tip of her tail below the scarf.
+SAKURA_HUD_CUT = ((710, 810, 858, 915), "hud_cat_sakura", ((0, 95, 40, 105),))
+
 # Pieces cut from the user's UI sheets, which sit on a grey transparency checkerboard:
 # (source, box in the sheet, asset name[, background rule]).
 SHEET_CUTS = [
@@ -580,6 +610,250 @@ def cut_from_sheet(source: str, box: tuple, name: str, background=None, keep_min
     write_png(piece, folder / f"{name}.png")
     contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}
     (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+# Each world's own level-complete screen (`CompleteLook` in App/UI/ResultView.swift), from the user's paintings: one
+# sheet per level theme with the title, the world's boss, the score card's frame, the NEXT LEVEL / RETRY / MENU
+# buttons and loose decorations. The sheets have real transparency (the blurred backdrop under the clear pixels is
+# dropped by the alpha threshold). Painted sample text is taken out (`COMPLETE_BLANKS`): the card's stars, score,
+# level name and fish and the buttons' labels and icons, which the game draws itself from Lore.json.
+COMPLETE_SOURCES = {"frost": "frost_complete_source.png", "haunted": "haunted_complete_source.png",
+                    "citadel": "citadel_complete_source.png"}
+
+
+def _cream(p: tuple) -> bool:
+    return p[0] > 225 and p[1] > 195 and p[2] > 140 and p[0] - p[2] > 25
+
+
+def _pale(p: tuple) -> bool:
+    return min(p[:3]) > 200
+
+
+def _orange(p: tuple) -> bool:
+    return p[0] > 200 and 90 < p[1] < 215 and p[2] < 110
+
+
+# (theme, box to fill in the sheet, fill colour test). Each row of a box is refilled with the paint either side of
+# it (`blank_box`), so the parchment's and the buttons' shading carries on under where the lettering was.
+COMPLETE_BLANKS = [
+    ("frost", (128, 615, 626, 958), _cream),        # card: stars, SCORE, BEST, level name, fish
+    ("frost", (190, 955, 515, 991), _cream),        # card: NEW ABILITY (crystals reach in either side of it)
+    ("frost", (505, 1090, 950, 1168), _orange),     # NEXT LEVEL ▷
+    ("frost", (212, 1232, 448, 1305), _cream),      # RETRY ↻
+    ("frost", (638, 1232, 842, 1305), _cream),      # ⌂ MENU
+    ("haunted", (108, 558, 512, 862), _cream),
+    ("haunted", (148, 862, 456, 912), _cream),
+    ("haunted", (205, 1094, 584, 1154), _orange),
+    ("haunted", (122, 1246, 314, 1307), _cream),
+    ("haunted", (442, 1246, 626, 1307), _cream),
+    ("citadel", (130, 618, 492, 744), _cream),      # the stars, between the card's two banners
+    ("citadel", (104, 744, 512, 925), _cream),
+    ("citadel", (160, 925, 456, 972), _cream),
+    ("citadel", (240, 1105, 690, 1192), _orange),
+    ("citadel", (120, 1266, 308, 1333), _pale),     # the steam buttons' fill is nearly white
+    ("citadel", (450, 1266, 648, 1333), _pale),
+]
+
+
+def blank_box(px, box: tuple, fill) -> None:
+    """Paints over `box` (sheet pixels) with the colour either side of it: each row runs from the mean of the
+    `fill`-coloured pixels just left of the box to that of those just right of it (over the row and three either
+    side, so one row's highlight does not show as a line). A side with no such pixels (a crystal reaching in) takes
+    the other's colour; a row with none at all, the row above's."""
+    x0, y0, x1, y1 = box
+
+    def mean(xs, y):
+        near = [px[x, yy][:3] for yy in range(y - 3, y + 4) for x in xs if fill(px[x, yy])]
+        return tuple(sum(c[i] for c in near) / len(near) for i in range(3)) if near else None
+
+    rows = []
+    for y in range(y0, y1):
+        left, right = mean(range(x0 - 10, x0), y), mean(range(x1, x1 + 10), y)
+        rows.append((left or right, right or left))
+    known = [row for row in rows if row[0]]
+    last = known[0]
+    for y in range(y0, y1):
+        left, right = rows[y - y0] if rows[y - y0][0] else last
+        last = (left, right)
+        for x in range(x0, x1):
+            t = (x - x0) / max(1, x1 - x0 - 1)
+            px[x, y] = tuple(round(left[i] + (right[i] - left[i]) * t) for i in range(3)) + (255,)
+
+
+def complete_sheet(theme: str) -> Image.Image:
+    """The theme's painting with its sample text and labels painted out."""
+    sheet = Image.open(Path(__file__).parent / COMPLETE_SOURCES[theme]).convert("RGBA")
+    px = sheet.load()
+    for blank_theme, box, fill in COMPLETE_BLANKS:
+        if blank_theme == theme:
+            blank_box(px, box, fill)
+    if theme == "citadel":
+        steamless_card_foot(px)
+    return sheet
+
+
+def _puff(p: tuple) -> bool:
+    """The steam world's pink steam, lit orange by the lamps: warmer than the purple-grey iron and bluer than its
+    rust (the parchment's cream, as warm, is left out by where it is: `CARD_PARCHMENT`)."""
+    r, g, b = p[:3]
+    return r > 150 and g > 95 and b > 70 and 25 <= r - g <= 150
+
+
+# The steam card's bottom corners, which steam puffs cover (sheet pixels): the right corner, where the frame shows
+# most, the parchment inside the frame (not steam however warm), and the line the card is symmetric about
+# (x' = CARD_MIRROR - x).
+CARD_FOOT, CARD_PARCHMENT, CARD_MIRROR = (423, 880, 613, 1060), (104, 618, 534, 992), 623
+# How far left of hidden frame the frame it is rebuilt from lies: the bottom bar, with a bolt, runs on under the steam.
+CARD_BAR_REPEAT, CARD_BAR_TOP = 60, 992
+
+
+def steamless_card_foot(px) -> None:
+    """Takes the steam off the steam card's bottom corners. In the right corner, steam between two bits of frame on
+    a row of the bottom bar (from `CARD_BAR_TOP` down, with no gap between) is frame hidden behind steam, rebuilt
+    from the frame `CARD_BAR_REPEAT` pixels left of it (the bar runs along the row); the rest of the steam is
+    cleared. The left corner, more hidden, becomes the mirror image of the right one."""
+    x0, y0, x1, y1 = CARD_FOOT
+    px0, py0, px1, py1 = CARD_PARCHMENT
+    for y in range(y0, y1):
+        x = x0
+        while x < x1:
+            if px[x, y][3] < 200:
+                x += 1
+                continue
+            end = x
+            while end < x1 and px[end, y][3] >= 200:
+                end += 1
+            run = range(x, end)
+            steam = {i for i in run if _puff(px[i, y]) and not (px0 <= i < px1 and py0 <= y < py1)}
+            frame = [i for i in run if i not in steam]
+            for i in run:
+                if i in steam:
+                    hidden = y >= CARD_BAR_TOP and frame and frame[0] < i < frame[-1]
+                    px[i, y] = px[i - CARD_BAR_REPEAT, y] if hidden else (0, 0, 0, 0)
+            x = end
+        for x in range(CARD_MIRROR - x1 + 1, CARD_MIRROR - x0 + 1):
+            px[x, y] = px[CARD_MIRROR - x, y]
+
+
+def _smoke(p: tuple, q: tuple) -> bool:
+    """A pixel of a soft steam puff, reached from its neighbour `q`: not an outline (dark) and close to `q` (the
+    puffs are smooth; the art has hard edges)."""
+    return sum(p[:3]) > 300 and sum(abs(p[i] - q[i]) for i in range(3)) < 40
+
+
+def cut_painted(sheet: Image.Image, box: tuple, name: str, alpha: int = 200, haze=None, keep_min: int = 0,
+                cleared: tuple = (), mirror_from: int | None = None) -> tuple:
+    """One piece of a painting with real transparency: pixels under `alpha` cleared and the rest made opaque; with
+    `haze`, soft painted smoke reached from the clear pixels through `haze(pixel, neighbour)` cleared too, stopped by
+    the art's outlines; `cleared` rectangles (box pixels) cleared by hand. Only the largest shape is kept (the boxes
+    catch a neighbour's tips), with `keep_min` every shape of at least that size. With `mirror_from` (a sheet x), the
+    piece is made symmetric: what lies right of that line, and its mirror image on the left. Trimmed; returns the
+    trimmed box in sheet pixels (before mirroring). A regular image, outside the atlas."""
+    im = sheet.crop(box)
+    w, h = im.size
+    px = im.load()
+    for x0, y0, x1, y1 in cleared:
+        for y in range(max(0, y0), min(y1, h)):
+            for x in range(max(0, x0), min(x1, w)):
+                px[x, y] = (0, 0, 0, 0)
+    original = im.copy().load()
+    clear = bytearray(w * h)
+    todo = []
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a >= alpha:
+                px[x, y] = (r, g, b, 255)
+            else:
+                px[x, y] = (0, 0, 0, 0)
+                clear[y * w + x] = 1
+                todo.append((x, y))
+    if haze:
+        while todo:
+            x, y = todo.pop()
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= nx < w and 0 <= ny < h and not clear[ny * w + nx] and haze(original[nx, ny], original[x, y]):
+                    clear[ny * w + nx] = 1
+                    px[nx, ny] = (0, 0, 0, 0)
+                    todo.append((nx, ny))
+    seen, best, kept = bytearray(w * h), [], []
+    for sy in range(h):
+        for sx in range(w):
+            if seen[sy * w + sx] or px[sx, sy][3] == 0:
+                continue
+            shape, stack = [], [(sx, sy)]
+            seen[sy * w + sx] = 1
+            while stack:
+                x, y = stack.pop()
+                shape.append((x, y))
+                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx] and px[nx, ny][3]:
+                        seen[ny * w + nx] = 1
+                        stack.append((nx, ny))
+            best = max(best, shape, key=len)
+            if keep_min and len(shape) >= keep_min:
+                kept += shape
+    keep = set(kept or best)
+    for y in range(h):
+        for x in range(w):
+            if px[x, y][3] and (x, y) not in keep:
+                px[x, y] = (0, 0, 0, 0)
+    bbox = im.getbbox()
+    piece = im.crop(bbox)
+    if mirror_from is not None:
+        right = piece.crop((mirror_from - box[0] - bbox[0], 0, piece.width, piece.height))
+        piece = Image.new("RGBA", (right.width * 2, right.height), (0, 0, 0, 0))
+        piece.paste(ImageOps.mirror(right), (0, 0))
+        piece.paste(right, (right.width, 0))
+    _write_image(piece, name)
+    return (box[0] + bbox[0], box[1] + bbox[1], box[0] + bbox[2], box[1] + bbox[3])
+
+
+def _write_image(image: Image.Image, name: str) -> None:
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(image, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
+# (theme, box in the sheet, piece, cut options). Pieces are named `<piece>_complete_<theme>`; the Swift side
+# (`CompleteLook`) knows where each card's parchment and each button's label sit in the trimmed pieces.
+COMPLETE_CUTS = [
+    ("frost", (22, 10, 555, 465), "title", {}),
+    ("frost", (467, 20, 1013, 568), "boss", {}),
+    ("frost", (13, 454, 745, 1127), "card", {}),
+    ("frost", (385, 1046, 1014, 1222), "next", {}),
+    ("frost", (104, 1205, 526, 1347), "retry", {}),
+    ("frost", (555, 1206, 921, 1340), "menu", {}),
+    ("frost", (774, 590, 874, 702), "flake", {}),
+    ("frost", (920, 593, 971, 696), "crystal", {}),
+    ("haunted", (12, 21, 625, 426), "title", {}),
+    ("haunted", (596, 25, 1007, 619), "boss", {}),
+    ("haunted", (9, 386, 631, 1021), "card", {}),
+    ("haunted", (15, 1034, 710, 1200), "next", {}),
+    ("haunted", (24, 1216, 375, 1329), "retry", {}),
+    ("haunted", (388, 1216, 704, 1329), "menu", {}),
+    ("haunted", (885, 1050, 1009, 1180), "ghost", {}),
+    ("haunted", (843, 1207, 902, 1316), "flame", {}),
+    # The steam world's pieces are wrapped in soft steam puffs, cleared with `_smoke`.
+    ("citadel", (13, 20, 600, 470), "title", {"haze": _smoke}),
+    # The Mecha-Mouser on the top of its castle wall: the towers left of it and the steam under the wall cut away.
+    ("citadel", (520, 20, 1013, 662), "boss", {"haze": _smoke, "cleared": ((0, 380, 82, 642),)}),
+    ("citadel", (13, 470, 612, 1060), "card", {"haze": _smoke, "cleared": ((552, 0, 599, 83), (592, 83, 599, 245))}),
+    # A cheering cat (not the player's) sits on the NEXT LEVEL plank's left end: the right half is mirrored over it.
+    ("citadel", (20, 1040, 770, 1235), "next", {"haze": _smoke, "mirror_from": 440}),
+    ("citadel", (33, 1244, 381, 1365), "retry", {"haze": _smoke}),
+    ("citadel", (390, 1244, 721, 1365), "menu", {"haze": _smoke}),
+]
+
+
+def complete_looks() -> None:
+    sheets = {}
+    for theme, box, piece, options in COMPLETE_CUTS:
+        if theme not in sheets:
+            sheets[theme] = complete_sheet(theme)
+        cut_painted(sheets[theme], box, f"{piece}_complete_{theme}", **options)
 
 
 def contact_sheet(sprites: list[Sprite], path: Path, scale: int = 4) -> None:
