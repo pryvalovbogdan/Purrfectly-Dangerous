@@ -42,6 +42,7 @@ Tools/run-sim.sh 2 12 41             # bot plays level 2; screenshots at 12 s an
 Tools/run-sim.sh endless 60          # bot plays an endless run; screenshot at 60 s
 ORIENT=portrait Tools/run-sim.sh 1 39   # same, upright (default is landscape)
 Tools/release-check.sh               # gate before any TestFlight/App Store upload
+Tools/release.sh                     # archive + upload to TestFlight (CI does this on merge to main; docs/release.md)
 ```
 
 Debug without sound: watch the game with bot runs (`Tools/run-sim.sh <level> …`), which are always
@@ -49,7 +50,7 @@ silent. Never launch a level with sound on while debugging.
 After debugging in the simulator, always stop it: `xcrun simctl shutdown all`.
 
 First-time setup: `brew install xcodegen` and
-`python3 -m venv Tools/.venv && Tools/.venv/bin/pip install pillow pytest`.
+`python3 -m venv Tools/.venv && Tools/.venv/bin/pip install -r Tools/requirements.txt`.
 
 ## Where things are
 

@@ -1,0 +1,4 @@
+# The art pipeline and its tests. Pinned: a different Pillow can encode PNGs differently, which fails
+# the "sprites are up to date" test. Install with: Tools/.venv/bin/pip install -r Tools/requirements.txt
+pillow==13.0.0
+pytest==9.1.1

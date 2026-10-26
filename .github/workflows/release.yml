@@ -1,0 +1,64 @@
+# Every merge to main: run all checks, raise the build number, archive, upload to App Store Connect
+# (TestFlight), and commit the new build number back to main. Submitting for App Store review stays a
+# manual step in App Store Connect. Runs on the self-hosted Mac runner; setup in docs/release.md.
+name: Release to TestFlight
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One release at a time, in merge order: two runs at once would take the same build number.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 60
+    env:
+      DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python for the art pipeline
+        run: |
+          python3 -m venv Tools/.venv
+          Tools/.venv/bin/pip install -q -r Tools/requirements.txt
+
+      - name: Checks (rules, levels, art, simulator build)
+        run: Tools/check.sh
+
+      - name: Raise the build number
+        id: build
+        run: echo "number=$(Tools/bump-build.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Archive and upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          trap 'rm -f "$ASC_KEY_PATH"' EXIT
+          printf '%s\n' "$ASC_KEY_P8" > "$ASC_KEY_PATH"
+          Tools/release.sh
+
+      # Only after a successful upload, so a failed run does not use up a number. "[skip ci]" keeps
+      # this commit from starting another release.
+      - name: Commit the build number
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add project.yml
+          git commit -m "Build ${{ steps.build.outputs.number }} [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Stop the simulator
+        if: always()
+        run: xcrun simctl shutdown all || true
