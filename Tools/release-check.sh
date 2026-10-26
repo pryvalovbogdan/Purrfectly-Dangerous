@@ -7,7 +7,7 @@ FAILED=0
 fail() { echo "✘ $1"; FAILED=1; }
 pass() { echo "✔ $1"; }
 
-xcodegen generate >/dev/null
+Tools/xcodegen.sh >/dev/null
 xcodebuild -project PurrfectlyDangerous.xcodeproj -scheme PurrfectlyDangerous -configuration Release \
   -destination "generic/platform=iOS Simulator" -derivedDataPath .build/xcode-release build >/dev/null 2>&1
 APP=.build/xcode-release/Build/Products/Release-iphonesimulator/PurrfectlyDangerous.app

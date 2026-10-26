@@ -57,6 +57,11 @@ final class AppModel {
     /// Debug builds only: `-uitest-jump` plays a flat, empty copy of level 1 with real touches and no
     /// bot, for the jump-height UI test (UITests/JumpHoldUITests.swift). Never set in Release.
     private(set) var jumpTest = false
+    /// Debug builds only: `-storeShots` hides the debug jump readout, for App Store screenshots.
+    private(set) var storeShots = false
+    /// Debug builds only: `-cats <id>` opens the CATS screen on that cat, for screenshots
+    /// (`CATS=<id> Tools/run-sim.sh`).
+    private(set) var debugCats: String?
     private let music = MusicPlayer()
     /// False while the app is in the background or behind the app switcher; the music never plays then.
     private var isActive = true
@@ -82,6 +87,10 @@ final class AppModel {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         silent = arguments.contains("-silent")
+        storeShots = arguments.contains("-storeShots")
+        if let flag = arguments.firstIndex(of: "-cats"), arguments.indices.contains(flag + 1) {
+            debugCats = arguments[flag + 1]
+        }
         if arguments.contains("-uitest-jump") {
             jumpTest = true
             silent = true

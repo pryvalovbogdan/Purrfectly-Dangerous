@@ -124,6 +124,8 @@ struct PaintedBossHealth: View {
         var plateScale: CGFloat
         var plateHeight: CGFloat
         var lines: [LogoTitle.Line]
+        /// The lettering's size in sub-pixels (`LogoTitle.metrics(lines)`, kept so it is measured once).
+        var metrics: LogoTitle.Metrics
         var sub: Int
         var barScale: CGFloat
         var barWidth: CGFloat
@@ -157,8 +159,8 @@ struct PaintedBossHealth: View {
     /// The largest lettering that fits the plate's field, one line before two at the same size. For each
     /// size the plate takes the largest scale that leaves the line room (the middle stretching to make up
     /// the width), up to its natural shape and the height cap.
-    static func plan(style: Style, width: CGFloat, name: String, displayScale: CGFloat, maxPlateHeight: CGFloat?,
-                     crest: String?) -> Plan {
+    @MainActor static func plan(style: Style, width: CGFloat, name: String, displayScale: CGFloat,
+                                maxPlateHeight: CGFloat?, crest: String?) -> Plan {
         let scale = max(displayScale, 1)
         let widthPixels = width * scale
         var cap = widthPixels / style.plateSize.width
@@ -166,19 +168,20 @@ struct PaintedBossHealth: View {
         let around = style.plateSize.width - style.plateText.width
         let oneLine = LogoTitle.lines(name, splitFrom: .max, tint: nil)
         let twoLines = LogoTitle.lines(name, splitFrom: 2, tint: nil)
-        var choice: (lines: [LogoTitle.Line], sub: Int, plateScale: CGFloat)?
+        let candidates = (twoLines.count > 1 ? [oneLine, twoLines] : [oneLine])
+            .map { (lines: $0, metrics: LogoTitle.metrics($0, fish: nil, arch: false)) }
+        var choice: (lines: [LogoTitle.Line], metrics: LogoTitle.Metrics, sub: Int, plateScale: CGFloat)?
         search: for sub in (1...3).reversed() {
-            for lines in twoLines.count > 1 ? [oneLine, twoLines] : [oneLine] {
-                let metrics = LogoTitle.metrics(lines, fish: nil, arch: false)
+            for (lines, metrics) in candidates {
                 let s = min(cap, (widthPixels - CGFloat(metrics.width * sub)) / around)
                 if s > 0, style.plateText.height * s >= CGFloat(metrics.height * sub) {
-                    choice = (lines, sub, s)
+                    choice = (lines, metrics, sub, s)
                     break search
                 }
             }
         }
         // Nothing fits (a very long name on a very small screen): the smallest two lines on the largest plate.
-        let picked = choice ?? (twoLines, 1, cap)
+        let picked = choice ?? (candidates.last!.lines, candidates.last!.metrics, 1, cap)
         let plateScale = picked.plateScale / scale
         let plateHeight = (style.plateSize.height * plateScale).rounded()
         let barScale = plateScale * style.frameScale
@@ -191,15 +194,36 @@ struct PaintedBossHealth: View {
         let rise = max(0, crestHeight - (style.crestBase * plateScale).rounded())
         let barTop = (plateHeight * style.barTop).rounded()
         return Plan(style: style, width: width, plateScale: plateScale, plateHeight: plateHeight,
-                    lines: picked.lines, sub: picked.sub, barScale: barScale, barWidth: barWidth,
-                    barHeight: barHeight, barTop: barTop, rise: rise, crestHeight: crestHeight,
+                    lines: picked.lines, metrics: picked.metrics, sub: picked.sub, barScale: barScale,
+                    barWidth: barWidth, barHeight: barHeight, barTop: barTop, rise: rise, crestHeight: crestHeight,
                     height: rise + max(barTop + barHeight, plateHeight))
     }
 
-    private func plan(width: CGFloat) -> Plan {
+    /// Plans already worked out. Laying out the lettering is slow, and SwiftUI asks for the plan
+    /// several times on every HUD update of a fight (each hit, each change of a button), which stalled
+    /// whole frames; the inputs only change on rotation or with the boss.
+    private struct PlanKey: Hashable {
+        var plate: String
+        var width: CGFloat
+        var name: String
+        var displayScale: CGFloat
+        var maxPlateHeight: CGFloat?
+        var crest: String?
+    }
+
+    @MainActor private static var plans: [PlanKey: Plan] = [:]
+
+    @MainActor private func plan(width: CGFloat) -> Plan {
         let cap = verticalSizeClass == .compact ? style.maxPlateHeight : nil
-        return Self.plan(style: style, width: width, name: name, displayScale: displayScale, maxPlateHeight: cap,
-                         crest: crest)
+        let key = PlanKey(plate: style.plate, width: width, name: name, displayScale: displayScale,
+                          maxPlateHeight: cap, crest: crest)
+        if let plan = Self.plans[key] { return plan }
+        let plan = Self.plan(style: style, width: width, name: name, displayScale: displayScale, maxPlateHeight: cap,
+                             crest: crest)
+        // A handful of widths per fight (orientations); start over rather than grow without end.
+        if Self.plans.count > 32 { Self.plans.removeAll() }
+        Self.plans[key] = plan
+        return plan
     }
 
     var body: some View {
@@ -255,7 +279,7 @@ struct PaintedBossHealth: View {
         let frameCaps = EdgeInsets(top: 0, leading: style.frameCaps * plan.barScale, bottom: 0,
                                    trailing: style.frameCaps * plan.barScale)
         let unit = CGFloat(plan.sub) / max(displayScale, 1)
-        let metrics = LogoTitle.metrics(plan.lines, fish: nil, arch: false)
+        let metrics = plan.metrics
         let textBox = plan.textBox
         let track = plan.track
         let barLeft = ((plan.width - plan.barWidth) / 2).rounded()
@@ -271,7 +295,7 @@ struct PaintedBossHealth: View {
                         y: plan.rise + (textBox.midY - CGFloat(metrics.height) * unit / 2).rounded())
             if let crest {
                 // Centred on the plate's top rim.
-                Image(crest).resizable().interpolation(.high).scaledToFit()
+                Self.picture(crest).resizable().interpolation(.high).scaledToFit()
                     .frame(width: plan.width, height: plan.crestHeight)
                     .offset(y: plan.rise + (style.crestBase * plan.plateScale).rounded() - plan.crestHeight)
             }
@@ -306,10 +330,10 @@ struct PaintedBossHealth: View {
         let squeeze = min(1, length / (natural.left + natural.right))
         let ends = (left: natural.left * squeeze, right: natural.right * squeeze)
         return HStack(spacing: 0) {
-            Image(style.fill.left).resizable().interpolation(.high).frame(width: ends.left, height: height)
-            Image(style.fill.mid).resizable().interpolation(.high)
+            Self.picture(style.fill.left).resizable().interpolation(.high).frame(width: ends.left, height: height)
+            Self.picture(style.fill.mid).resizable().interpolation(.high)
                 .frame(width: max(0, length - ends.left - ends.right), height: height)
-            Image(style.fill.right).resizable().interpolation(.high).frame(width: ends.right, height: height)
+            Self.picture(style.fill.right).resizable().interpolation(.high).frame(width: ends.right, height: height)
         }
         .brightness(flash * 0.35 + (pulse ? 0.14 : 0))
         .opacity(length > 0.5 ? 1 : 0)
@@ -317,8 +341,34 @@ struct PaintedBossHealth: View {
 
     /// An image asset drawn at `pointsPerPixel` points per pixel of the painting.
     private static func painting(_ name: String, pointsPerPixel: CGFloat) -> Image {
-        guard let image = UIImage(named: name)?.cgImage, pointsPerPixel > 0 else { return Image(name) }
+        guard let image = decoded(name), pointsPerPixel > 0 else { return Image(name) }
         return Image(decorative: image, scale: 1 / pointsPerPixel)
+    }
+
+    /// An image asset at one point per pixel (for pieces that are resized anyway).
+    fileprivate static func picture(_ name: String) -> Image {
+        decoded(name).map { Image(decorative: $0, scale: 1) } ?? Image(name)
+    }
+
+    /// The bar's paintings, decoded once and kept: drawn from memory rather than decoded again when
+    /// the plate first shows or is first hit (`prepare(_:name:crest:)` does it before the fight).
+    @MainActor private static var decodedImages: [String: CGImage] = [:]
+
+    @MainActor private static func decoded(_ name: String) -> CGImage? {
+        if let image = decodedImages[name] { return image }
+        guard let image = UIImage(named: name) else { return nil }
+        let decoded = (image.preparingForDisplay() ?? image).cgImage
+        decodedImages[name] = decoded
+        return decoded
+    }
+
+    /// Decodes a style's pieces (and a crest) ahead of the fight, and lays out the boss's name.
+    @MainActor static func prepare(_ style: Style, name: String, crest: String?) {
+        for name in style.assets + [crest].compactMap({ $0 }) { _ = decoded(name) }
+        // Lay out the name's lettering (one line and two) ahead too; `plan` picks from these.
+        for split in [Int.max, 2] {
+            _ = LogoTitle.metrics(LogoTitle.lines(name, splitFrom: split, tint: nil), fish: nil, arch: false)
+        }
     }
 
     private func clamped(_ value: Double) -> Double { min(max(value, 0), 1) }
@@ -432,7 +482,7 @@ private struct PetalBurstView: View {
             case .pieces(let names):
                 guard !names.isEmpty else { break }
                 // Each painted piece at its own shape, its longer side about two thirds of the track.
-                let image = piece.resolve(Image(names[i % names.count]))
+                let image = piece.resolve(PaintedBossHealth.picture(names[i % names.count]))
                 let side = size * (0.6 + 0.3 * scatter(i, 4))
                 let k = side / max(image.size.width, image.size.height, 1)
                 let drawn = CGSize(width: image.size.width * k, height: image.size.height * k)

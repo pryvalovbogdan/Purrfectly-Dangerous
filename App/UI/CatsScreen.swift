@@ -60,7 +60,7 @@ struct CatsScreen: View {
             showGoldenShop = false
             banner = delivery
         }
-        .onAppear { if highlighted == nil { highlighted = data.selected } }
+        .onAppear { if highlighted == nil { highlighted = model.debugCats ?? data.selected } }
     }
 
     /// Share of an upright screen below the ground line: the card, grid and button sit on the earth.

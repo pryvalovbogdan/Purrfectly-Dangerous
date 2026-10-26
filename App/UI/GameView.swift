@@ -7,6 +7,11 @@ struct GameView: View {
     let levelIndex: Int
     @State private var hud = GameHUD()
     @State private var scene: GameScene?
+    @State private var viewSize = CGSize.zero
+    /// Where the loading bar's fill is heading, and how long it takes to get there.
+    @State private var loadProgress = (to: 0.0, seconds: 0.0)
+    /// The loading screen stays up at least this long, so a quick load does not just flash it.
+    private static let shortestLoad = Duration.milliseconds(900)
 
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
@@ -22,8 +27,11 @@ struct GameView: View {
                         SpriteView(scene: scene, preferredFramesPerSecond: 60)
                     }
                 }
-                .onAppear { if scene == nil { scene = makeScene(viewSize: proxy.size) } }
-                .onChange(of: proxy.size) { _, newSize in scene?.layout(viewSize: newSize) }
+                .onAppear { viewSize = proxy.size }
+                .onChange(of: proxy.size) { _, newSize in
+                    viewSize = newSize
+                    scene?.layout(viewSize: newSize)
+                }
             }
             .ignoresSafeArea()
             HUDView(hud: hud,
@@ -31,7 +39,13 @@ struct GameView: View {
                     fire: { scene?.setFire(held: $0) },
                     paw: { scene?.setPaw(held: $0) },
                     quit: { model.quit() })
+            if hud.isLoading {
+                LoadingScreen(title: model.text(model.levels[levelIndex].nameKey), progress: loadProgress.to,
+                              seconds: loadProgress.seconds)
+                    .transition(.opacity)
+            }
         }
+        .task { await load() }
         // The buttons sit near the screen's edges: iOS must not hold their touches back (or take
         // them) for its own edge swipes, nor show the home indicator over them, during play.
         .defersSystemGestures(on: .all)
@@ -46,6 +60,32 @@ struct GameView: View {
             // A bot run opens its level at launch, before the app is active, and must not wait on a tap.
             if scenePhase != .active, !model.autoplay, !model.jumpTest { hud.isPaused = true }
         }
+    }
+
+    /// Puts the loading screen up, builds the scene behind it (SpriteKit builds the level and decodes its
+    /// textures as the scene is first shown), and takes the screen down once that is done and the bar is full.
+    /// The jump UI test plays at once.
+    private func load() async {
+        guard scene == nil else { return }
+        let start = ContinuousClock.now
+        loadProgress = (0.85, 1.5)
+        // A moment for the loading screen to show, and a rotation under way to finish, before the scene's
+        // build holds the main thread.
+        try? await Task.sleep(for: .milliseconds(300))
+        if Task.isCancelled { return }
+        scene = makeScene(viewSize: viewSize)
+        guard !model.jumpTest else {
+            hud.isLoading = false
+            return
+        }
+        while !hud.isLoaded {
+            try? await Task.sleep(for: .milliseconds(30))
+            if Task.isCancelled { return }
+        }
+        try? await Task.sleep(until: start + Self.shortestLoad)
+        loadProgress = (1, 0.2)
+        try? await Task.sleep(for: .milliseconds(350))
+        withAnimation(.easeOut(duration: 0.25)) { hud.isLoading = false }
     }
 
     private func makeScene(viewSize: CGSize) -> GameScene {
@@ -185,20 +225,23 @@ private struct HUDView: View {
                     .allowsHitTesting(false)
             }
             // Always on in debug builds, so a hold can be checked on a real device: the last jump's
-            // apex (world units above where it left) and how long the button was held.
-            Text(hud.debugJumpCount == 0 ? "jump – · held –"
-                 : String(format: "jump %.0f · held %.2fs", hud.debugJumpApex, hud.debugJumpHeld))
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(.black.opacity(0.45), in: Capsule())
-                // Bottom centre: between the corner buttons in both orientations, clear of every
-                // control and of the boss banner at the top.
-                .padding(.bottom, 4)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+            // apex (world units above where it left) and how long the button was held. Hidden for
+            // store screenshots (`-storeShots`).
+            if !model.storeShots {
+                Text(hud.debugJumpCount == 0 ? "jump – · held –"
+                     : String(format: "jump %.0f · held %.2fs", hud.debugJumpApex, hud.debugJumpHeld))
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.black.opacity(0.45), in: Capsule())
+                    // Bottom centre: between the corner buttons in both orientations, clear of every
+                    // control and of the boss banner at the top.
+                    .padding(.bottom, 4)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
             #endif
             VStack(spacing: 6) {
                 HStack(alignment: .bottom, spacing: 12) {

@@ -44,6 +44,11 @@ final class GameHUD {
     /// An ability just won, shown as an award card for a moment.
     var award: Ability?
     var isPaused = false
+    /// The loading screen is up: the world waits, as when paused, but with no pause panel. A level opens
+    /// behind it.
+    var isLoading = true
+    /// The scene is built and the textures it preloads are decoded; the loading screen can go.
+    var isLoaded = false
     /// Debug builds only (the jump trace): how many jumps have landed, and the last one's apex above
     /// where it started, in world units. Read by the jump-height UI test.
     var debugJumpCount = 0

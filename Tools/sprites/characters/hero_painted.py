@@ -199,6 +199,107 @@ def fluffy() -> Sprite:
     })
 
 
+# Sharky: `docs/concept/Sharky Cat Pixel Sprite Sheet v2.png`, copied to `hero_sharky_source.png`. A calico kitten in
+# a whole shark onesie, painted on real transparency: a blue haze behind the rows (alpha under 200), the cats and their
+# dark outline opaque, no ground shadows. The rows sit two or three to a line, the cats well apart; hearts, stars and
+# the throw's water flicks are loose specks too small to count. No STOP, POUNCE, MENU or PEEK row is painted, and the
+# EFFECTS row (waves, splashes, bubbles) is not cut: `skin_abilities.py` draws Sharky's water. The pills of the jump,
+# fall, sit and cheer rows reach down into their boxes and are cleared.
+SHARKY = HeroSheet(
+    source="hero_sharky_source.png",
+    rows={
+        "idle": Row((8, 42, 622, 162), 6, align="body"),
+        "run": Row((632, 42, 1535, 162), 8),
+        # Crouched take-off (0), then three rising leaps.
+        "jump": Row((8, 196, 456, 345), 4, airborne=True, cleared=((10, 175, 128, 208),)),
+        "fall": Row((466, 200, 922, 356), 4, airborne=True, cleared=((448, 175, 558, 208),)),
+        # The forward roll; the blue swirl arcs round it are thin specks left behind.
+        "double": Row((930, 212, 1530, 354), 6, airborne=True),
+        # Belly down on a surf of spray. The spray behind the tail is trimmed (the game draws its own water slide
+        # under the dash, `skin_abilities.py`), what is left is still wide, so the row is scaled on its own.
+        "dash": Row((20, 403, 1410, 502), 6,
+                    trim_left={0: 52, 1: 270, 2: 490, 3: 726, 4: 983, 5: 1240}),
+        "throw": Row((10, 550, 530, 676), 4),
+        "hurt": Row((575, 555, 965, 680), 3),
+        "death": Row((995, 570, 1532, 672), 4, align=False),
+        "sit": Row((8, 708, 475, 853), 4, align="body", cleared=((8, 686, 182, 720),)),
+        "cheer": Row((495, 706, 958, 853), 4, align="body", cleared=((490, 686, 620, 720),)),
+        "ko": Row((975, 740, 1532, 853), 4),
+        # No dark outline: a pale blue spirit glowing at its rim; see-through in `painted`.
+        "ghost": Row((12, 902, 692, 1006), 6, align="body", airborne=True),
+    },
+    frame=SIZE, cx=CX, alpha=200, min_area=1500,
+    max_scale=1.36, own_scale=("dash",),
+    size_to="idle", size_skip=("death", "ko"),
+    max_lift=3,
+)
+
+
+# The plan of the costume sheets (Sharky, Cabbage), painted to the same rows and counts. As Fluffy's: the fps keep each
+# animation's length near the code-drawn hero's. STOP and MENU borrow IDLE's frames, POUNCE the leap of JUMP, and PEEK
+# (no box painted) the standing IDLE.
+COSTUME_PLAN = {
+    "run": ("run", 14, True),                       # 8, 0.57 s per cycle
+    "stop": ("idle", 10, False, (0, 1, 2, 3)),      # 4, 0.4 s: no skid painted, so it settles into idle
+    "idle": ("idle", 6, True),                      # 6, 1 s
+    "jump": ("jump", 12, True, (1, 2, 3)),          # 3, 0.25 s: rising (the crouched take-off left out)
+    "fall": ("fall", 16, True),                     # 4, 0.25 s
+    "double": ("double", 24, True),                 # 6, 0.25 s: the forward roll
+    "throw": ("throw", 16, False),                  # 4, 0.25 s
+    "dash": ("dash", 24, True),                     # 6, 0.25 s
+    "pounce": ("jump", 12, True),                   # 4, 0.33 s: the whole leap, take-off included
+    "hurt": ("hurt", 10, True),                     # 3, 0.3 s
+    "death": ("death", 5, False),                   # 4, 0.8 s
+    "peek": ("idle", 6, True),                      # 6, 1 s
+    "cheer": ("cheer", 8, True),                    # 4, 0.5 s
+    "sit_happy": ("sit", 6, True),                  # 4, 0.67 s
+    "menu": ("idle", 6, True),                      # 6, 1 s
+    "ko": ("ko", 6, True),                          # 4, 0.67 s
+    "ghost": ("ghost", 7, True),                    # 6, 0.86 s
+}
+
+
+def sharky() -> Sprite:
+    return painted("hero_sharky", SHARKY, COSTUME_PLAN)
+
+
+# Cabbage: `docs/concept/Cabbage Cat Pixel Sprite Sheet v2.png`, copied to `hero_cabage_source.png`. A calico kitten in
+# a leafy cabbage onesie, painted to the same plan as Sharky's sheet: a green haze behind the rows and soft ground
+# shadows (alpha under 200), the cats opaque and well apart; the stars, swirls and loose leaves are specks too small to
+# count. No STOP, POUNCE, MENU or PEEK row, and the EFFECTS row is not cut. The pills of the jump and cheer rows reach
+# down into their boxes and are cleared.
+CABAGE = HeroSheet(
+    source="hero_cabage_source.png",
+    rows={
+        "idle": Row((10, 42, 650, 163), 6, align="body"),
+        "run": Row((662, 42, 1530, 163), 8),
+        # Crouched take-off (0), then three rising leaps.
+        "jump": Row((10, 198, 450, 340), 4, airborne=True, cleared=((10, 175, 136, 212),)),
+        "fall": Row((460, 212, 915, 350), 4, airborne=True),
+        "double": Row((918, 212, 1525, 350), 6, airborne=True),
+        # Belly down with a green streak behind: the row is scaled on its own.
+        "dash": Row((40, 405, 1405, 502), 6),
+        "throw": Row((10, 548, 520, 672), 4),
+        "hurt": Row((552, 552, 965, 672), 3),
+        "death": Row((992, 560, 1525, 672), 4, align=False),
+        "sit": Row((10, 724, 470, 853), 4, align="body"),
+        "cheer": Row((498, 716, 960, 853), 4, align="body", cleared=((494, 686, 622, 721),)),
+        "ko": Row((975, 755, 1525, 856), 4),
+        # No dark outline: a pale green spirit glowing at its rim; see-through in `painted`.
+        "ghost": Row((12, 903, 692, 1008), 6, align="body", airborne=True),
+    },
+    frame=SIZE, cx=CX, alpha=200, min_area=1500,
+    max_scale=1.36, own_scale=("dash",),
+    size_to="idle", size_skip=("death", "ko"),
+    max_lift=3,
+)
+
+
+def cabage() -> Sprite:
+    # Sharky's plan: both sheets are painted to the same rows and counts.
+    return painted("hero_cabage", CABAGE, COSTUME_PLAN)
+
+
 def painted(name: str, sheet: HeroSheet, plan: dict) -> Sprite:
     """The sprite `name` from `sheet`: per animation (row, fps, loop[, picks]), the painted cats of the row in
     order: every one, or only those whose indices are in `picks`."""
@@ -215,7 +316,7 @@ def painted(name: str, sheet: HeroSheet, plan: dict) -> Sprite:
     return hero
 
 
-PAINTED = {"fluffy": fluffy, "sakura": sakura}
+PAINTED = {"fluffy": fluffy, "sakura": sakura, "sharky": sharky, "cabage": cabage}
 
 
 def sprite_name(cat: str) -> str:

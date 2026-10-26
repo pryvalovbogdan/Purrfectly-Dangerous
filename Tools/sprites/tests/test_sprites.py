@@ -13,6 +13,10 @@ sys.path.insert(0, str(TOOL))
 import build  # noqa: E402
 import export  # noqa: E402
 
+COSTUME_COUNTS = {"run": 8, "stop": 4, "idle": 6, "jump": 3, "fall": 4, "double": 6, "throw": 4, "dash": 6,
+                  "pounce": 4, "hurt": 3, "death": 4, "peek": 6, "cheer": 4, "sit_happy": 4, "ko": 4, "ghost": 6,
+                  "menu": 6}
+
 # sprite -> (size, {animation: frames}). Mirrors docs/sprite-spec.md; change both together.
 SPEC = {
     # Fluffy, cut from the user's painting (characters/hero_painted.py), 3x PNGs; stop, not painted, borrows idle's
@@ -26,7 +30,14 @@ SPEC = {
     "hero_sakura": ((44, 36), {"run": 9, "stop": 8, "idle": 6, "jump": 5, "fall": 6, "double": 8, "throw": 9,
                                "dash": 7, "pounce": 8, "hurt": 4, "death": 9, "peek": 7, "cheer": 7, "sit_happy": 8,
                                "ko": 4, "ghost": 8, "menu": 6}),
+    # Sharky and Cabbage, cut from their costume sheets (characters/hero_painted.py, `COSTUME_PLAN`): stop, menu, pounce
+    # and peek, not painted, borrow idle's and jump's frames.
+    "hero_sharky": ((44, 36), COSTUME_COUNTS),
+    "hero_cabage": ((44, 36), COSTUME_COUNTS),
     "yarn": ((12, 12), {"fly": 4, "impact": 5}),
+    # Sharky's looks for Yarn Shot and Ghost Dash (characters/sharky_water.py).
+    "shot_wave": ((16, 12), {"fly": 4, "impact": 5}),
+    "water_slide": ((60, 14), {"slide": 4, "splash": 5}),
     # World 1, forest
     # Cut from the user's painting (characters/squirrel_painted.py), 3x PNGs; every painted frame of WALK and DEATH
     # (the spear lying past the frame in DEATH 1-3 cut off in front of the face).
@@ -753,6 +764,26 @@ def test_floral_boss_bar_matches_the_hud():
         assert im.getpixel((im.width // 2, 24))[0] > 200          # bright orange in the middle
     assert left.getpixel((0, 0))[3] == 0 and left.getpixel((0, 47))[3] == 0     # rounded: corners clear
     assert right.getpixel((63, 0))[3] == 0 and right.getpixel((63, 47))[3] == 0
+
+
+def test_loading_bar_matches_the_screen():
+    """The loading bar's pieces (`LOADING_CUTS`, built by `titles()`) have the sizes and track that `LoadingScreen`
+    (App/UI/LoadingScreen.swift) slides the fill along: the track sits inside the bar's dark field, and the fill is
+    solid orange stripes."""
+    folder = export.ATLAS.parent
+
+    def piece(name):
+        return Image.open(folder / f"{name}.imageset" / f"{name}.png").convert("RGBA")
+
+    bar, track, fill = piece("loading_bar"), piece("loading_bar_track"), piece("loading_bar_fill")
+    assert bar.size == track.size == (361, 125)
+    assert fill.size == (257, 31)
+    assert track.getbbox() == (92, 47, 311, 81)
+    for im in (bar, track, fill):
+        assert sum(im.getchannel("A").histogram()[1:255]) == 0
+    assert all(fill.getpixel((x, 15))[0] > 200 for x in range(20, 237, 5))
+    assert fill.getpixel((256, 0))[3] == 0 and fill.getpixel((256, 30))[3] == 0     # rounded tip
+    assert all(bar.getpixel((x, 64))[3] == 255 and max(bar.getpixel((x, 64))[:3]) < 80 for x in range(130, 300, 7))
 
 
 def test_complete_looks_match_the_screen():

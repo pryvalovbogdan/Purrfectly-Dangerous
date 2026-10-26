@@ -72,3 +72,9 @@ __pycache__/
 .idea/
 .DS_Store
 img
+
+# Private settings (signing team); see .env.example
+.env
+
+# App Store Connect API keys never belong in the repo (see docs/release.md)
+*.p8

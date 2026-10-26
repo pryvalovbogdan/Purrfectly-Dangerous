@@ -59,6 +59,35 @@ means:
   never touching the cat. Small loose specks near the cat are dropped by the cutter.
 - **Don't paint the yarn ball**: the game draws the shot itself.
 
+### Sharky's water
+
+Sharky's abilities look different from the other cats' (the rules are the same):
+
+- **Yarn Shot is a water wave.** In THROW, Sharky flings a wave instead of tossing yarn: one paw sweeps
+  forward and the onesie's fin swings with it. Leave the paw empty, because the game draws the flying
+  wave. If you paint the wave, put it in the effects row: 4 frames of a small curling blue wave with
+  foam, flying right, about 24×16 px, plus 3 frames of its splash when it hits.
+- **Ghost Dash is a surf.** In DASH, Sharky crouches low as if riding a board, leaning forward, with
+  all four paws together on one line, not running. Paint no water under the cat. If you paint the
+  water, put it in the effects row: 4 frames of a strip of water about 1.5× the cat's length and a
+  quarter of its height, with foam and spray at the front, plus 2 frames of a starting splash. The
+  game draws it under Sharky's feet while the dash lasts.
+
+### Cabage's cabbages
+
+Cabage's abilities look different from the other cats' (the rules are the same):
+
+- **Yarn Shot is a thrown cabbage.** In THROW, Cabage lobs a cabbage overhand: the paw goes back
+  behind the leafy hood, then forward. Leave the paw empty, because the game draws the flying cabbage.
+  If you paint the cabbage, put it in the effects row: 4 frames of a small round green cabbage
+  spinning, about 14×14 px, plus 3 frames of it bursting into leaves when it hits.
+- **Ghost Dash is a leaf ride.** In DASH, Cabage crouches low on one big cabbage leaf, leaning
+  forward with all four paws together on one line, as if sledging. Don't paint the leaf on the cat
+  rows. If you paint the leaf, put it in the effects row: 4 frames of a wide curled cabbage leaf about
+  1.3× the cat's length, its front tip curled up, with a few loose leaf bits flying off behind, plus
+  2 frames of leaves scattering when the ride starts. The game draws it under Cabage's feet while the
+  dash lasts.
+
 ## The cat
 
 Every cat is a small chibi kitten hero: a big head, a short body, a tail, and a scarf or short cape
@@ -78,8 +107,8 @@ every cat, so the whole cast reads as one family. Use the cat's portrait on the 
 | Snowball (`snowball`) | Pure white fluff that never minds the cold. | White fur, blue scarf, blue eyes |
 | Napster (`napster`) | Mostly asleep, but terrifying when awake. | Warm grey fur, brown scarf |
 | Toffee (`toffee`) | A caramel cat with a sticky habit of winning. | Calico with a dark patch over one ear, brown scarf |
-| Cabage (`cabage`) | Leafy hood, green thumbs and a crunchy attitude. | Calico kitten in a whole cabbage onesie with a leafy hood |
-| Sharky (`sharky`) | Wears a shark suit. Nobody has asked why. | Calico kitten in a whole shark onesie, face in the shark's mouth |
+| Cabage (`cabage`) | Leafy hood on: lobs cabbages and rides a leaf every dash. | Calico kitten in a whole cabbage onesie with a leafy hood; see "Cabage's cabbages" below |
+| Sharky (`sharky`) | Shark suit on: throws waves and surfs every dash. | Calico kitten in a whole shark onesie, face in the shark's mouth; see "Sharky's water" below |
 
 ## Animations
 

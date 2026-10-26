@@ -10,7 +10,7 @@ run "game rules + every level beatable without a hit (swift test)" \
 run "sprites match spec, are deterministic and up to date (pytest)" \
   Tools/.venv/bin/python -m pytest -q Tools/sprites/tests
 run "app builds for the simulator" \
-  bash -c 'xcodegen generate >/dev/null && xcodebuild -project PurrfectlyDangerous.xcodeproj -scheme PurrfectlyDangerous -configuration Debug \
+  bash -c 'Tools/xcodegen.sh >/dev/null && xcodebuild -project PurrfectlyDangerous.xcodeproj -scheme PurrfectlyDangerous -configuration Debug \
     -destination "generic/platform=iOS Simulator" -derivedDataPath .build/xcode build 2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)"; \
     [ "${PIPESTATUS[0]}" = 0 ]'
 # Touch-level regression tests (UITests/) in a simulator; slow (a few minutes), so opt-in:

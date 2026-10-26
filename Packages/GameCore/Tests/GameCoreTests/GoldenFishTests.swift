@@ -213,7 +213,31 @@ import Testing
         #expect(game.ownedSkins == ["fluffy", "honey"])
         #expect(game.selectedSkin == "honey")
         #expect(game.xp == 900 && game.unlockedLevels == 3 && !game.soundOn && game.bestEndlessScore == 1200)
-        #expect(try JSONDecoder().decode(CloudBackup.self, from: Data("{}".utf8)) == CloudBackup())
+        #expect(try JSONDecoder().decode(CloudBackup.self, from: Data("{}".utf8)) == CloudBackup(giftsTakenBack: false))
+    }
+
+    @Test func theFreeSakuraFromTestFlightIsTakenBackOnce() throws {
+        // A save from a build that gave Sakura away: she is taken back, and the cat in use falls back.
+        let gifted = #"{"fishWallet":40,"ownedSkins":["fluffy","sakura","honey"],"selectedSkin":"sakura"}"#
+        var game = try JSONDecoder().decode(SaveGame.self, from: Data(gifted.utf8))
+        #expect(game.ownedSkins == ["fluffy", "honey"])
+        #expect(game.selectedSkin == "fluffy")
+        #expect(game.fishWallet == 40)
+        // Paid for in golden fish: kept.
+        let paid = #"{"goldenPurchases":{"a":50},"goldenSkins":{"sakura":15},"ownedSkins":["fluffy","sakura"],"selectedSkin":"sakura"}"#
+        let payer = try JSONDecoder().decode(SaveGame.self, from: Data(paid.utf8))
+        #expect(payer.owns("sakura") && payer.selectedSkin == "sakura")
+        // An old iCloud backup does not hand her out again; a backup written since does.
+        do { let changed = game.merge(CloudBackup(ownedSkins: ["fluffy", "sakura"], giftsTakenBack: false)); #expect(!changed) }
+        #expect(!game.owns("sakura"))
+        // Bought with fish after the step: the save keeps her through a save and load.
+        game.addFish(3500)
+        do { let result = game.unlock(skin: "sakura"); #expect(result == .unlocked) }
+        let reloaded = try JSONDecoder().decode(SaveGame.self, from: JSONEncoder().encode(game))
+        #expect(reloaded.owns("sakura"))
+        var other = SaveGame()
+        do { let changed = other.merge(game.cloudBackup); #expect(changed) }
+        #expect(other.owns("sakura"))
     }
 
     @Test func aCatPaidForInGoldenFishIsOwnedEvenIfTheOwnedListLostIt() throws {
