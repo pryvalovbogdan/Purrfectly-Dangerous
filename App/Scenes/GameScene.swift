@@ -101,6 +101,8 @@ final class GameScene: SKScene {
     /// Each open portal pair: the entry and the exit node.
     private var portalNodes: [Int: (entry: ActorNode, exit: ActorNode)] = [:]
     private var shotNodes: [Int: ActorNode] = [:]
+    /// The strip the kitten rides during a Ghost Dash on the ground, for cats that have one (`SkinLook.dashSlide`).
+    private var slideNode: ActorNode?
     private var platformViews: [PlatformView] = []
     /// World time each crumbling ledge was landed on, to pace its crumble frames.
     private var crumbleStart: [Int: Double] = [:]
@@ -204,15 +206,35 @@ final class GameScene: SKScene {
         render()
     }
 
-    /// Hands SpriteKit every frame the kitten and its yarn can show, so the first throw, double
-    /// pounce or dash of a run does not stall a frame while its textures are uploaded.
+    /// Hands SpriteKit every frame the kitten and its yarn can show, and everything this level's boss
+    /// brings (its own animations, what its attacks throw, what it summons and what those throw, its
+    /// portals), so the first throw, dash or boss attack of a run does not stall a frame while its
+    /// textures are loaded. Only this level's boss: the others stay unloaded. The painted health plate
+    /// is decoded here too. The loading screen stays up until this is done (`GameHUD.isLoaded`).
     private func preloadTextures() {
+        var sprites = Set([hero.spriteName, hero.fallbackSprite ?? hero.spriteName, "yarn"])
+        if let boss = world.boss {
+            sprites.insert(boss.id)
+            for attack in boss.attacks {
+                for hazard in attack.hazards {
+                    sprites.insert(Self.projectileSprite[hazard.kind] ?? "hazard_\(hazard.kind)")
+                }
+                for summon in attack.summons ?? [] {
+                    sprites.insert(summon.kind.rawValue)
+                    if let thrown = Self.thrownBy[summon.kind] { sprites.insert(thrown) }
+                }
+                if attack.portals?.isEmpty == false { sprites.insert("portal") }
+            }
+            BossHealth.prepare(boss.id, name: text("\(boss.id).name"))
+        }
         var textures: [SKTexture] = []
-        for sprite in Set([hero.spriteName, hero.fallbackSprite ?? hero.spriteName, "yarn"]) {
+        for sprite in sprites {
             guard let animations = library.sheet(sprite)?.animations else { continue }
             for name in animations.keys { textures += library.textures(sprite, name) }
         }
-        SKTexture.preload(textures) {}
+        SKTexture.preload(textures) { [hud] in
+            Task { @MainActor in hud.isLoaded = true }
+        }
     }
 
     private func buildScenery() {
@@ -662,9 +684,10 @@ final class GameScene: SKScene {
     // MARK: - Loop
 
     override func update(_ currentTime: TimeInterval) {
-        guard !hud.isPaused, let last = lastTime else {
+        let waiting = hud.isPaused || hud.isLoading
+        guard !waiting, let last = lastTime else {
             // Dropping the timestamp while paused stops the pause from being replayed as one big step.
-            lastTime = hud.isPaused ? nil : currentTime
+            lastTime = waiting ? nil : currentTime
             return
         }
         lastTime = currentTime
@@ -1168,6 +1191,7 @@ final class GameScene: SKScene {
         }
         renderPlatforms()
         renderHero()
+        renderSlide()
         renderEntities()
         renderHazards()
         renderPortals()
@@ -1617,13 +1641,63 @@ final class GameScene: SKScene {
         }
     }
 
+    /// A cat's own look for its abilities, keyed by skin id (the `<id>` of `hero_<id>`): the shot drawn in place of
+    /// the ball of yarn (with `fly` and `impact`) and the strip it rides on a Ghost Dash (`slide` and `splash`).
+    /// Looks only: hitboxes and timing are GameCore's. Cats not listed throw yarn and dash as they always did.
+    private struct SkinLook {
+        var shot = "yarn"
+        var dashSlide: String?
+    }
+    private static let skinLooks: [String: SkinLook] = [
+        "sharky": SkinLook(shot: "shot_wave", dashSlide: "water_slide"),
+    ]
+    private var skinLook: SkinLook {
+        let id = hero.spriteName.hasPrefix("hero_") ? String(hero.spriteName.dropFirst(5)) : "fluffy"
+        return Self.skinLooks[id] ?? SkinLook()
+    }
+
+    /// The water a cat with a `dashSlide` surfs on: under its feet while a Ghost Dash lasts on the ground, with a
+    /// splash where it starts, and left behind to fade as the dash ends or the kitten leaves the ground. In the
+    /// air there is none (the dash frames carry their own wave); landing mid-dash starts a new one.
+    private func renderSlide() {
+        guard let sprite = skinLook.dashSlide, library.sheet(sprite) != nil else { return }
+        let feet = CGPoint(x: framing.heroScreenX, y: screenY(world.heroY))
+        if world.isDashing, world.onGround, !fell, world.phase == .running || world.phase == .boss {
+            if slideNode == nil {
+                let node = ActorNode(sprite: sprite, library: library)
+                node.zPosition = hero.zPosition - 0.5
+                node.play("slide")
+                actors.addChild(node)
+                slideNode = node
+                let splash = ActorNode(sprite: sprite, library: library)
+                splash.position = feet
+                splash.zPosition = hero.zPosition - 0.4
+                actors.addChild(splash)
+                if let animation = library.animation(sprite, "splash") {
+                    let duration = Double(animation.frames) / max(animation.fps, 1)
+                    splash.run(.moveBy(x: -CGFloat(world.runSpeed * duration), y: 0, duration: duration))
+                }
+                splash.play("splash") { [weak splash] in splash?.removeFromParent() }
+            }
+            slideNode?.position = feet
+        } else if let node = slideNode {
+            slideNode = nil
+            let fade = 0.15
+            node.run(.sequence([.group([.fadeOut(withDuration: fade),
+                                        .moveBy(x: -CGFloat(world.runSpeed * fade), y: 0, duration: fade)]),
+                                .removeFromParent()]))
+        }
+    }
+
     private func renderShots() {
+        let look = skinLook.shot
+        let shotSprite = library.sheet(look) != nil ? look : "yarn"
         for shot in world.projectiles {
             let node: ActorNode
             if let existing = shotNodes[shot.id] {
                 node = existing
             } else {
-                node = ActorNode(sprite: "yarn", library: library)
+                node = ActorNode(sprite: shotSprite, library: library)
                 node.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 node.zPosition = 6
                 node.play("fly")

@@ -295,6 +295,45 @@ FLORAL_FILL_CUTS = [
 FLORAL_FILL_ROW = (156, 406, 1380, 454)
 
 
+# The level loading bar, from the user's loading sheet (real transparency): the empty bar of row 1 (`loading_bar`),
+# its dark track alone in the same box (`loading_bar_track`: track x 92-310, y 47-80), for the screen to mask the
+# fill with, and the striped fill of the full bar (`loading_bar_fill`, 257x31), which slides in along the track from
+# under the paw (`LoadingScreen` in App/UI/LoadingScreen.swift).
+LOADING_SOURCE = "loading_source.png"
+LOADING_BAR_BOX = (14, 50, 375, 175)
+LOADING_CUTS = [
+    # (box in the sheet, a point inside the piece, the colours it is made of, asset name)
+    (LOADING_BAR_BOX, (200, 112), lambda p: 30 < p[0] < 75 and p[1] < 45 and p[2] < 40, "loading_bar_track"),
+    ((1822, 243, 2079, 274), (1950, 255), lambda p: p[0] > 200 and p[1] > 120, "loading_bar_fill"),
+]
+
+
+def cut_region(source: str, box: tuple, seed: tuple, colour, name: str) -> None:
+    """One piece of a painting that is only the opaque pixels of `colour` joined to `seed` (sheet coordinates): a
+    dark line walls a bar's track or fill in, so the flood stops there. The rest of `box` is cleared."""
+    sheet = Image.open(Path(__file__).parent / source).convert("RGBA")
+    px = sheet.load()
+    region, todo = set(), [seed]
+    while todo:
+        x, y = todo.pop()
+        if (x, y) in region or not (box[0] <= x < box[2] and box[1] <= y < box[3]):
+            continue
+        if px[x, y][3] < 200 or not colour(px[x, y]):
+            continue
+        region.add((x, y))
+        todo += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    piece = Image.new("RGBA", (box[2] - box[0], box[3] - box[1]), (0, 0, 0, 0))
+    out = piece.load()
+    for x, y in region:
+        out[x - box[0], y - box[1]] = px[x, y][:3] + (255,)
+    folder = ATLAS.parent / f"{name}.imageset"
+    folder.mkdir(parents=True, exist_ok=True)
+    write_png(piece, folder / f"{name}.png")
+    contents = {"images": [{"filename": f"{name}.png", "idiom": "universal"}],
+                "info": {"author": "xcode", "version": 1}}
+    (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
+
+
 def cut_fill_piece(source: str, row: tuple, box: tuple, name: str) -> None:
     """One piece of a painted bar's fill, where the sheet only shows the fill inside its frame: the fill is what
     the middle of the bar reaches through bright pixels (red over 200), because a dark line walls it in from the
@@ -414,6 +453,9 @@ def titles() -> None:
         cut_alpha_piece(FLORAL_BAR_SOURCE, box, name, min_shape=min_shape)
     for box, name in FLORAL_FILL_CUTS:
         cut_fill_piece(FLORAL_BAR_SOURCE, FLORAL_FILL_ROW, box, name)
+    cut_alpha_piece(LOADING_SOURCE, LOADING_BAR_BOX, "loading_bar", min_shape=200)
+    for cut in LOADING_CUTS:
+        cut_region(LOADING_SOURCE, *cut)
     cut_alpha_piece(SAKURA_MENU_SOURCE, SAKURA_TITLE_BOX, "title_start_sakura")
     for cut in SHEET_CUTS:
         cut_from_sheet(*cut)

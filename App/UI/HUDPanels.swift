@@ -337,6 +337,13 @@ struct BossHealth: View {
     /// A boss's crest on the painted plate: the Great Squirrel King keeps the crown of his banner.
     static let crests: [String: String] = ["boss_squirrel": "boss_crown_squirrel"]
 
+    /// Decodes the painted plate and bar of boss `id` (and its crest) and lays out its `name` before the
+    /// fight, so none of it is done on the frame the plate first shows.
+    @MainActor static func prepare(_ id: String, name: String) {
+        guard let style = paintedStyle(for: id) else { return }
+        PaintedBossHealth.prepare(style, name: name, crest: crests[id])
+    }
+
     /// Bosses whose health plate opens the fight with its own entrance and shows the name, so the
     /// scene leaves out the plain name banner (it would only repeat the name under the plate).
     static func introducesItself(_ id: String) -> Bool {

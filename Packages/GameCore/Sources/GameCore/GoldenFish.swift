@@ -38,11 +38,16 @@ public struct CloudBackup: Codable, Sendable, Equatable {
     public var goldenSkins: [String: Int] = [:]
     /// Every cat owned, however it was paid for.
     public var ownedSkins: Set<String> = []
+    /// Whether the copy was written after the free gifts were taken back (`SaveGame.freeGifts`); an
+    /// older copy's `ownedSkins` may still hold them.
+    public var giftsTakenBack = true
 
-    public init(goldenPurchases: [String: Int] = [:], goldenSkins: [String: Int] = [:], ownedSkins: Set<String> = []) {
+    public init(goldenPurchases: [String: Int] = [:], goldenSkins: [String: Int] = [:], ownedSkins: Set<String> = [],
+                giftsTakenBack: Bool = true) {
         self.goldenPurchases = goldenPurchases
         self.goldenSkins = goldenSkins
         self.ownedSkins = ownedSkins
+        self.giftsTakenBack = giftsTakenBack
     }
 
     public init(from decoder: Decoder) throws {
@@ -50,5 +55,6 @@ public struct CloudBackup: Codable, Sendable, Equatable {
         goldenPurchases = try values.decodeIfPresent([String: Int].self, forKey: .goldenPurchases) ?? [:]
         goldenSkins = try values.decodeIfPresent([String: Int].self, forKey: .goldenSkins) ?? [:]
         ownedSkins = try values.decodeIfPresent(Set<String>.self, forKey: .ownedSkins) ?? []
+        giftsTakenBack = try values.decodeIfPresent(Bool.self, forKey: .giftsTakenBack) ?? false
     }
 }

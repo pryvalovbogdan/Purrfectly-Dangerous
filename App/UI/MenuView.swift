@@ -52,6 +52,7 @@ struct MenuView: View {
             }
         }
         .animation(.easeOut(duration: 0.15), value: overlay)
+        .onAppear { if model.debugCats != nil { overlay = .cats } }
     }
 
     /// Upright: title at the top, the hero in the middle of the scene, buttons on the earth.

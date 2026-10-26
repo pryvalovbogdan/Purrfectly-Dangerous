@@ -3723,23 +3723,23 @@
     "loop": false
    },
    "idle": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "jump": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 3,
+    "fps": 12,
     "loop": true
    },
    "fall": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 4,
+    "fps": 16,
     "loop": true
    },
    "double": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "throw": {
@@ -3748,8 +3748,8 @@
     "loop": false
    },
    "dash": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "pounce": {
@@ -3758,18 +3758,18 @@
     "loop": true
    },
    "hurt": {
-    "frames": 2,
+    "frames": 3,
     "fps": 10,
     "loop": true
    },
    "death": {
-    "frames": 6,
-    "fps": 8,
+    "frames": 4,
+    "fps": 5,
     "loop": false
    },
    "peek": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "cheer": {
@@ -3783,27 +3783,22 @@
     "loop": true
    },
    "menu": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "ko": {
-    "frames": 2,
-    "fps": 3,
+    "frames": 4,
+    "fps": 6,
     "loop": true
    },
    "ghost": {
-    "frames": 4,
-    "fps": 5,
-    "loop": true,
-    "sequence": [
-     0,
-     1,
-     2,
-     1
-    ]
+    "frames": 6,
+    "fps": 7,
+    "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hero_clover": {
   "width": 44,
@@ -4510,23 +4505,23 @@
     "loop": false
    },
    "idle": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "jump": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 3,
+    "fps": 12,
     "loop": true
    },
    "fall": {
-    "frames": 2,
-    "fps": 8,
+    "frames": 4,
+    "fps": 16,
     "loop": true
    },
    "double": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "throw": {
@@ -4535,8 +4530,8 @@
     "loop": false
    },
    "dash": {
-    "frames": 4,
-    "fps": 16,
+    "frames": 6,
+    "fps": 24,
     "loop": true
    },
    "pounce": {
@@ -4545,18 +4540,18 @@
     "loop": true
    },
    "hurt": {
-    "frames": 2,
+    "frames": 3,
     "fps": 10,
     "loop": true
    },
    "death": {
-    "frames": 6,
-    "fps": 8,
+    "frames": 4,
+    "fps": 5,
     "loop": false
    },
    "peek": {
-    "frames": 4,
-    "fps": 4,
+    "frames": 6,
+    "fps": 6,
     "loop": true
    },
    "cheer": {
@@ -4570,33 +4565,22 @@
     "loop": true
    },
    "menu": {
-    "frames": 4,
-    "fps": 4,
-    "loop": true,
-    "sequence": [
-     0,
-     0,
-     1,
-     2
-    ]
+    "frames": 6,
+    "fps": 6,
+    "loop": true
    },
    "ko": {
-    "frames": 2,
-    "fps": 3,
+    "frames": 4,
+    "fps": 6,
     "loop": true
    },
    "ghost": {
-    "frames": 4,
-    "fps": 5,
-    "loop": true,
-    "sequence": [
-     0,
-     1,
-     2,
-     1
-    ]
+    "frames": 6,
+    "fps": 7,
+    "loop": true
    }
-  }
+  },
+  "scale": 3
  },
  "hero_snowball": {
   "width": 44,
@@ -7904,6 +7888,24 @@
    }
   }
  },
+ "shot_wave": {
+  "width": 16,
+  "height": 12,
+  "anchorX": 0.5,
+  "anchorY": 0,
+  "animations": {
+   "fly": {
+    "frames": 4,
+    "fps": 12,
+    "loop": true
+   },
+   "impact": {
+    "frames": 5,
+    "fps": 18,
+    "loop": false
+   }
+  }
+ },
  "sign_cat": {
   "width": 18,
   "height": 22,
@@ -9343,6 +9345,24 @@
    "death": {
     "frames": 4,
     "fps": 10,
+    "loop": false
+   }
+  }
+ },
+ "water_slide": {
+  "width": 60,
+  "height": 14,
+  "anchorX": 0.675,
+  "anchorY": 0.2143,
+  "animations": {
+   "slide": {
+    "frames": 4,
+    "fps": 14,
+    "loop": true
+   },
+   "splash": {
+    "frames": 5,
+    "fps": 16,
     "loop": false
    }
   }

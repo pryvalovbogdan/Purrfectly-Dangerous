@@ -27,7 +27,8 @@ from existing books, films or games.
 6. **Never cut a piece out of a sprite texture in code** (`SKTexture(rect:in:)`). On a real device
    the atlas packs sprites together and the cut-out shows its neighbours; the simulator hides this.
    Generate the piece as its own sprite instead.
-7. `PurrfectlyDangerous.xcodeproj` is generated. Edit `project.yml`, then `xcodegen generate`.
+7. `PurrfectlyDangerous.xcodeproj` is generated. Edit `project.yml`, then `Tools/xcodegen.sh` (it reads the signing team from `.env`, which git
+   ignores; see `.env.example`).
 
 ## Commands
 

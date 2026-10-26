@@ -9,7 +9,7 @@ import SwiftUI
 /// as crisp as the sprites. The words come from Lore.json; this is only the typeface. Letters it has
 /// no glyph for fall back to their unaccented form, then to a gap.
 struct LogoTitle: View {
-    enum Fill: Equatable {
+    enum Fill: Hashable {
         /// Cream with a white top edge: the logo's first line.
         case cream
         /// Yellow at the top running to orange at the bottom.
@@ -17,7 +17,7 @@ struct LogoTitle: View {
         case flat(Color)
     }
 
-    struct Line: Equatable {
+    struct Line: Hashable {
         var text: String
         var fill: Fill
     }
@@ -34,7 +34,7 @@ struct LogoTitle: View {
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        let layout = LogoLayout(lines: lines,
+        let layout = LogoLayout.cached(lines: lines,
                                 fish: fish ? model.sprites.sheet("fish").map { (Int($0.width), Int($0.height)) } : nil,
                                 arch: arch)
         let unit = CGFloat(sub) / max(displayScale, 1)
@@ -64,8 +64,8 @@ struct LogoTitle: View {
         var lettersCenter: CGFloat
     }
 
-    static func metrics(_ lines: [Line], fish: (Int, Int)?, arch: Bool = true) -> Metrics {
-        let layout = LogoLayout(lines: lines, fish: fish, arch: arch)
+    @MainActor static func metrics(_ lines: [Line], fish: (Int, Int)?, arch: Bool = true) -> Metrics {
+        let layout = LogoLayout.cached(lines: lines, fish: fish, arch: arch)
         return Metrics(width: layout.width, height: layout.height, firstLineCenter: layout.firstLineCenter,
                        firstLineTop: layout.firstLineTop, lettersWidth: layout.lettersWidth,
                        lettersCenter: CGFloat(layout.lettersWidth) / 2)
@@ -114,6 +114,27 @@ struct LogoLayout {
     /// Fill of each lit sub-pixel: the line's fill and the row within the letter.
     private var lit: [Int: (fill: LogoTitle.Fill, row: Int)] = [:]
     private var backingCells = Set<Int>()
+
+    /// Layouts already worked out: lighting the sub-pixels is slow (tens of milliseconds for a boss
+    /// name in a debug build), and a title is measured and drawn again on every update of its view.
+    private struct Key: Hashable {
+        var lines: [LogoTitle.Line]
+        var fishWidth: Int?
+        var fishHeight: Int?
+        var arch: Bool
+    }
+
+    @MainActor private static var layouts: [Key: LogoLayout] = [:]
+
+    @MainActor static func cached(lines: [LogoTitle.Line], fish: (Int, Int)?, arch: Bool = true) -> LogoLayout {
+        let key = Key(lines: lines, fishWidth: fish?.0, fishHeight: fish?.1, arch: arch)
+        if let layout = layouts[key] { return layout }
+        let layout = LogoLayout(lines: lines, fish: fish, arch: arch)
+        // Only a handful of titles are on screen in a session; start over rather than grow without end.
+        if layouts.count > 64 { layouts.removeAll() }
+        layouts[key] = layout
+        return layout
+    }
 
     fileprivate enum Slot {
         case glyph([String]), space

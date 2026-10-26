@@ -22,11 +22,22 @@ public struct SaveGame: Codable, Sendable, Equatable {
     /// Cats bought with golden fish: cat id → golden fish paid. The balance is what was bought less
     /// what was paid here (see `goldenFish`), so it is never stored and never conflicts.
     public private(set) var goldenSkins: [String: Int] = [:]
+    /// Whether the cats once given away free (`freeGifts`) have been taken back from this save. True
+    /// for every save from now on; false only in data written before the step existed.
+    public private(set) var giftsTakenBack = true
 
     /// The skin every player has from the start.
     public static let defaultSkin = Skin.free
     /// What the one cat was called before the shop; such saves now pick the free cat.
     static let legacySkins: Set<String> = ["orange"]
+    /// Cats that TestFlight builds gave every player for free at launch. They are taken back once,
+    /// unless they were paid for in golden fish (a fish purchase was impossible while they were free).
+    static let freeGifts: Set<String> = ["sakura"]
+
+    /// `owned` without the free gifts that were not paid for in golden fish.
+    static func withoutFreeGifts(_ owned: Set<String>, golden: [String: Int]) -> Set<String> {
+        owned.subtracting(freeGifts.subtracting(golden.keys))
+    }
 
     public init() {}
 
@@ -46,8 +57,11 @@ public struct SaveGame: Codable, Sendable, Equatable {
             .filter { $0.value > 0 }
         goldenSkins = (try values.decodeIfPresent([String: Int].self, forKey: .goldenSkins) ?? [:])
             .filter { $0.value > 0 }
+        // The free gifts are taken back once (a save from before that step), then the flag is set.
+        let kept = try values.decodeIfPresent(Bool.self, forKey: .giftsTakenBack) ?? false
+            ? owned : Self.withoutFreeGifts(owned, golden: goldenSkins)
         // A cat paid for in golden fish is owned.
-        ownedSkins = owned.union(goldenSkins.keys).filter { Skin.named($0) != nil }.union([Skin.free])
+        ownedSkins = kept.union(goldenSkins.keys).filter { Skin.named($0) != nil }.union([Skin.free])
         let selected = try values.decodeIfPresent(String.self, forKey: .selectedSkin) ?? Self.defaultSkin
         selectedSkin = ownedSkins.contains(selected) ? selected : Self.defaultSkin
     }
@@ -107,7 +121,8 @@ public struct SaveGame: Codable, Sendable, Equatable {
 
     /// What goes to iCloud: purchases, golden-bought cats and owned cats.
     public var cloudBackup: CloudBackup {
-        CloudBackup(goldenPurchases: goldenPurchases, goldenSkins: goldenSkins, ownedSkins: ownedSkins)
+        CloudBackup(goldenPurchases: goldenPurchases, goldenSkins: goldenSkins, ownedSkins: ownedSkins,
+                    giftsTakenBack: giftsTakenBack)
     }
 
     /// Takes in a copy kept elsewhere (iCloud, another phone): the union of purchases, golden-bought
@@ -125,7 +140,10 @@ public struct SaveGame: Codable, Sendable, Equatable {
         for (id, price) in remote.goldenSkins where price > 0 {
             goldenSkins[id] = max(goldenSkins[id] ?? 0, price)
         }
-        ownedSkins.formUnion(remote.ownedSkins.union(remote.goldenSkins.keys).filter { Skin.named($0) != nil })
+        // A backup written before the free gifts were taken back would hand them out again.
+        let remoteOwned = remote.giftsTakenBack ? remote.ownedSkins
+            : Self.withoutFreeGifts(remote.ownedSkins, golden: remote.goldenSkins)
+        ownedSkins.formUnion(remoteOwned.union(remote.goldenSkins.keys).filter { Skin.named($0) != nil })
         return before != (goldenPurchases, goldenSkins, ownedSkins)
     }
 
